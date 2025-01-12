@@ -7,4 +7,16 @@ export default defineNuxtConfig({
     '@/assets/base.css',
     '@/assets/main.css',
   ],
+
+  app: {
+    head: {
+      script: [
+        {
+          src: 'https://cdn.plaid.com/link/v2/stable/link-initialize.js', // Add Plaid script
+          type: 'text/javascript',
+          async: true, // Ensure it loads asynchronously
+        }
+      ]
+    }
+  }
 });
