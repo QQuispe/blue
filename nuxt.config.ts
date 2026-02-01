@@ -18,5 +18,17 @@ export default defineNuxtConfig({
         }
       ]
     }
+  },
+
+  // Enable experimental features for session support
+  nitro: {
+    experimental: {
+      wasm: true
+    }
+  },
+
+  // Runtime config for session secrets
+  runtimeConfig: {
+    sessionSecret: process.env.SESSION_SECRET || 'your-session-secret-minimum-32-characters-long'
   }
 });

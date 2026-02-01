@@ -1,5 +1,6 @@
 <script setup>
-const username = 'User'; // TODO: Replace with data from DB
+const { user } = useAuth();
+const username = computed(() => user.value?.username || 'Guest');
 </script>
 
 <template>

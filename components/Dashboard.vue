@@ -1,5 +1,8 @@
 <script setup>
 import BalanceCard from "./cards/BalanceCard.vue";
+import BudgetsCard from "./cards/BudgetsCard.vue";
+import TopSpendingCategoriesCard from "./cards/TopSpendingCategoriesCard.vue";
+import NetWorthCard from "./cards/NetWorthCard.vue";
 import Welcome from "./Welcome.vue";
 </script>
 <template>
@@ -14,9 +17,15 @@ import Welcome from "./Welcome.vue";
           <div class="card">
             <BalanceCard />
           </div>
-          <div class="card">Section 2</div>
-          <div class="card">Section 3</div>
-          <div class="card">Section 4</div>
+          <div class="card">
+            <NetWorthCard />
+          </div>
+          <div class="card">
+            <TopSpendingCategoriesCard />
+          </div>
+          <div class="card">
+            <BudgetsCard />
+          </div>
           <div class="card">Section 5</div>
           <div class="card">Section 6</div>
         </main>

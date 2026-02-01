@@ -1,75 +1,98 @@
-# Nuxt Minimal Starter
+# Blue - Personal Finance Dashboard
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+A Nuxt 3 + Vue 3 application with Plaid integration for personal finance management.
 
-## Setup
+## Quick Start with Docker
 
-Make sure to install dependencies:
+The easiest way to get started is using Docker Compose, which will set up both the app and PostgreSQL database.
+
+### Prerequisites
+- Docker Desktop installed and running
+- Plaid account with API credentials
+
+### Setup
+
+1. **Copy environment template:**
+```bash
+cp .env.example .env
+```
+
+2. **Edit `.env` with your Plaid credentials:**
+```
+PLAID_CLIENT_ID=your_plaid_client_id
+PLAID_SECRET=your_plaid_secret
+PLAID_ENV=sandbox
+ENCRYPTION_KEY=your-32-char-encryption-key-here
+```
+
+3. **Start the application:**
+```bash
+docker-compose up
+```
+
+4. **Open http://localhost:3000** in your browser
+
+The database will automatically create tables on first run. Data persists in a Docker volume.
+
+### Viewing Database
+
+To inspect the database:
+```bash
+# Connect to PostgreSQL container
+docker-compose exec db psql -U postgres -d mydatabase
+
+# Or use any PostgreSQL client on localhost:5432
+# User: postgres, Password: mypassword, Database: mydatabase
+```
+
+## Development (Without Docker)
+
+If you prefer to run locally without Docker:
 
 ```bash
-# npm
+# Install dependencies
 npm install
 
-# pnpm
-pnpm install
+# Set up PostgreSQL locally and update DATABASE_URI in .env
 
-# yarn
-yarn install
-
-# bun
-bun install
-```
-
-## Development Server
-
-Start the development server on `http://localhost:3000`:
-
-```bash
-# npm
+# Run development server
 npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
+## Architecture
 
-Build the application for production:
+- **Frontend:** Nuxt 3 with Vue 3, server-side rendering
+- **API:** Nitro server routes in `/server/api/`
+- **Database:** PostgreSQL with connection pooling via `pg`
+- **Banking:** Plaid API for account connections and transactions
+- **Security:** Access tokens encrypted in database
 
-```bash
-# npm
-npm run build
+## Features
 
-# pnpm
-pnpm build
+- [x] Plaid Link integration for bank connections
+- [x] Cursor-based transaction synchronization
+- [x] Encrypted token storage
+- [x] Transaction history with pagination
+- [ ] User authentication (Phase 2)
+- [ ] Spending analytics (Phase 2)
+- [ ] Budget tracking (Phase 3)
 
-# yarn
-yarn build
+## Plaid Environment
 
-# bun
-bun run build
-```
+The app uses Plaid Sandbox by default. To switch to Development or Production:
 
-Locally preview production build:
+1. Update `PLAID_ENV` in `.env` (sandbox/development/production)
+2. Ensure your `PLAID_SECRET` matches the environment
+3. Restart the application
 
-```bash
-# npm
-npm run preview
+## Database Schema
 
-# pnpm
-pnpm preview
+- **users** - User accounts (simplified for Phase 1)
+- **items** - Plaid connected institutions with encrypted access tokens
+- **accounts** - Bank accounts linked to items
+- **transactions** - Transaction history with categorization
 
-# yarn
-yarn preview
+## Learn More
 
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+- [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction)
+- [Plaid API documentation](https://plaid.com/docs/)

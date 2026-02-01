@@ -1,76 +1,141 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
-
-const props = defineProps({
-  accessToken: String, // Receive the access token from the parent component
-});
+import { ref, onMounted, defineExpose } from 'vue';
 
 const transactions = ref([]);
+const isLoading = ref(false);
 
-// Fetch transactions based on the provided access token
+// Fetch cached transactions from database
 const fetchTransactions = async () => {
-  if (!props.accessToken) {
-    console.error("No access token available");
-    return;
-  }
-
+  isLoading.value = true;
   try {
-    const response = await fetch('/api/plaid/transactions', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ accessToken: props.accessToken })
-    });
-
+    const response = await fetch('/api/user/transactions');
+    
     if (!response.ok) {
       console.error(`Request failed with status ${response.status}`);
       return;
     }
 
     const data = await response.json();
-
-    // Debugging
-    console.log("Transaction Data:", data)
-
+    console.log("Transaction Data:", data);
     transactions.value = data.transactions || [];
   } catch (error) {
     console.error('Error fetching transactions:', error);
+  } finally {
+    isLoading.value = false;
   }
 };
 
-// Watch for changes to the access token and fetch transactions when it changes
-watch(() => props.accessToken, (newToken) => {
-  if (newToken) {
-    fetchTransactions();
-  }
+// Fetch transactions on mount
+onMounted(() => {
+  fetchTransactions();
 });
 
-// Fetch transactions on initial mount if an access token is available
-onMounted(() => {
-  if (props.accessToken) {
-    fetchTransactions();
-  }
+// Expose method to parent so it can trigger refresh after sync
+defineExpose({
+  refresh: fetchTransactions
 });
 </script>
 
 <template>
-  <div>
-    <h2>Transactions</h2>
-    <table v-if="transactions.length">
+  <div class="transactions-section">
+    <h2>Recent Transactions</h2>
+    <button @click="fetchTransactions" :disabled="isLoading" class="refresh-btn">
+      {{ isLoading ? 'Loading...' : 'Refresh' }}
+    </button>
+    
+    <div v-if="isLoading" class="loading">Loading transactions...</div>
+    
+    <table v-else-if="transactions.length" class="transactions-table">
       <thead>
         <tr>
           <th>Date</th>
-          <th>Merchant</th>
+          <th>Account</th>
+          <th>Name</th>
           <th>Amount</th>
+          <th>Status</th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="txn in transactions" :key="txn.transaction_id">
+        <tr v-for="txn in transactions" :key="txn.plaid_transaction_id">
           <td>{{ txn.date }}</td>
-          <td>{{ txn.merchant_name }}</td>
-          <td>{{ txn.amount }}</td>
+          <td>{{ txn.account_name || 'Unknown' }}</td>
+          <td>{{ txn.name }}</td>
+          <td :class="{ 'negative': txn.amount > 0 }">${{ txn.amount }}</td>
+          <td>
+            <span v-if="txn.pending" class="pending-badge">Pending</span>
+            <span v-else class="posted-badge">Posted</span>
+          </td>
         </tr>
       </tbody>
     </table>
-    <p v-else>No transactions available</p>
+    <p v-else class="no-data">No transactions available. Connect a bank account to see transactions.</p>
   </div>
 </template>
+
+<style scoped>
+.transactions-section {
+  margin-top: 30px;
+  padding: 20px;
+  background: rgb(64, 64, 64);
+  border-radius: 10px;
+}
+
+.refresh-btn {
+  margin-bottom: 15px;
+  padding: 8px 16px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.refresh-btn:hover {
+  background: #059669;
+}
+
+.transactions-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.transactions-table th,
+.transactions-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.transactions-table th {
+  font-weight: 600;
+  color: #18ffc1;
+}
+
+.negative {
+  color: #ef4444;
+}
+
+.pending-badge {
+  background: #fbbf24;
+  color: #000;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+}
+
+.posted-badge {
+  background: #10b981;
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+}
+
+.loading,
+.no-data {
+  padding: 20px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+</style>

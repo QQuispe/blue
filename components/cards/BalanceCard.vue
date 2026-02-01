@@ -1,26 +1,81 @@
 <script setup>
-// We'll replace these with real data later
-const balance = {
-  amount: 5249.80,
-  currency: 'USD',
-  change: 12.5 // Percentage change
+import { ref, onMounted, computed } from 'vue'
+
+const balanceData = ref(null)
+const isLoading = ref(true)
+const error = ref(null)
+
+// Fetch balance data from API
+const fetchBalance = async () => {
+  try {
+    isLoading.value = true
+    error.value = null
+    
+    const response = await fetch('/api/user/balance', {
+      credentials: 'include'
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch balance')
+    }
+    
+    const data = await response.json()
+    balanceData.value = data.summary
+  } catch (err) {
+    console.error('Error fetching balance:', err)
+    error.value = err.message
+  } finally {
+    isLoading.value = false
+  }
 }
+
+onMounted(() => {
+  fetchBalance()
+})
+
+// Computed properties for display
+const displayBalance = computed(() => {
+  if (!balanceData.value) return { amount: 0, currency: 'USD', accountCount: 0 }
+  
+  return {
+    amount: balanceData.value.totalCurrent,
+    currency: balanceData.value.currency,
+    accountCount: balanceData.value.accountCount
+  }
+})
+
+const formattedAmount = computed(() => {
+  return displayBalance.value.amount.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })
+})
 </script>
 
 <template>
   <div class="balance-card">
     <div class="balance-header">
       <h3 class="title">Total Balance</h3>
-      <span class="change-indicator positive">
-        +{{ balance.change }}%
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 15l-6-6-6 6"/>
-        </svg>
+      <span v-if="displayBalance.accountCount > 0" class="account-count">
+        {{ displayBalance.accountCount }} account{{ displayBalance.accountCount === 1 ? '' : 's' }}
       </span>
     </div>
-    <div class="balance-amount">
-      <span class="currency">{{ balance.currency }}</span>
-      {{ balance.amount.toLocaleString(undefined, {minimumFractionDigits: 2}) }}
+    
+    <div v-if="isLoading" class="loading-state">
+      Loading...
+    </div>
+    
+    <div v-else-if="error" class="error-state">
+      {{ error }}
+    </div>
+    
+    <div v-else class="balance-amount">
+      <span class="currency">{{ displayBalance.currency }}</span>
+      {{ formattedAmount }}
+    </div>
+    
+    <div v-if="!isLoading && !error && displayBalance.accountCount === 0" class="no-accounts">
+      No connected accounts
     </div>
   </div>
 </template>
@@ -46,19 +101,25 @@ const balance = {
   margin: 0;
 }
 
-.change-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+.account-count {
   font-size: 0.875rem;
-  font-weight: 500;
-  padding: 0.25rem 0.5rem;
-  border-radius: 1rem;
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.change-indicator.positive {
-  color: #10b981;
-  background-color: #ecfdf5;
+.loading-state {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.error-state {
+  font-size: 1rem;
+  color: #ef4444;
+}
+
+.no-accounts {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 0.5rem;
 }
 
 .balance-amount {
