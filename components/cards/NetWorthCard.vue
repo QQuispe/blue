@@ -1,11 +1,24 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
+import Chart from 'chart.js/auto'
 
-const summary = ref(null)
-const assets = ref([])
-const liabilities = ref([])
+const currentData = ref(null)
+const historyData = ref([])
 const isLoading = ref(true)
 const error = ref(null)
+const selectedTimeframe = ref('12m')
+const hasSyntheticData = ref(false)
+const chartCanvas = ref(null)
+let chart = null
+
+const timeframes = [
+  { value: '1m', label: '1M' },
+  { value: '3m', label: '3M' },
+  { value: '6m', label: '6M' },
+  { value: '12m', label: '12M' },
+  { value: 'ytd', label: 'YTD' },
+  { value: 'all', label: 'ALL' }
+]
 
 // Fetch net worth data from API
 const fetchNetWorth = async () => {
@@ -13,7 +26,9 @@ const fetchNetWorth = async () => {
     isLoading.value = true
     error.value = null
     
-    const response = await fetch('/api/user/net-worth', {
+    console.log(`[NetWorthCard] Fetching data for timeframe: ${selectedTimeframe.value}`)
+    
+    const response = await fetch(`/api/user/net-worth?timeframe=${selectedTimeframe.value}`, {
       credentials: 'include'
     })
     
@@ -22,9 +37,11 @@ const fetchNetWorth = async () => {
     }
     
     const data = await response.json()
-    summary.value = data.summary
-    assets.value = data.assets
-    liabilities.value = data.liabilities
+    console.log(`[NetWorthCard] Received ${data.history?.length || 0} data points, synthetic: ${data.hasSyntheticData}`)
+    
+    currentData.value = data.current
+    historyData.value = data.history || []
+    hasSyntheticData.value = data.hasSyntheticData || false
   } catch (err) {
     console.error('Error fetching net worth:', err)
     error.value = err.message
@@ -37,6 +54,164 @@ onMounted(() => {
   fetchNetWorth()
 })
 
+// Cleanup chart on unmount
+onUnmounted(() => {
+  if (chart) {
+    chart.destroy()
+    chart = null
+  }
+})
+
+// Watch for timeframe changes
+watch(selectedTimeframe, () => {
+  // Clear chart immediately to prevent visual flash
+  if (chart) {
+    chart.destroy()
+    chart = null
+  }
+  historyData.value = []
+  fetchNetWorth()
+})
+
+// Watch for data changes and create/update chart
+watch([historyData, isLoading], async () => {
+  if (!isLoading.value && historyData.value.length > 0) {
+    await nextTick() // Wait for DOM to render the canvas
+    createChart()
+  }
+})
+
+// Create or update chart
+const createChart = () => {
+  if (!chartCanvas.value) {
+    console.log('[NetWorthCard] Canvas not ready yet')
+    return
+  }
+  
+  if (historyData.value.length === 0) {
+    console.log('[NetWorthCard] No history data to display')
+    return
+  }
+  
+  // Destroy existing chart
+  if (chart) {
+    chart.destroy()
+    chart = null
+  }
+  
+  const labels = historyData.value.map(d => {
+    const date = new Date(d.date)
+    return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+  })
+  
+  const data = historyData.value.map(d => d.netWorth)
+  
+  // Create gradient for fill
+  const chartHeight = chartCanvas.value?.offsetHeight || 200
+  const ctx = chartCanvas.value.getContext('2d')
+  const gradient = ctx.createLinearGradient(0, 0, 0, chartHeight)
+  gradient.addColorStop(0, 'rgba(62, 180, 137, 0.3)')
+  gradient.addColorStop(1, 'rgba(62, 180, 137, 0.0)')
+  
+  chart = new Chart(chartCanvas.value, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        borderColor: '#3EB489',
+        backgroundColor: gradient,
+        borderWidth: 2,
+        tension: 0.4,
+        fill: true,
+        pointRadius: 0,
+        pointHoverRadius: 6,
+        pointHoverBackgroundColor: '#3EB489',
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: {
+        padding: {
+          top: 5,
+          right: 5,
+          bottom: 5,
+          left: 5
+        }
+      },
+      interaction: {
+        intersect: false,
+        mode: 'index'
+      },
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: '#1a1a1a',
+          titleColor: 'rgba(255, 255, 255, 0.7)',
+          bodyColor: '#fff',
+          borderColor: 'rgba(255, 255, 255, 0.1)',
+          borderWidth: 1,
+          padding: 10,
+          displayColors: false,
+          callbacks: {
+            title: (context) => {
+              const index = context[0].dataIndex
+              const date = new Date(historyData.value[index].date)
+              return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+            },
+            label: (context) => {
+              const value = context.raw
+              return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          display: true,
+          grid: {
+            display: false
+          },
+          ticks: {
+            color: 'rgba(255, 255, 255, 0.5)',
+            font: {
+              size: 10
+            },
+            autoSkip: true,
+            autoSkipPadding: 10,
+            maxRotation: 0,
+            minRotation: 0
+          }
+        },
+        y: {
+          display: true,
+          grid: {
+            color: 'rgba(255, 255, 255, 0.03)',
+            drawBorder: false
+          },
+          ticks: {
+            color: 'rgba(255, 255, 255, 0.5)',
+            font: {
+              size: 10
+            },
+            maxTicksLimit: 6,
+            callback: (value) => {
+              if (value >= 1000000) return '$' + (value / 1000000).toFixed(1) + 'M'
+              if (value >= 1000) return '$' + (value / 1000).toFixed(0) + 'k'
+              return '$' + value
+            }
+          }
+        }
+      }
+    }
+  })
+}
+
 // Expose refresh method for parent component
 const refresh = () => {
   fetchNetWorth()
@@ -45,33 +220,74 @@ const refresh = () => {
 defineExpose({ refresh })
 
 // Computed properties
-const hasAccounts = computed(() => summary.value && summary.value.accountCount > 0)
-
-const netWorthColor = computed(() => {
-  if (!summary.value) return 'white'
-  return summary.value.netWorth >= 0 ? '#3EB489' : '#ef4444'
-})
-
-const formatCurrency = (amount) => {
-  return amount.toLocaleString(undefined, {
+const formattedNetWorth = computed(() => {
+  if (!currentData.value) return '0.00'
+  return currentData.value.netWorth.toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })
+})
+
+const percentageChange = computed(() => {
+  if (!currentData.value) return 0
+  return currentData.value.percentageChange || 0
+})
+
+const percentageChangeClass = computed(() => {
+  if (percentageChange.value > 0) return 'positive'
+  if (percentageChange.value < 0) return 'negative'
+  return 'neutral'
+})
+
+const changeIcon = computed(() => {
+  if (percentageChange.value > 0) return '↑'
+  if (percentageChange.value < 0) return '↓'
+  return '→'
+})
+
+// Change timeframe
+const changeTimeframe = (timeframe) => {
+  selectedTimeframe.value = timeframe
 }
 </script>
 
 <template>
   <div class="net-worth-card">
-    <!-- Header Row: Title left, Value right -->
-    <div class="card-header-row">
-      <h3 class="title">Net Worth</h3>
-      <div v-if="!isLoading && !error && hasAccounts" class="header-value" :style="{ color: netWorthColor }">
-        {{ summary.netWorth >= 0 ? '' : '-' }}${{ formatCurrency(Math.abs(summary.netWorth)) }}
+    <!-- Header: Title (left) | Timeframe (center) | Value (right) -->
+    <div class="header-row">
+      <!-- Left: Title + DEV badge -->
+      <div class="header-left">
+        <div class="title-section">
+          <h3 class="title">Net Worth</h3>
+          <span v-if="hasSyntheticData" class="dev-badge">DEV</span>
+        </div>
+      </div>
+      
+      <!-- Center: Timeframe Selector -->
+      <div class="timeframe-selector">
+        <button 
+          v-for="tf in timeframes" 
+          :key="tf.value"
+          class="timeframe-btn"
+          :class="{ active: selectedTimeframe === tf.value }"
+          @click="changeTimeframe(tf.value)"
+        >
+          {{ tf.label }}
+        </button>
+      </div>
+      
+      <!-- Right: Value + Percentage -->
+      <div class="header-right">
+        <span class="value">${{ formattedNetWorth }}</span>
+        <span 
+          v-if="percentageChange !== 0" 
+          class="percentage" 
+          :class="percentageChangeClass"
+        >
+          {{ changeIcon }} {{ Math.abs(percentageChange) }}%
+        </span>
       </div>
     </div>
-    
-    <!-- Minimal separator -->
-    <div class="separator"></div>
     
     <!-- Loading State -->
     <div v-if="isLoading" class="loading-state">
@@ -84,52 +300,16 @@ const formatCurrency = (amount) => {
       {{ error }}
     </div>
     
-    <!-- No Accounts State -->
-    <div v-else-if="!hasAccounts" class="no-accounts">
-      <div class="empty-icon">📊</div>
-      <p>No accounts connected</p>
+    <!-- No Data State -->
+    <div v-else-if="historyData.length === 0" class="no-data">
+      <div class="empty-icon">📈</div>
+      <p>No historical data available</p>
+      <span class="empty-hint">Connect accounts to start tracking your net worth</span>
     </div>
     
-    <!-- Content -->
-    <div v-else class="card-content">
-      <!-- Breakdown -->
-      <div class="breakdown">
-        <div class="breakdown-item">
-          <div class="breakdown-icon assets">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2v20M2 12h20"/>
-            </svg>
-          </div>
-          <div class="breakdown-info">
-            <span class="breakdown-label">Assets</span>
-            <span class="breakdown-value positive">${{ formatCurrency(summary.totalAssets) }}</span>
-          </div>
-        </div>
-        
-        <div class="breakdown-item">
-          <div class="breakdown-icon liabilities">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M5 12h14"/>
-            </svg>
-          </div>
-          <div class="breakdown-info">
-            <span class="breakdown-label">Liabilities</span>
-            <span class="breakdown-value negative">${{ formatCurrency(summary.totalLiabilities) }}</span>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Quick Stats -->
-      <div class="quick-stats">
-        <div class="stat">
-          <span class="stat-value">{{ assets.length }}</span>
-          <span class="stat-label">Asset Accounts</span>
-        </div>
-        <div class="stat">
-          <span class="stat-value">{{ liabilities.length }}</span>
-          <span class="stat-label">Liability Accounts</span>
-        </div>
-      </div>
+    <!-- Chart -->
+    <div v-else class="chart-container">
+      <canvas ref="chartCanvas"></canvas>
     </div>
   </div>
 </template>
@@ -138,53 +318,148 @@ const formatCurrency = (amount) => {
 .net-worth-card {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  height: 100%;
+  overflow: hidden;
 }
 
-/* Header Row - Standardized */
-.card-header-row {
+/* Header row: Title (left) | Timeframe (center) | Value (right) */
+.header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+}
+
+.title-section {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
 }
 
 .title {
   color: rgba(255, 255, 255, 0.9);
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   margin: 0;
   letter-spacing: -0.01em;
+  line-height: 1;
 }
 
-.header-value {
+/* DEV badge inline with title */
+.dev-badge {
+  font-size: 0.5rem;
+  font-weight: 700;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.12);
+  padding: 0.125rem 0.25rem;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+.value {
   font-size: 1.125rem;
   font-weight: 600;
+  color: #3EB489;
   letter-spacing: -0.01em;
+  line-height: 1;
 }
 
-/* Minimal separator */
-.separator {
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  margin: 0;
+.percentage {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.1875rem 0.4375rem;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  gap: 0.125rem;
+  line-height: 1;
 }
 
-/* Loading & Error States */
-.loading-state, .error-state, .no-accounts {
+.percentage.positive {
+  color: #3EB489;
+  background: rgba(62, 180, 137, 0.12);
+}
+
+.percentage.negative {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+}
+
+.percentage.neutral {
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* Timeframe Selector - inline with header */
+.timeframe-selector {
+  display: flex;
+  gap: 0.125rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.timeframe-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  padding: 0.25rem 0.4375rem;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.625rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1;
+}
+
+.timeframe-btn:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.timeframe-btn.active {
+  background: rgba(62, 180, 137, 0.15);
+  border-color: rgba(62, 180, 137, 0.35);
+  color: #3EB489;
+}
+
+/* Loading & Error States - adjusted for taller chart */
+.loading-state, .error-state, .no-data {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 1rem 0;
+  padding: 1.5rem 0;
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.875rem;
   text-align: center;
+  flex: 1;
+  min-height: 180px;
 }
 
 .loading-spinner {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border: 2px solid rgba(255, 255, 255, 0.06);
   border-top-color: #3EB489;
   border-radius: 50%;
@@ -199,114 +474,33 @@ const formatCurrency = (amount) => {
   color: #ef4444;
 }
 
-.no-accounts .empty-icon {
-  font-size: 1.5rem;
+.no-data .empty-icon {
+  font-size: 2rem;
   opacity: 0.5;
 }
 
-.no-accounts p {
+.no-data p {
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.875rem;
   margin: 0;
 }
 
-/* Content */
-.card-content {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  flex: 1;
-}
-
-/* Breakdown */
-.breakdown {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.breakdown-item {
-  display: flex;
-  align-items: center;
-  gap: 0.625rem;
-  padding: 0.5rem 0.625rem;
-  background: #151515;
-  border-radius: 6px;
-}
-
-.breakdown-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.breakdown-icon.assets {
-  background-color: rgba(16, 185, 129, 0.2);
-  color: #3EB489;
-}
-
-.breakdown-icon.liabilities {
-  background-color: rgba(239, 68, 68, 0.2);
-  color: #ef4444;
-}
-
-.breakdown-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  flex: 1;
-}
-
-.breakdown-label {
-  font-size: 0.6875rem;
+.empty-hint {
   color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  font-size: 0.75rem;
 }
 
-.breakdown-value {
-  font-size: 0.9375rem;
-  font-weight: 600;
+/* Chart Container - maximized height ~210px */
+.chart-container {
+  flex: 1;
+  min-height: 200px;
+  max-height: 210px;
+  position: relative;
+  width: 100%;
 }
 
-.breakdown-value.positive {
-  color: #3EB489;
-}
-
-.breakdown-value.negative {
-  color: #ef4444;
-}
-
-/* Quick Stats */
-.quick-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.125rem;
-  padding: 0.5rem;
-  background-color: #151515;
-  border-radius: 6px;
-}
-
-.stat-value {
-  font-size: 1rem;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.stat-label {
-  font-size: 0.6875rem;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+.chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 </style>

@@ -4,6 +4,7 @@ import { getItemByPlaidItemId } from '~/server/db/queries/items.js';
 import { createAccount } from '~/server/db/queries/accounts.js';
 import { decrypt } from '~/server/utils/crypto.js';
 import { requireAuth } from '~/server/utils/auth.js';
+import { captureNetWorthSnapshot } from '~/server/utils/snapshots.js';
 
 // Sync accounts for a specific item from Plaid
 export default defineEventHandler(async (event) => {
@@ -69,6 +70,14 @@ export default defineEventHandler(async (event) => {
         account.subtype
       );
       savedAccounts.push(savedAccount);
+    }
+
+    // Capture net worth snapshot after accounts are synced
+    try {
+      await captureNetWorthSnapshot(user.id);
+    } catch (snapshotError) {
+      console.error('Failed to capture net worth snapshot:', snapshotError);
+      // Don't fail the sync if snapshot fails
     }
 
     return {

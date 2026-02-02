@@ -27,20 +27,21 @@ defineExpose({ refreshAll })
       <!-- Main Content -->
       <div class="main-content">
         <main class="grid-container">
+          <!-- Row 1: Net Worth (wide) + Balance -->
+          <div class="card card-wide">
+            <NetWorthCard ref="netWorthCardRef" />
+          </div>
           <div class="card">
             <BalanceCard ref="balanceCardRef" />
           </div>
-          <div class="card">
-            <NetWorthCard ref="netWorthCardRef" />
-          </div>
+          
+          <!-- Row 2: Spending + Budgets -->
           <div class="card">
             <TopSpendingCategoriesCard ref="spendingCardRef" />
           </div>
           <div class="card">
             <BudgetsCard ref="budgetsCardRef" />
           </div>
-          <div class="card">Section 5</div>
-          <div class="card">Section 6</div>
         </main>
       </div>
     </div>
@@ -72,7 +73,7 @@ defineExpose({ refreshAll })
   flex-direction: column;
 }
 
-/* Grid Layout */
+/* Grid Layout - 3 columns with Net Worth spanning 2 */
 .grid-container {
   display: grid;
   grid-template-columns: 1fr;
@@ -84,19 +85,34 @@ defineExpose({ refreshAll })
   .grid-container {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  .card-wide {
+    grid-column: span 2;
+  }
 }
 
 @media (min-width: 1024px) {
   .grid-container {
     grid-template-columns: repeat(3, 1fr);
   }
+  
+  .card-wide {
+    grid-column: span 2;
+  }
 }
 
-/* Card Style */
+/* Card Style - consistent height across all cards */
 .card {
   background: #151515;
   padding: 20px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  height: 300px;
+}
+
+.card-wide {
+  height: 300px;
 }
 </style>

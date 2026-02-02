@@ -83,6 +83,37 @@ export async function createTables() {
                     console.log('Budgets table created successfully.');
                 }
                 
+                // Check if net_worth_snapshots table exists
+                const snapshotsTableCheck = await client.query(`
+                    SELECT EXISTS (
+                        SELECT FROM pg_tables 
+                        WHERE schemaname = 'public' 
+                        AND tablename = 'net_worth_snapshots'
+                    );
+                `);
+                
+                if (!snapshotsTableCheck.rows[0].exists) {
+                    console.log('Creating net_worth_snapshots table...');
+                    await client.query(`
+                        CREATE TABLE net_worth_snapshots (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+                            snapshot_date DATE NOT NULL,
+                            total_assets NUMERIC(28,10) NOT NULL,
+                            total_liabilities NUMERIC(28,10) NOT NULL,
+                            net_worth NUMERIC(28,10) NOT NULL,
+                            account_count INTEGER NOT NULL,
+                            is_synthetic BOOLEAN DEFAULT false,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            UNIQUE(user_id, snapshot_date)
+                        );
+                    `);
+                    await client.query(`
+                        CREATE INDEX idx_net_worth_user_date ON net_worth_snapshots(user_id, snapshot_date);
+                    `);
+                    console.log('Net worth snapshots table created successfully.');
+                }
+                
                 return;
             }
             
