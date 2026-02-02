@@ -6,7 +6,6 @@ const balanceData = ref(null)
 const accounts = ref([])
 const isLoading = ref(true)
 const error = ref(null)
-const isExpanded = ref(false)
 
 const route = useRoute()
 const router = useRouter()
@@ -72,12 +71,6 @@ const refresh = () => {
 
 defineExpose({ refresh })
 
-// Toggle expand state
-const toggleExpand = () => {
-  isExpanded.value = !isExpanded.value
-  logger.action('toggle_balance_card_expand', { expanded: isExpanded.value })
-}
-
 // Navigate to full page
 const navigateToFullPage = () => {
   logger.action('navigate_to_balance_fullpage', { from: route.path })
@@ -135,42 +128,22 @@ const getAccountTypeStyle = (type) => {
 </script>
 
 <template>
-  <div class="balance-card" :class="{ 'is-expanded': isExpanded }">
-    <!-- Header -->
-    <div class="balance-header">
-      <div class="header-left">
-        <h3 class="title">Total Balance</h3>
-        <span v-if="displayBalance.accountCount > 0 && !isExpanded" class="account-count">
-          {{ displayBalance.accountCount }} accounts
-        </span>
-      </div>
-      <div class="header-actions">
-        <button 
-          v-if="accounts.length > 0" 
-          @click="toggleExpand"
-          class="expand-btn"
-          :aria-label="isExpanded ? 'Collapse' : 'Expand'"
-        >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            width="16" 
-            height="16" 
-            viewBox="0 0 24 24" 
-            fill="none" 
-            stroke="currentColor" 
-            stroke-width="2"
-            :class="{ 'rotated': isExpanded }"
-          >
-            <path d="M6 9l6 6 6-6"/>
-          </svg>
-        </button>
+  <div class="balance-card">
+    <!-- Header Row: Title left, Value right -->
+    <div class="card-header-row">
+      <h3 class="title">Balance</h3>
+      <div v-if="!isLoading && !error && displayBalance.accountCount > 0" class="header-value">
+        ${{ formattedAmount }}
       </div>
     </div>
+    
+    <!-- Minimal separator -->
+    <div class="separator"></div>
     
     <!-- Loading State -->
     <div v-if="isLoading" class="loading-state">
       <div class="loading-spinner"></div>
-      <span>Loading balance...</span>
+      <span>Loading...</span>
     </div>
     
     <!-- Error State -->
@@ -185,12 +158,6 @@ const getAccountTypeStyle = (type) => {
     
     <!-- Content -->
     <div v-else class="card-content">
-      <!-- Main Balance Display -->
-      <div class="balance-display">
-        <span class="currency">{{ displayBalance.currency }}</span>
-        <span class="amount">{{ formattedAmount }}</span>
-      </div>
-      
       <!-- No Accounts State -->
       <div v-if="displayBalance.accountCount === 0" class="no-accounts">
         <div class="empty-icon">🏦</div>
@@ -198,12 +165,9 @@ const getAccountTypeStyle = (type) => {
         <span class="empty-hint">Connect a bank to see your balance</span>
       </div>
       
-      <!-- Mini Account List (Collapsible) -->
+      <!-- Account List -->
       <div v-else class="accounts-section">
-        <div 
-          class="accounts-list"
-          :class="{ 'is-expanded': isExpanded }"
-        >
+        <div class="accounts-list">
           <div 
             v-for="account in topAccounts" 
             :key="account.id"
@@ -223,7 +187,7 @@ const getAccountTypeStyle = (type) => {
           </div>
           
           <!-- Show more indicator -->
-          <div v-if="hasMoreAccounts && !isExpanded" class="more-accounts-hint">
+          <div v-if="hasMoreAccounts" class="more-accounts-hint">
             +{{ accounts.length - 3 }} more
           </div>
         </div>
@@ -244,28 +208,16 @@ const getAccountTypeStyle = (type) => {
 
 <style scoped>
 .balance-card {
-  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  transition: all 0.3s ease;
+  gap: 0.75rem;
 }
 
-.balance-card.is-expanded {
-  gap: 1.5rem;
-}
-
-/* Header */
-.balance-header {
+/* Header Row - Standardized */
+.card-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.header-left {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
 }
 
 .title {
@@ -276,42 +228,18 @@ const getAccountTypeStyle = (type) => {
   letter-spacing: -0.01em;
 }
 
-.account-count {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.header-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #3EB489;
+  letter-spacing: -0.01em;
 }
 
-.header-actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.expand-btn {
-  background: #151515;
-  border: none;
-  border-radius: 6px;
-  padding: 0.375rem;
-  cursor: pointer;
-  color: rgba(255, 255, 255, 0.7);
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.expand-btn:hover {
-  background: rgba(56, 111, 164, 0.6);
-  color: white;
-}
-
-.expand-btn svg {
-  transition: transform 0.3s ease;
-}
-
-.expand-btn svg.rotated {
-  transform: rotate(180deg);
+/* Minimal separator */
+.separator {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  margin: 0;
 }
 
 /* Loading & Error States */
@@ -320,15 +248,15 @@ const getAccountTypeStyle = (type) => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.75rem;
-  padding: 2rem 0;
+  gap: 0.5rem;
+  padding: 1rem 0;
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.875rem;
 }
 
 .loading-spinner {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border: 2px solid rgba(255, 255, 255, 0.06);
   border-top-color: #3EB489;
   border-radius: 50%;
@@ -347,29 +275,7 @@ const getAccountTypeStyle = (type) => {
 .card-content {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
   flex: 1;
-}
-
-/* Balance Display */
-.balance-display {
-  display: flex;
-  align-items: baseline;
-  gap: 0.25rem;
-}
-
-.currency {
-  font-size: 1.25rem;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.amount {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #3EB489;
-  letter-spacing: -0.02em;
-  line-height: 1;
 }
 
 /* Empty State */
@@ -377,13 +283,13 @@ const getAccountTypeStyle = (type) => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1.5rem 0;
+  gap: 0.5rem;
+  padding: 1rem 0;
   text-align: center;
 }
 
 .empty-icon {
-  font-size: 2rem;
+  font-size: 1.5rem;
   opacity: 0.5;
 }
 
@@ -394,7 +300,7 @@ const getAccountTypeStyle = (type) => {
 }
 
 .empty-hint {
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.75rem;
 }
 
@@ -402,22 +308,22 @@ const getAccountTypeStyle = (type) => {
 .accounts-section {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .accounts-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 
 .account-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.625rem 0.75rem;
+  gap: 0.625rem;
+  padding: 0.5rem 0.625rem;
   background: #151515;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -428,13 +334,13 @@ const getAccountTypeStyle = (type) => {
 }
 
 .account-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
+  font-size: 0.875rem;
   flex-shrink: 0;
 }
 
@@ -447,7 +353,7 @@ const getAccountTypeStyle = (type) => {
 }
 
 .account-name {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.9);
   white-space: nowrap;
@@ -456,13 +362,13 @@ const getAccountTypeStyle = (type) => {
 }
 
 .account-type {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.5);
   text-transform: capitalize;
 }
 
 .account-balance {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 600;
   color: #3EB489;
   flex-shrink: 0;
@@ -474,16 +380,14 @@ const getAccountTypeStyle = (type) => {
 
 .more-accounts-hint {
   text-align: center;
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
-  padding: 0.25rem 0;
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.5);
+  padding: 0.125rem 0;
 }
 
 /* Footer */
 .card-footer {
-  margin-top: auto;
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: 0.25rem;
 }
 
 .view-details-btn {
@@ -491,13 +395,13 @@ const getAccountTypeStyle = (type) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  padding: 0.625rem;
+  gap: 0.375rem;
+  padding: 0.5rem;
   background: transparent;
   border: 1px solid rgba(62, 180, 137, 0.3);
   border-radius: 6px;
   color: #3EB489;
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;

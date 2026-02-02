@@ -62,36 +62,41 @@ const formatCurrency = (amount) => {
 
 <template>
   <div class="net-worth-card">
-    <div class="card-header">
+    <!-- Header Row: Title left, Value right -->
+    <div class="card-header-row">
       <h3 class="title">Net Worth</h3>
+      <div v-if="!isLoading && !error && hasAccounts" class="header-value" :style="{ color: netWorthColor }">
+        {{ summary.netWorth >= 0 ? '' : '-' }}${{ formatCurrency(Math.abs(summary.netWorth)) }}
+      </div>
     </div>
     
+    <!-- Minimal separator -->
+    <div class="separator"></div>
+    
+    <!-- Loading State -->
     <div v-if="isLoading" class="loading-state">
-      Loading...
+      <div class="loading-spinner"></div>
+      <span>Loading...</span>
     </div>
     
+    <!-- Error State -->
     <div v-else-if="error" class="error-state">
       {{ error }}
     </div>
     
+    <!-- No Accounts State -->
     <div v-else-if="!hasAccounts" class="no-accounts">
-      No accounts connected
+      <div class="empty-icon">📊</div>
+      <p>No accounts connected</p>
     </div>
     
+    <!-- Content -->
     <div v-else class="card-content">
-      <!-- Net Worth Display -->
-      <div class="net-worth-display">
-        <span class="net-worth-label">Total Net Worth</span>
-        <span class="net-worth-amount" :style="{ color: netWorthColor }">
-          {{ summary.netWorth >= 0 ? '' : '-' }}${{ formatCurrency(Math.abs(summary.netWorth)) }}
-        </span>
-      </div>
-      
       <!-- Breakdown -->
       <div class="breakdown">
         <div class="breakdown-item">
           <div class="breakdown-icon assets">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 2v20M2 12h20"/>
             </svg>
           </div>
@@ -101,11 +106,9 @@ const formatCurrency = (amount) => {
           </div>
         </div>
         
-        <div class="breakdown-divider"></div>
-        
         <div class="breakdown-item">
           <div class="breakdown-icon liabilities">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M5 12h14"/>
             </svg>
           </div>
@@ -119,12 +122,12 @@ const formatCurrency = (amount) => {
       <!-- Quick Stats -->
       <div class="quick-stats">
         <div class="stat">
-          <span class="stat-label">Asset Accounts</span>
           <span class="stat-value">{{ assets.length }}</span>
+          <span class="stat-label">Asset Accounts</span>
         </div>
         <div class="stat">
-          <span class="stat-label">Liability Accounts</span>
           <span class="stat-value">{{ liabilities.length }}</span>
+          <span class="stat-label">Liability Accounts</span>
         </div>
       </div>
     </div>
@@ -133,13 +136,13 @@ const formatCurrency = (amount) => {
 
 <style scoped>
 .net-worth-card {
-  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
-.card-header {
+/* Header Row - Standardized */
+.card-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -148,63 +151,93 @@ const formatCurrency = (amount) => {
 .title {
   color: rgba(255, 255, 255, 0.9);
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.header-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* Minimal separator */
+.separator {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   margin: 0;
 }
 
+/* Loading & Error States */
 .loading-state, .error-state, .no-accounts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 0;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.7);
   text-align: center;
-  padding: 2rem 0;
+}
+
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.06);
+  border-top-color: #3EB489;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .error-state {
   color: #ef4444;
 }
 
+.no-accounts .empty-icon {
+  font-size: 1.5rem;
+  opacity: 0.5;
+}
+
+.no-accounts p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Content */
 .card-content {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.75rem;
   flex: 1;
 }
 
-.net-worth-display {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.net-worth-label {
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.net-worth-amount {
-  font-size: 2rem;
-  font-weight: 600;
-  letter-spacing: -0.025em;
-}
-
+/* Breakdown */
 .breakdown {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .breakdown-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.625rem;
+  padding: 0.5rem 0.625rem;
+  background: #151515;
+  border-radius: 6px;
 }
 
 .breakdown-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -223,17 +256,19 @@ const formatCurrency = (amount) => {
 .breakdown-info {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.125rem;
   flex: 1;
 }
 
 .breakdown-label {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .breakdown-value {
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 600;
 }
 
@@ -245,36 +280,33 @@ const formatCurrency = (amount) => {
   color: #ef4444;
 }
 
-.breakdown-divider {
-  height: 1px;
-  background-color: rgba(255, 255, 255, 0.06);
-  margin: 0.25rem 0;
-}
-
+/* Quick Stats */
 .quick-stats {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.75rem;
-  margin-top: auto;
+  gap: 0.5rem;
 }
 
 .stat {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 0.125rem;
   padding: 0.5rem;
   background-color: #151515;
-  border-radius: 8px;
-}
-
-.stat-label {
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
 }
 
 .stat-value {
   font-size: 1rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
+}
+
+.stat-label {
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 </style>

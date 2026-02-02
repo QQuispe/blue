@@ -88,10 +88,10 @@ const createChart = () => {
           labels: {
              color: 'rgba(255, 255, 255, 0.9)',
             font: {
-              size: 11
+              size: 10
             },
-            boxWidth: 12,
-            padding: 10
+            boxWidth: 10,
+            padding: 8
           }
         },
         tooltip: {
@@ -106,7 +106,7 @@ const createChart = () => {
           }
         }
       },
-      cutout: '60%'
+      cutout: '65%'
     }
   })
 
@@ -139,32 +139,36 @@ defineExpose({ refresh })
 
 <template>
   <div class="spending-categories-card">
-    <div class="card-header">
+    <!-- Header Row: Title left, Value right -->
+    <div class="card-header-row">
       <h3 class="title">Top Spending</h3>
-      <span v-if="period" class="period">
-        {{ new Date(period.startDate).toLocaleDateString('en-US', { month: 'short' }) }}
-      </span>
+      <div v-if="!isLoading && !error && hasData" class="header-value">
+        ${{ totalSpending.toFixed(2) }}
+      </div>
     </div>
     
+    <!-- Minimal separator -->
+    <div class="separator"></div>
+    
+    <!-- Loading State -->
     <div v-if="isLoading" class="loading-state">
-      Loading...
+      <div class="loading-spinner"></div>
+      <span>Loading...</span>
     </div>
     
+    <!-- Error State -->
     <div v-else-if="error" class="error-state">
       {{ error }}
     </div>
     
+    <!-- No Data State -->
     <div v-else-if="!hasData" class="no-data">
-      No spending data available
+      <div class="empty-icon">📈</div>
+      <p>No spending data available</p>
     </div>
     
+    <!-- Content -->
     <div v-else class="card-content">
-      <!-- Total Spending -->
-      <div class="total-spending">
-        <span class="total-label">Total Spent</span>
-        <span class="total-amount">${{ totalSpending.toFixed(2) }}</span>
-      </div>
-      
       <!-- Chart -->
       <div class="chart-container">
         <canvas ref="chartCanvas"></canvas>
@@ -181,13 +185,13 @@ defineExpose({ refresh })
 
 <style scoped>
 .spending-categories-card {
-  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
-.card-header {
+/* Header Row - Standardized */
+.card-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -196,55 +200,77 @@ defineExpose({ refresh })
 .title {
   color: rgba(255, 255, 255, 0.9);
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.header-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #ef4444;
+  letter-spacing: -0.01em;
+}
+
+/* Minimal separator */
+.separator {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   margin: 0;
 }
 
-.period {
+/* Loading & Error States */
+.loading-state, .error-state, .no-data {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1rem 0;
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
 }
 
-.loading-state, .error-state, .no-data {
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.7);
-  text-align: center;
-  padding: 2rem 0;
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.06);
+  border-top-color: #3EB489;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .error-state {
   color: #ef4444;
 }
 
+.no-data .empty-icon {
+  font-size: 1.5rem;
+  opacity: 0.5;
+}
+
+.no-data p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+/* Content */
 .card-content {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
   flex: 1;
-}
-
-.total-spending {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.total-label {
-  font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.total-amount {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #ef4444;
 }
 
 .chart-container {
-  flex: 1;
-  min-height: 150px;
+  flex: 0 0 auto;
+  height: 110px;
   position: relative;
   width: 100%;
 }
@@ -258,9 +284,10 @@ defineExpose({ refresh })
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-top: 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  font-size: 0.875rem;
+  padding: 0.5rem 0.625rem;
+  background: #151515;
+  border-radius: 6px;
+  font-size: 0.8125rem;
 }
 
 .top-label {
@@ -269,6 +296,6 @@ defineExpose({ refresh })
 
 .top-amount {
   color: #3EB489;
-  font-weight: 500;
+  font-weight: 600;
 }
 </style>
