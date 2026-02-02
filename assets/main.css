@@ -2,39 +2,46 @@
 
 @import './base.css';
 
-body {
-    padding: 1rem;
+html, body {
+  padding: 0;
+  margin: 0;
+  background: #0d0d0d !important;
+  min-height: 100vh;
 }
 
 * {
-    box-sizing: border-box;
-  }
-
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+  box-sizing: border-box;
 }
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  color: var(--color-heading);
+a {
+  text-decoration: none;
+  color: #3EB489;
+  transition: 0.4s;
+}
+
+a:hover {
+  color: #4FD19E;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #ffffff;
 }
 
 section {
   padding: 20px;
-  background-color: var(--color-background-soft);
+  background-color: #151515;
   margin-bottom: 20px;
-  border: 1px solid var(--color-border);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
 }
 
 section:hover {
-  background-color: var(--color-background-mute);
-  border-color: var(--color-border-hover);
+  background-color: #111111;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Force dark mode on all elements */
+#__nuxt, #__layout, #app {
+  background: #0d0d0d !important;
+  min-height: 100vh;
 }

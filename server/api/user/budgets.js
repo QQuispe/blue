@@ -8,14 +8,14 @@ import {
   deleteBudget 
 } from '~/server/db/queries/budgets.js';
 
-// Get date range for current month
-function getCurrentMonthRange() {
+// Get date range for last 30 days
+function getLast30DaysRange() {
   const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const start = new Date(now);
+  start.setDate(start.getDate() - 30);
   return {
     startDate: start.toISOString().split('T')[0],
-    endDate: end.toISOString().split('T')[0]
+    endDate: now.toISOString().split('T')[0]
   };
 }
 
@@ -25,8 +25,8 @@ export default defineEventHandler(async (event) => {
     const method = event.node.req.method;
     
     if (method === 'GET') {
-      // Get budgets with spending data for current month
-      const { startDate, endDate } = getCurrentMonthRange();
+      // Get budgets with spending data for last 30 days
+      const { startDate, endDate } = getLast30DaysRange();
       const budgets = await getBudgetsWithSpending(user.id, startDate, endDate);
       
       return {

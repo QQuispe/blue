@@ -1,18 +1,30 @@
-import { defineEventHandler, createError } from 'h3';
+import { defineEventHandler, createError, getRequestURL, getMethod } from 'h3';
 import { requireAuth } from '~/server/utils/auth.js';
+import { serverLogger } from '~/server/utils/logger.js';
 import { getTotalBalanceForUser, getAccountsByUserId } from '~/server/db/queries/accounts.js';
 
 // Get balance summary for the authenticated user
 export default defineEventHandler(async (event) => {
+  const startTime = Date.now();
+  const url = getRequestURL(event);
+  const method = getMethod(event);
+  
+  serverLogger.info(`→ ${method} ${url.pathname} - Starting request`);
+  
   try {
     // Require authentication
     const user = await requireAuth(event);
+    serverLogger.debug(`User authenticated: ${user.id}`);
     
     // Get total balance
+    const balanceStart = Date.now();
     const balanceSummary = await getTotalBalanceForUser(user.id);
+    serverLogger.db('getTotalBalanceForUser', Date.now() - balanceStart, 1);
     
     // Get accounts for breakdown
+    const accountsStart = Date.now();
     const accounts = await getAccountsByUserId(user.id);
+    serverLogger.db('getAccountsByUserId', Date.now() - accountsStart, accounts.length);
     
     // Format accounts for frontend
     const formattedAccounts = accounts.map(acc => ({
@@ -20,10 +32,18 @@ export default defineEventHandler(async (event) => {
       name: acc.name,
       mask: acc.mask,
       type: acc.type,
+      item_id: acc.item_id,
       currentBalance: acc.current_balance,
       availableBalance: acc.available_balance,
       currency: acc.iso_currency_code || 'USD'
     }));
+    
+    const duration = Date.now() - startTime;
+    serverLogger.api(method, url.pathname, 200, duration, user.id);
+    serverLogger.success(`Balance fetched for user ${user.id}`, {
+      accountCount: formattedAccounts.length,
+      totalBalance: balanceSummary.total_current
+    });
     
     return {
       statusCode: 200,
@@ -36,7 +56,13 @@ export default defineEventHandler(async (event) => {
       accounts: formattedAccounts
     };
   } catch (error) {
-    console.error('Error fetching user balance:', error);
+    const duration = Date.now() - startTime;
+    serverLogger.api(method, url.pathname, error.statusCode || 500, duration);
+    serverLogger.error(`Balance fetch failed: ${error.message}`, {
+      stack: error.stack,
+      statusCode: error.statusCode
+    });
+    
     throw createError({
       statusCode: error.statusCode || 500,
       statusMessage: error.statusMessage || 'Failed to fetch balance',

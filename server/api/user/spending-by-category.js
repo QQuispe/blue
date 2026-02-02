@@ -2,21 +2,21 @@ import { defineEventHandler, createError } from 'h3';
 import { requireAuth } from '~/server/utils/auth.js';
 import { pool } from '~/server/db/index.js';
 
-// Get date range for current month
-function getCurrentMonthRange() {
+// Get date range for last 30 days
+function getLast30DaysRange() {
   const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const start = new Date(now);
+  start.setDate(start.getDate() - 30);
   return {
     startDate: start.toISOString().split('T')[0],
-    endDate: end.toISOString().split('T')[0]
+    endDate: now.toISOString().split('T')[0]
   };
 }
 
 export default defineEventHandler(async (event) => {
   try {
     const user = await requireAuth(event);
-    const { startDate, endDate } = getCurrentMonthRange();
+    const { startDate, endDate } = getLast30DaysRange();
     
     // Get spending by category
     const result = await pool.query(

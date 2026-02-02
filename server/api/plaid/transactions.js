@@ -92,6 +92,10 @@ export default defineEventHandler(async (event) => {
 
     // Step 4: Apply updates to database and save new cursor (atomic operation)
     const result = await applyTransactionUpdates(item.id, syncData);
+    
+    // Step 5: Update last_synced_at timestamp
+    const { updateItemSync } = await import('~/server/db/queries/items.js');
+    await updateItemSync(item.id, syncData.nextCursor);
 
     console.log('Transaction sync completed:', {
       userId: user.id,

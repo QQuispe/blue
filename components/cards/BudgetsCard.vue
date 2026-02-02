@@ -35,6 +35,13 @@ onMounted(() => {
   fetchBudgets()
 })
 
+// Expose refresh method for parent component
+const refresh = () => {
+  fetchBudgets()
+}
+
+defineExpose({ refresh })
+
 // Computed properties
 const hasBudgets = computed(() => budgets.value.length > 0)
 
@@ -57,7 +64,7 @@ const overallPercentage = computed(() => {
 
 // Get color based on percentage used
 const getProgressColor = (percentage) => {
-  if (percentage < 50) return '#10b981' // Green
+  if (percentage < 50) return '#3EB489' // Green
   if (percentage < 75) return '#f59e0b' // Yellow
   if (percentage < 90) return '#f97316' // Orange
   return '#ef4444' // Red
@@ -170,7 +177,7 @@ const formatCurrency = (amount) => {
 }
 
 .title {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 1rem;
   font-weight: 500;
   margin: 0;
@@ -178,12 +185,12 @@ const formatCurrency = (amount) => {
 
 .period {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .loading-state, .error-state, .no-budgets {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
   text-align: center;
   padding: 1rem 0;
 }
@@ -218,7 +225,7 @@ const formatCurrency = (amount) => {
 .summary-value {
   font-size: 0.875rem;
   font-weight: 600;
-  color: #18ffc1;
+  color: #3EB489;
 }
 
 .summary-value.spent {
@@ -238,7 +245,7 @@ const formatCurrency = (amount) => {
 .progress-bar-bg {
   width: 100%;
   height: 8px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.06);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -255,7 +262,7 @@ const formatCurrency = (amount) => {
 
 .progress-text {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
   text-align: right;
 }
 
@@ -281,11 +288,11 @@ const formatCurrency = (amount) => {
 
 .budget-category {
   font-size: 0.875rem;
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .budget-amounts {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
 }
 </style>

@@ -186,8 +186,8 @@ export async function applyTransactionUpdates(itemId, syncData) {
         [
           accountId,
           transaction.transaction_id,
-          transaction.category_id,
-          transaction.category?.join(', '),
+          transaction.personal_finance_category?.primary,
+          transaction.personal_finance_category?.detailed || transaction.personal_finance_category?.primary,
           transaction.payment_channel,
           transaction.name,
           transaction.amount,
@@ -213,8 +213,8 @@ export async function applyTransactionUpdates(itemId, syncData) {
           updated_at = CURRENT_TIMESTAMP
         WHERE plaid_transaction_id = $7`,
         [
-          transaction.category_id,
-          transaction.category?.join(', '),
+          transaction.personal_finance_category?.primary,
+          transaction.personal_finance_category?.detailed || transaction.personal_finance_category?.primary,
           transaction.name,
           transaction.amount,
           transaction.date,

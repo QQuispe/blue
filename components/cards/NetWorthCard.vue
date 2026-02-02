@@ -37,12 +37,19 @@ onMounted(() => {
   fetchNetWorth()
 })
 
+// Expose refresh method for parent component
+const refresh = () => {
+  fetchNetWorth()
+}
+
+defineExpose({ refresh })
+
 // Computed properties
 const hasAccounts = computed(() => summary.value && summary.value.accountCount > 0)
 
 const netWorthColor = computed(() => {
   if (!summary.value) return 'white'
-  return summary.value.netWorth >= 0 ? '#18ffc1' : '#ef4444'
+  return summary.value.netWorth >= 0 ? '#3EB489' : '#ef4444'
 })
 
 const formatCurrency = (amount) => {
@@ -139,7 +146,7 @@ const formatCurrency = (amount) => {
 }
 
 .title {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 1rem;
   font-weight: 500;
   margin: 0;
@@ -147,7 +154,7 @@ const formatCurrency = (amount) => {
 
 .loading-state, .error-state, .no-accounts {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
   text-align: center;
   padding: 2rem 0;
 }
@@ -168,12 +175,12 @@ const formatCurrency = (amount) => {
   flex-direction: column;
   gap: 0.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .net-worth-label {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .net-worth-amount {
@@ -205,7 +212,7 @@ const formatCurrency = (amount) => {
 
 .breakdown-icon.assets {
   background-color: rgba(16, 185, 129, 0.2);
-  color: #10b981;
+  color: #3EB489;
 }
 
 .breakdown-icon.liabilities {
@@ -231,7 +238,7 @@ const formatCurrency = (amount) => {
 }
 
 .breakdown-value.positive {
-  color: #10b981;
+  color: #3EB489;
 }
 
 .breakdown-value.negative {
@@ -240,7 +247,7 @@ const formatCurrency = (amount) => {
 
 .breakdown-divider {
   height: 1px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.06);
   margin: 0.25rem 0;
 }
 
@@ -256,7 +263,7 @@ const formatCurrency = (amount) => {
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.5rem;
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: #151515;
   border-radius: 8px;
 }
 
@@ -268,6 +275,6 @@ const formatCurrency = (amount) => {
 .stat-value {
   font-size: 1rem;
   font-weight: 600;
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 </style>

@@ -1,30 +1,43 @@
 <script setup>
+import { ref } from 'vue'
 import BalanceCard from "./cards/BalanceCard.vue";
 import BudgetsCard from "./cards/BudgetsCard.vue";
 import TopSpendingCategoriesCard from "./cards/TopSpendingCategoriesCard.vue";
 import NetWorthCard from "./cards/NetWorthCard.vue";
-import Welcome from "./Welcome.vue";
+
+// Refs to card components
+const balanceCardRef = ref(null)
+const netWorthCardRef = ref(null)
+const spendingCardRef = ref(null)
+const budgetsCardRef = ref(null)
+
+// Refresh all cards
+const refreshAll = () => {
+  balanceCardRef.value?.refresh()
+  netWorthCardRef.value?.refresh()
+  spendingCardRef.value?.refresh()
+  budgetsCardRef.value?.refresh()
+}
+
+defineExpose({ refreshAll })
 </script>
 <template>
   <div class="page-container">
-    <div>
-      <Welcome />    
-    </div>
     <div class="dashboard">
       <!-- Main Content -->
       <div class="main-content">
         <main class="grid-container">
           <div class="card">
-            <BalanceCard />
+            <BalanceCard ref="balanceCardRef" />
           </div>
           <div class="card">
-            <NetWorthCard />
+            <NetWorthCard ref="netWorthCardRef" />
           </div>
           <div class="card">
-            <TopSpendingCategoriesCard />
+            <TopSpendingCategoriesCard ref="spendingCardRef" />
           </div>
           <div class="card">
-            <BudgetsCard />
+            <BudgetsCard ref="budgetsCardRef" />
           </div>
           <div class="card">Section 5</div>
           <div class="card">Section 6</div>
@@ -36,23 +49,14 @@ import Welcome from "./Welcome.vue";
 
 <style scoped>
 .page-container {
-  /* min-height: 100vh; */
   display: flex;
   flex-direction: column;
-}
-
-.welcome {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
-  width: 100%;
+  padding-top: 10px;
 }
 
 /* Layout */
 .dashboard {
   display: flex;
-  /* background: #f4f4f4; */
 }
 
 @media (min-width: 768px) {
@@ -72,8 +76,8 @@ import Welcome from "./Welcome.vue";
 .grid-container {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 20px;
-  padding: 0 20px 20px 20px;
+  gap: 16px;
+  padding: 10px 20px 20px 20px;
 }
 
 @media (min-width: 768px) {
@@ -90,9 +94,9 @@ import Welcome from "./Welcome.vue";
 
 /* Card Style */
 .card {
-  background: rgb(64, 64, 64);
+  background: #151515;
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 </style>

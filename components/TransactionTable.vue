@@ -11,15 +11,13 @@ const fetchTransactions = async () => {
     const response = await fetch('/api/user/transactions');
     
     if (!response.ok) {
-      console.error(`Request failed with status ${response.status}`);
       return;
     }
 
     const data = await response.json();
-    console.log("Transaction Data:", data);
     transactions.value = data.transactions || [];
   } catch (error) {
-    console.error('Error fetching transactions:', error);
+    // Error fetching transactions
   } finally {
     isLoading.value = false;
   }
@@ -76,14 +74,14 @@ defineExpose({
 .transactions-section {
   margin-top: 30px;
   padding: 20px;
-  background: rgb(64, 64, 64);
+  background: #151515;
   border-radius: 10px;
 }
 
 .refresh-btn {
   margin-bottom: 15px;
   padding: 8px 16px;
-  background: #10b981;
+  background: #3EB489;
   color: white;
   border: none;
   border-radius: 5px;
@@ -104,12 +102,12 @@ defineExpose({
 .transactions-table td {
   padding: 12px;
   text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .transactions-table th {
   font-weight: 600;
-  color: #18ffc1;
+  color: #3EB489;
 }
 
 .negative {
@@ -125,7 +123,7 @@ defineExpose({
 }
 
 .posted-badge {
-  background: #10b981;
+  background: #3EB489;
   color: white;
   padding: 2px 8px;
   border-radius: 12px;
@@ -136,6 +134,6 @@ defineExpose({
 .no-data {
   padding: 20px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
 }
 </style>

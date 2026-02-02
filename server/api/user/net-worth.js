@@ -60,11 +60,11 @@ export default defineEventHandler(async (event) => {
         totalAssets,
         totalLiabilities,
         netWorth,
-        currency: 'USD'
+        currency: 'USD',
+        accountCount: result.rows.length
       },
       assets,
-      liabilities,
-      accountCount: result.rows.length
+      liabilities
     };
     
   } catch (error) {

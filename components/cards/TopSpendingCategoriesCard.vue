@@ -59,7 +59,7 @@ const createChart = () => {
   
   // Color palette
   const colors = [
-    '#18ffc1',
+    '#3EB489',
     '#3b82f6',
     '#8b5cf6',
     '#f59e0b',
@@ -81,11 +81,12 @@ const createChart = () => {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      resizeDelay: 0,
       plugins: {
         legend: {
           position: 'right',
           labels: {
-            color: 'rgba(255, 255, 255, 0.8)',
+             color: 'rgba(255, 255, 255, 0.9)',
             font: {
               size: 11
             },
@@ -108,6 +109,13 @@ const createChart = () => {
       cutout: '60%'
     }
   })
+
+  // Add resize handler
+  window.addEventListener('resize', () => {
+    if (chart) {
+      chart.resize()
+    }
+  })
 }
 
 // Watch for data changes and create chart
@@ -119,6 +127,14 @@ onMounted(async () => {
 // Computed properties
 const hasData = computed(() => categories.value.length > 0)
 const topCategory = computed(() => categories.value[0] || null)
+
+// Expose refresh method for parent component
+const refresh = async () => {
+  await fetchSpending()
+  createChart()
+}
+
+defineExpose({ refresh })
 </script>
 
 <template>
@@ -178,7 +194,7 @@ const topCategory = computed(() => categories.value[0] || null)
 }
 
 .title {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 1rem;
   font-weight: 500;
   margin: 0;
@@ -186,12 +202,12 @@ const topCategory = computed(() => categories.value[0] || null)
 
 .period {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .loading-state, .error-state, .no-data {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
   text-align: center;
   padding: 2rem 0;
 }
@@ -212,12 +228,12 @@ const topCategory = computed(() => categories.value[0] || null)
   justify-content: space-between;
   align-items: center;
   padding-bottom: 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .total-label {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .total-amount {
@@ -230,6 +246,12 @@ const topCategory = computed(() => categories.value[0] || null)
   flex: 1;
   min-height: 150px;
   position: relative;
+  width: 100%;
+}
+
+.chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .top-category {
@@ -237,16 +259,16 @@ const topCategory = computed(() => categories.value[0] || null)
   justify-content: space-between;
   align-items: center;
   padding-top: 0.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
   font-size: 0.875rem;
 }
 
 .top-label {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .top-amount {
-  color: #18ffc1;
+  color: #3EB489;
   font-weight: 500;
 }
 </style>

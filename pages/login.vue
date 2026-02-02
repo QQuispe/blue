@@ -167,28 +167,28 @@ const handleGuestLogin = async () => {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: #000000;
 }
 
 .login-box {
-  background: rgba(255, 255, 255, 0.05);
+  background: #151515;
   backdrop-filter: blur(10px);
   border-radius: 16px;
   padding: 40px;
   width: 100%;
   max-width: 400px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 h1 {
-  color: white;
+  color: rgba(255, 255, 255, 0.9);
   margin: 0 0 8px 0;
   font-size: 1.75rem;
   text-align: center;
 }
 
 .subtitle {
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
   text-align: center;
   margin: 0 0 32px 0;
   font-size: 0.875rem;
@@ -207,7 +207,7 @@ h1 {
 }
 
 label {
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.9);
   font-size: 0.875rem;
   font-weight: 500;
 }
@@ -215,20 +215,20 @@ label {
 input {
   padding: 12px 16px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #0a0a0a;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 1rem;
   transition: border-color 0.2s;
 }
 
 input:focus {
   outline: none;
-  border-color: #18ffc1;
+  border-color: #3EB489;
 }
 
 input::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 input:disabled {
@@ -246,8 +246,8 @@ input:disabled {
 }
 
 .login-btn {
-  background: linear-gradient(135deg, #18ffc1 0%, #10b981 100%);
-  color: #1a1a2e;
+  background: #3EB489;
+  color: #000000;
   border: none;
   padding: 14px;
   border-radius: 8px;
@@ -259,7 +259,7 @@ input:disabled {
 
 .login-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(24, 255, 193, 0.3);
+  box-shadow: 0 4px 12px rgba(62, 180, 137, 0.3);
 }
 
 .login-btn:disabled {
@@ -270,12 +270,12 @@ input:disabled {
 .register-link {
   text-align: center;
   margin-top: 24px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.875rem;
 }
 
 .register-link a {
-  color: #18ffc1;
+  color: #3EB489;
   text-decoration: none;
   margin-left: 4px;
 }
@@ -296,7 +296,7 @@ input:disabled {
   display: flex;
   align-items: center;
   text-align: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.875rem;
 }
 
@@ -304,7 +304,7 @@ input:disabled {
 .divider::after {
   content: '';
   flex: 1;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .divider span {
@@ -312,9 +312,9 @@ input:disabled {
 }
 
 .guest-btn {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #151515;
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 14px;
   border-radius: 8px;
   font-size: 1rem;
@@ -324,8 +324,8 @@ input:disabled {
 }
 
 .guest-btn:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: #1a1a1a;
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .guest-btn:disabled {
@@ -335,7 +335,7 @@ input:disabled {
 
 .guest-note {
   text-align: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.5);
   font-size: 0.75rem;
   margin: 0;
 }

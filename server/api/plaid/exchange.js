@@ -33,16 +33,29 @@ export default defineEventHandler(async (event) => {
     });
     const institutionId = itemResponse.data.item.institution_id || 'unknown';
 
-    // Step 3: Encrypt the access token before storing
+    // Step 3: Get institution name
+    let institutionName = 'Unknown Institution';
+    try {
+      const instResponse = await plaidClient.institutionsGetById({
+        institution_id: institutionId,
+        country_codes: ['US'],
+      });
+      institutionName = instResponse.data.institution.name;
+    } catch (instError) {
+      console.warn('Could not fetch institution name:', instError.message);
+    }
+
+    // Step 4: Encrypt the access token before storing
     const encryptedAccessToken = encrypt(access_token);
 
-    // Step 4: Save to database with authenticated user ID
+    // Step 5: Save to database with authenticated user ID
     const item = await createItem(
       user.id, // Use authenticated user ID
       encryptedAccessToken,
       item_id,
       institutionId,
-      'active'
+      'active',
+      institutionName
     );
 
     console.log("Item created successfully:", {
