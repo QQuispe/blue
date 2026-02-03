@@ -180,9 +180,13 @@ export async function applyTransactionUpdates(itemId, syncData) {
         `INSERT INTO transactions (
           account_id, plaid_transaction_id, plaid_category_id, category,
           type, name, amount, iso_currency_code, unofficial_currency_code,
-          date, pending, account_owner
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        ON CONFLICT (plaid_transaction_id) DO NOTHING`,
+          date, pending, account_owner, logo_url
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        ON CONFLICT (plaid_transaction_id) DO UPDATE SET
+          plaid_category_id = EXCLUDED.plaid_category_id,
+          category = EXCLUDED.category,
+          logo_url = EXCLUDED.logo_url,
+          updated_at = CURRENT_TIMESTAMP`,
         [
           accountId,
           transaction.transaction_id,
@@ -195,7 +199,8 @@ export async function applyTransactionUpdates(itemId, syncData) {
           transaction.unofficial_currency_code,
           transaction.date,
           transaction.pending,
-          transaction.account_owner
+          transaction.account_owner,
+          transaction.logo_url
         ]
       );
     }
@@ -210,8 +215,9 @@ export async function applyTransactionUpdates(itemId, syncData) {
           amount = $4,
           date = $5,
           pending = $6,
+          logo_url = $7,
           updated_at = CURRENT_TIMESTAMP
-        WHERE plaid_transaction_id = $7`,
+        WHERE plaid_transaction_id = $8`,
         [
           transaction.personal_finance_category?.primary,
           transaction.personal_finance_category?.detailed || transaction.personal_finance_category?.primary,
@@ -219,6 +225,7 @@ export async function applyTransactionUpdates(itemId, syncData) {
           transaction.amount,
           transaction.date,
           transaction.pending,
+          transaction.logo_url,
           transaction.transaction_id
         ]
       );

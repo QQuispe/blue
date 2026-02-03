@@ -2,7 +2,9 @@ import { defineEventHandler, readBody, createError } from 'h3';
 import { plaidClient } from "~/server/api/plaid/plaid";
 import { requireAuth } from '~/server/utils/auth.js';
 import { createItem, getItemByPlaidItemId } from '~/server/db/queries/items.js';
+import { createAccount } from '~/server/db/queries/accounts.js';
 import { encrypt } from '~/server/utils/crypto.js';
+import { captureNetWorthSnapshot } from '~/server/utils/snapshots.js';
 
 // API for exchanging the public token and persisting to database
 export default defineEventHandler(async (event) => {
@@ -65,12 +67,54 @@ export default defineEventHandler(async (event) => {
       institutionId: item.plaid_institution_id,
     });
 
-    // Step 5: Return item info (do NOT return access token for security)
+    // Step 6: Fetch accounts from Plaid for this new item
+    let accountsCount = 0;
+    try {
+      const accountsResponse = await plaidClient.accountsGet({
+        access_token: access_token,
+      });
+      
+      const accounts = accountsResponse.data.accounts;
+      console.log(`Fetched ${accounts.length} accounts for new item ${item.plaid_item_id}`);
+      
+      // Save accounts to database
+      for (const account of accounts) {
+        await createAccount(
+          item.id,
+          account.account_id,
+          account.name,
+          account.mask,
+          account.official_name,
+          account.balances.current,
+          account.balances.available,
+          account.balances.iso_currency_code,
+          account.balances.unofficial_currency_code,
+          account.type,
+          account.subtype
+        );
+        accountsCount++;
+      }
+      
+      // Step 7: Capture net worth snapshot after accounts are created
+      try {
+        await captureNetWorthSnapshot(user.id);
+        console.log('Net worth snapshot captured after adding new account');
+      } catch (snapshotError) {
+        console.error('Failed to capture net worth snapshot:', snapshotError);
+      }
+      
+    } catch (accountsError) {
+      console.error('Error fetching accounts for new item:', accountsError);
+      // Don't fail the exchange if accounts fetch fails - they'll be synced later
+    }
+
+    // Step 8: Return item info (do NOT return access token for security)
     return {
       status: "success",
       itemId: item.plaid_item_id,
       internalId: item.id,
       institutionId: item.plaid_institution_id,
+      accountsCreated: accountsCount,
     };
   } catch (error) {
     console.error("Error during token exchange:", error);

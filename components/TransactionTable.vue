@@ -28,6 +28,21 @@ onMounted(() => {
   fetchTransactions();
 });
 
+// Format category for display (e.g., "FOOD_AND_DRINK_FAST_FOOD" -> "Fast Food")
+const formatCategory = (category) => {
+  if (!category || category === '') return 'Uncategorized';
+  
+  // Split by underscore and take the last part (most specific)
+  const parts = category.split('_');
+  const lastPart = parts[parts.length - 1];
+  
+  // Convert to title case and replace underscores with spaces
+  return lastPart
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, l => l.toUpperCase());
+};
+
 // Expose method to parent so it can trigger refresh after sync
 defineExpose({
   refresh: fetchTransactions
@@ -49,6 +64,7 @@ defineExpose({
           <th>Date</th>
           <th>Account</th>
           <th>Name</th>
+          <th>Category</th>
           <th>Amount</th>
           <th>Status</th>
         </tr>
@@ -57,7 +73,13 @@ defineExpose({
         <tr v-for="txn in transactions" :key="txn.plaid_transaction_id">
           <td>{{ txn.date }}</td>
           <td>{{ txn.account_name || 'Unknown' }}</td>
-          <td>{{ txn.name }}</td>
+          <td>
+            <div class="merchant-cell">
+              <img v-if="txn.logo_url" :src="txn.logo_url" alt="" class="merchant-logo" />
+              <span class="merchant-name">{{ txn.name }}</span>
+            </div>
+          </td>
+          <td>{{ formatCategory(txn.category) }}</td>
           <td :class="{ 'negative': txn.amount > 0 }">${{ txn.amount }}</td>
           <td>
             <span v-if="txn.pending" class="pending-badge">Pending</span>
@@ -135,5 +157,23 @@ defineExpose({
   padding: 20px;
   text-align: center;
   color: rgba(255, 255, 255, 0.7);
+}
+
+.merchant-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.merchant-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.merchant-name {
+  line-height: 1.4;
 }
 </style>

@@ -17,26 +17,40 @@ export async function captureNetWorthSnapshot(userId) {
     const snapshotDate = new Date(now.getFullYear(), now.getMonth(), 1);
     const snapshotDateStr = snapshotDate.toISOString().split('T')[0];
     
-    // Get all accounts with their balances for this user
+    // Get all accounts with their balances and types for this user
     const accountsResult = await client.query(
       `SELECT 
-        a.current_balance
+        a.current_balance,
+        a.type
        FROM accounts a
        JOIN items i ON a.item_id = i.id
        WHERE i.user_id = $1 AND i.status = 'active'`,
       [userId]
     );
     
-    // Calculate net worth
+    // Calculate net worth based on account types (matching net worth API logic)
     let totalAssets = 0;
     let totalLiabilities = 0;
     
     accountsResult.rows.forEach(account => {
       const balance = parseFloat(account.current_balance) || 0;
-      if (balance >= 0) {
+      const accountType = account.type;
+      
+      // Assets: depository (checking/savings) and investment accounts
+      if (accountType === 'depository' || accountType === 'investment') {
         totalAssets += balance;
-      } else {
-        totalLiabilities += Math.abs(balance);
+      }
+      // Liabilities: credit cards and loans (treat positive balance as debt)
+      else if (accountType === 'credit' || accountType === 'loan') {
+        if (balance > 0) {
+          totalLiabilities += balance;
+        } else {
+          totalAssets += Math.abs(balance); // Overpayment is an asset
+        }
+      }
+      // Other account types: treat as assets
+      else {
+        totalAssets += balance;
       }
     });
     
@@ -63,6 +77,8 @@ export async function captureNetWorthSnapshot(userId) {
     console.log(`Net worth snapshot captured for user ${userId}:`, {
       date: snapshotDateStr,
       netWorth: netWorth.toFixed(2),
+      totalAssets: totalAssets.toFixed(2),
+      totalLiabilities: totalLiabilities.toFixed(2),
       accounts: accountCount
     });
     

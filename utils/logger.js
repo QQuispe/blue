@@ -4,6 +4,7 @@
 const LOG_LEVELS = {
   DEBUG: { level: 0, color: '#6b7280', prefix: 'DEBUG' },
   INFO: { level: 1, color: '#3b82f6', prefix: 'INFO' },
+  SUCCESS: { level: 1, color: '#10b981', prefix: 'SUCCESS' },
   WARN: { level: 2, color: '#f59e0b', prefix: 'WARN' },
   ERROR: { level: 3, color: '#ef4444', prefix: 'ERROR' }
 }
@@ -103,6 +104,10 @@ class Logger {
 
   info(message, data, context) {
     return this.log(LOG_LEVELS.INFO, message, data, context)
+  }
+
+  success(message, data, context) {
+    return this.log(LOG_LEVELS.SUCCESS, message, data, context)
   }
 
   warn(message, data, context) {

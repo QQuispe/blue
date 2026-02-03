@@ -25,6 +25,21 @@ const syncTransactionsFromPlaid = async (accessToken, cursor = null) => {
 
       const data = response.data;
       
+      // DEBUG: Log first transaction to see what Plaid is sending
+      if (data.added.length > 0 && !allData.nextCursor) {
+        const sampleTxn = data.added[0];
+        console.log('[DEBUG] Sample transaction from Plaid:', {
+          name: sampleTxn.name,
+          hasPersonalFinanceCategory: !!sampleTxn.personal_finance_category,
+          personalFinanceCategory: sampleTxn.personal_finance_category,
+          hasLogoUrl: !!sampleTxn.logo_url,
+          logoUrl: sampleTxn.logo_url,
+          hasMerchantName: !!sampleTxn.merchant_name,
+          merchantName: sampleTxn.merchant_name,
+          rawKeys: Object.keys(sampleTxn).slice(0, 20) // First 20 keys
+        });
+      }
+      
       // Collect all changes
       allData.added.push(...data.added);
       allData.modified.push(...data.modified);

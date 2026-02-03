@@ -114,6 +114,24 @@ export async function createTables() {
                     console.log('Net worth snapshots table created successfully.');
                 }
                 
+                // Check if logo_url column exists in transactions table
+                const logoUrlColumnCheck = await client.query(`
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.columns 
+                        WHERE table_name = 'transactions' 
+                        AND column_name = 'logo_url'
+                    );
+                `);
+                
+                if (!logoUrlColumnCheck.rows[0].exists) {
+                    console.log('Adding logo_url column to transactions table...');
+                    await client.query(`
+                        ALTER TABLE transactions 
+                        ADD COLUMN logo_url TEXT;
+                    `);
+                    console.log('Logo URL column added successfully.');
+                }
+                
                 return;
             }
             

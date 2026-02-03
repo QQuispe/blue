@@ -177,12 +177,14 @@ const syncItem = async (itemId) => {
     // Refresh data
     await fetchData()
     
-    // Show success notification (we could add a toast system later)
-    alert(`Sync completed! Added: ${data.stats?.added || 0}, Modified: ${data.stats?.modified || 0}`)
+    // Show success toast
+    const { $toast } = useNuxtApp()
+    $toast.success(`Sync completed! Added: ${data.stats?.added || 0}, Modified: ${data.stats?.modified || 0}`)
     
   } catch (err) {
     logger.error('Sync failed', { error: err.message, itemId })
-    alert('Sync failed: ' + err.message)
+    const { $toast } = useNuxtApp()
+    $toast.error('Sync failed: ' + err.message)
   } finally {
     syncingItem.value = null
   }
@@ -215,11 +217,13 @@ const disconnectItem = async (itemId) => {
     await fetchData()
     
     showDisconnectConfirm.value = null
-    alert('Bank connection removed successfully')
+    const { $toast } = useNuxtApp()
+    $toast.success('Bank connection removed successfully')
     
   } catch (err) {
     logger.error('Disconnect failed', { error: err.message, itemId })
-    alert('Disconnect failed: ' + err.message)
+    const { $toast } = useNuxtApp()
+    $toast.error('Disconnect failed: ' + err.message)
   } finally {
     disconnectingItem.value = null
   }
