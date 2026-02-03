@@ -64,10 +64,10 @@ const overallPercentage = computed(() => {
 
 // Get color based on percentage used
 const getProgressColor = (percentage) => {
-  if (percentage < 50) return '#3EB489' // Green
-  if (percentage < 75) return '#f59e0b' // Yellow
-  if (percentage < 90) return '#f97316' // Orange
-  return '#ef4444' // Red
+  if (percentage < 50) return 'var(--color-success)'
+  if (percentage < 75) return 'var(--color-warning)'
+  if (percentage < 90) return 'var(--color-orange)'
+  return 'var(--color-error)'
 }
 
 const formatCurrency = (amount) => {
@@ -176,7 +176,7 @@ const formatCurrency = (amount) => {
 }
 
 .title {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 1rem;
   font-weight: 600;
   margin: 0;
@@ -186,14 +186,14 @@ const formatCurrency = (amount) => {
 .header-value {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #3EB489;
+  color: var(--color-success);
   letter-spacing: -0.01em;
 }
 
 /* Minimal separator */
 .separator {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
   margin: 0;
 }
 
@@ -205,7 +205,7 @@ const formatCurrency = (amount) => {
   justify-content: center;
   gap: 0.5rem;
   padding: 1rem 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
   font-size: 0.875rem;
   text-align: center;
 }
@@ -213,8 +213,8 @@ const formatCurrency = (amount) => {
 .loading-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.06);
-  border-top-color: #3EB489;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-success);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -224,7 +224,7 @@ const formatCurrency = (amount) => {
 }
 
 .error-state {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .no-budgets .empty-icon {
@@ -233,7 +233,7 @@ const formatCurrency = (amount) => {
 }
 
 .no-budgets p {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 0.875rem;
   margin: 0;
 }
@@ -256,7 +256,7 @@ const formatCurrency = (amount) => {
 .progress-bar-bg {
   width: 100%;
   height: 6px;
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: var(--color-bg-subtle);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -279,16 +279,16 @@ const formatCurrency = (amount) => {
 }
 
 .progress-stats .stat {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-secondary);
 }
 
 .progress-stats .remaining {
-  color: #3EB489;
+  color: var(--color-success);
   font-weight: 500;
 }
 
 .progress-stats .remaining.over-budget {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 /* Budgets List */
@@ -303,7 +303,7 @@ const formatCurrency = (amount) => {
   flex-direction: column;
   gap: 0.25rem;
   padding: 0.5rem 0.625rem;
-  background: #151515;
+  background: var(--color-bg-card);
   border-radius: 6px;
 }
 
@@ -315,12 +315,12 @@ const formatCurrency = (amount) => {
 
 .budget-category {
   font-size: 0.8125rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
 }
 
 .budget-percentage {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-secondary);
   font-weight: 500;
 }
 
@@ -331,7 +331,7 @@ const formatCurrency = (amount) => {
 .more-budgets {
   text-align: center;
   font-size: 0.6875rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
   padding: 0.25rem 0;
 }
 </style>

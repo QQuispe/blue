@@ -8,11 +8,11 @@ export default defineNuxtPlugin((nuxtApp) => {
     position: 'top-right',
     theme: 'dark',
     style: {
-      '--toastify-color-dark': '#151515',
-      '--toastify-color-success': '#3EB489',
-      '--toastify-color-error': '#ef4444',
-      '--toastify-color-warning': '#f59e0b',
-      '--toastify-text-color-dark': '#fff',
+      '--toastify-color-dark': 'var(--color-bg-card)',
+      '--toastify-color-success': 'var(--color-success)',
+      '--toastify-color-error': 'var(--color-error)',
+      '--toastify-color-warning': 'var(--color-warning)',
+      '--toastify-text-color-dark': 'var(--color-text-primary)',
     }
   })
   

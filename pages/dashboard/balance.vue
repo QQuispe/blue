@@ -289,11 +289,11 @@ const formatCurrency = (amount) => {
 // Get account type style
 const getAccountTypeStyle = (type) => {
   const styles = {
-    depository: { color: '#3EB489', icon: '🏦', label: 'Bank Account' },
-    credit: { color: '#ef4444', icon: '💳', label: 'Credit Card' },
-    loan: { color: '#f59e0b', icon: '📄', label: 'Loan' },
-    investment: { color: '#3b82f6', icon: '📈', label: 'Investment' },
-    other: { color: '#6b7280', icon: '🏛️', label: 'Other' }
+    depository: { color: 'var(--color-account-depository)', icon: '🏦', label: 'Bank Account' },
+    credit: { color: 'var(--color-account-credit)', icon: '💳', label: 'Credit Card' },
+    loan: { color: 'var(--color-account-loan)', icon: '📄', label: 'Loan' },
+    investment: { color: 'var(--color-account-investment)', icon: '📈', label: 'Investment' },
+    other: { color: 'var(--color-account-other)', icon: '🏛️', label: 'Other' }
   }
   return styles[type] || styles.other
 }
@@ -567,7 +567,7 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-secondary);
   font-size: 0.875rem;
   text-decoration: none;
   margin-bottom: 0.75rem;
@@ -575,18 +575,18 @@ onMounted(() => {
 }
 
 .back-link:hover {
-  color: #3EB489;
+  color: var(--color-primary);
 }
 
 .page-title {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 1.75rem;
   font-weight: 600;
   margin: 0 0 0.5rem 0;
 }
 
 .page-subtitle {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-muted);
   font-size: 0.875rem;
   margin: 0;
 }
@@ -597,8 +597,8 @@ onMounted(() => {
   align-items: center;
   gap: 1.5rem;
   padding: 1.25rem 1.5rem;
-  background: #151515;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   margin-bottom: 2rem;
 }
@@ -622,13 +622,13 @@ onMounted(() => {
 }
 
 .summary-value {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 1.25rem;
   font-weight: 600;
 }
 
 .summary-label {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-muted);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -637,7 +637,7 @@ onMounted(() => {
 .summary-divider {
   width: 1px;
   height: 40px;
-  background: #151515;
+  background: var(--color-bg-card);
 }
 
 .summary-divider.vertical {
@@ -653,7 +653,7 @@ onMounted(() => {
 
 .balance-group.net {
   padding: 0.5rem 1rem;
-  background: #151515;
+  background: var(--color-bg-card);
   border-radius: 8px;
 }
 
@@ -663,15 +663,15 @@ onMounted(() => {
 }
 
 .balance-value.positive {
-  color: #3EB489;
+  color: var(--color-success);
 }
 
 .balance-value.negative {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .balance-label {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-muted);
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -686,10 +686,10 @@ onMounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.625rem 1rem;
-  background: #3EB489;
+  background: var(--color-primary);
   border: none;
   border-radius: 8px;
-  color: #0a0a0a;
+  color: var(--color-bg-primary);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -697,7 +697,7 @@ onMounted(() => {
 }
 
 .add-account-btn:hover {
-  background: #2E9A6E;
+  background: var(--color-primary-hover);
   transform: translateY(-1px);
 }
 
@@ -709,14 +709,14 @@ onMounted(() => {
   justify-content: center;
   gap: 1rem;
   padding: 4rem 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-muted);
 }
 
 .loading-spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid rgba(255, 255, 255, 0.06);
-  border-top-color: #3EB489;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -726,22 +726,22 @@ onMounted(() => {
 }
 
 .error-state {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .retry-btn {
   padding: 0.5rem 1rem;
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-error) 30%, transparent);
   border-radius: 6px;
-  color: #ef4444;
+  color: var(--color-error);
   cursor: pointer;
   font-size: 0.875rem;
   transition: all 0.2s ease;
 }
 
 .retry-btn:hover {
-  background: rgba(239, 68, 68, 0.2);
+  background: color-mix(in srgb, var(--color-error) 20%, transparent);
 }
 
 /* Empty State */
@@ -751,8 +751,8 @@ onMounted(() => {
   align-items: center;
   text-align: center;
   padding: 4rem 2rem;
-  background: #0a0a0a;
-  border: 2px dashed rgba(255, 255, 255, 0.06);
+  background: var(--color-bg-primary);
+  border: 2px dashed var(--color-border);
   border-radius: 16px;
 }
 
@@ -763,14 +763,14 @@ onMounted(() => {
 }
 
 .empty-state h3 {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 1.25rem;
   font-weight: 600;
   margin: 0 0 0.5rem 0;
 }
 
 .empty-state p {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-muted);
   font-size: 0.875rem;
   margin: 0 0 1.5rem 0;
   max-width: 300px;
@@ -784,8 +784,8 @@ onMounted(() => {
 }
 
 .institution-card {
-  background: #151515;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
   overflow: hidden;
 }
@@ -796,8 +796,8 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 1.25rem;
-  background: #0a0a0a;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--color-bg-primary);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .institution-info {
@@ -807,14 +807,14 @@ onMounted(() => {
 }
 
 .institution-name {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 1.125rem;
   font-weight: 600;
   margin: 0;
 }
 
 .institution-meta {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-muted);
   font-size: 0.75rem;
 }
 
@@ -828,17 +828,17 @@ onMounted(() => {
   align-items: center;
   gap: 0.375rem;
   padding: 0.5rem 0.75rem;
-  background: #151515;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .action-btn:hover {
-  background: rgba(56, 111, 164, 0.6);
+  background: color-mix(in srgb, var(--color-info) 60%, transparent);
   color: white;
 }
 
@@ -848,20 +848,20 @@ onMounted(() => {
 }
 
 .sync-btn:hover {
-  background: rgba(62, 180, 137, 0.1);
-  border-color: rgba(62, 180, 137, 0.3);
-  color: #3EB489;
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+  color: var(--color-primary);
 }
 
 .sync-btn.is-syncing {
-  background: rgba(62, 180, 137, 0.1);
-  color: #3EB489;
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
 }
 
 .disconnect-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.3);
-  color: #ef4444;
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+  border-color: color-mix(in srgb, var(--color-error) 30%, transparent);
+  color: var(--color-error);
 }
 
 .confirm-actions {
@@ -871,22 +871,22 @@ onMounted(() => {
 }
 
 .confirm-text {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-muted);
   font-size: 0.75rem;
 }
 
 .confirm-btn {
-  background: rgba(239, 68, 68, 0.2);
-  border-color: rgba(239, 68, 68, 0.4);
-  color: #ef4444;
+  background: color-mix(in srgb, var(--color-error) 20%, transparent);
+  border-color: color-mix(in srgb, var(--color-error) 40%, transparent);
+  color: var(--color-error);
 }
 
 .confirm-btn:hover {
-  background: rgba(239, 68, 68, 0.3);
+  background: color-mix(in srgb, var(--color-error) 30%, transparent);
 }
 
 .cancel-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: color-mix(in srgb, var(--color-text-primary) 15%, transparent);
 }
 
 /* Sync Status Bar */
@@ -895,8 +895,8 @@ onMounted(() => {
   align-items: center;
   gap: 1rem;
   padding: 0.75rem 1.25rem;
-  background: #0a0a0a;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--color-bg-primary);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .sync-indicator {
@@ -912,16 +912,16 @@ onMounted(() => {
 }
 
 .sync-indicator.fresh .sync-dot {
-  background: #3EB489;
-  box-shadow: 0 0 8px #3EB489;
+  background: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary);
 }
 
 .sync-indicator.recent .sync-dot {
-  background: #3b82f6;
+  background: var(--color-info);
 }
 
 .sync-indicator.stale .sync-dot {
-  background: #f59e0b;
+  background: var(--color-warning);
 }
 
 .sync-indicator.never .sync-dot {
@@ -930,14 +930,14 @@ onMounted(() => {
 
 .sync-text {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-secondary);
 }
 
 .error-badge {
   font-size: 0.75rem;
-  color: #ef4444;
+  color: var(--color-error);
   padding: 0.25rem 0.5rem;
-  background: rgba(239, 68, 68, 0.1);
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
   border-radius: 4px;
 }
 
@@ -952,14 +952,14 @@ onMounted(() => {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: #0a0a0a;
+  background: var(--color-bg-primary);
   border-radius: 8px;
   margin-bottom: 0.5rem;
   transition: background 0.2s ease;
 }
 
 .account-row:hover {
-  background: #151515;
+  background: var(--color-bg-card);
 }
 
 .account-row:last-child {
@@ -979,7 +979,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #151515;
+  background: var(--color-bg-card);
   border-radius: 8px;
 }
 
@@ -990,19 +990,19 @@ onMounted(() => {
 }
 
 .account-name {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 0.875rem;
   font-weight: 500;
 }
 
 .account-type {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-secondary);
 }
 
 .account-mask {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-secondary);
 }
 
 .account-balance {
@@ -1013,18 +1013,18 @@ onMounted(() => {
 }
 
 .balance-amount {
-  color: #3EB489;
+  color: var(--color-success);
   font-size: 0.875rem;
   font-weight: 600;
 }
 
 .balance-amount.negative {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .available-balance {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-secondary);
 }
 
 .account-health {
@@ -1047,34 +1047,34 @@ onMounted(() => {
 }
 
 .health-indicator.good .health-dot {
-  background: #3EB489;
+  background: var(--color-primary);
 }
 
 .health-indicator.needs_attention .health-dot {
-  background: #f59e0b;
+  background: var(--color-warning);
 }
 
 .health-text {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-secondary);
 }
 
 .activity-meta {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-secondary);
 }
 
 /* Tips Section */
 .tips-section {
   margin-top: 2rem;
   padding: 1.25rem;
-  background: rgba(62, 180, 137, 0.05);
-  border: 1px solid rgba(62, 180, 137, 0.1);
+  background: color-mix(in srgb, var(--color-primary) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
   border-radius: 12px;
 }
 
 .tips-section h3 {
-  color: #3EB489;
+  color: var(--color-primary);
   font-size: 0.875rem;
   font-weight: 600;
   margin: 0 0 0.75rem 0;
@@ -1083,7 +1083,7 @@ onMounted(() => {
 .tips-section ul {
   margin: 0;
   padding-left: 1.25rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-secondary);
   font-size: 0.875rem;
 }
 

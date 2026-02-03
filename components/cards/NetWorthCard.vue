@@ -110,8 +110,20 @@ const createChart = () => {
   const chartHeight = chartCanvas.value?.offsetHeight || 200
   const ctx = chartCanvas.value.getContext('2d')
   const gradient = ctx.createLinearGradient(0, 0, 0, chartHeight)
-  gradient.addColorStop(0, 'rgba(62, 180, 137, 0.3)')
-  gradient.addColorStop(1, 'rgba(62, 180, 137, 0.0)')
+  
+  // Get computed CSS variable values for canvas
+  const computedStyle = getComputedStyle(document.documentElement)
+  const gradientStart = computedStyle.getPropertyValue('--color-chart-gradient-start').trim() || 'rgba(62, 180, 137, 0.3)'
+  const gradientEnd = computedStyle.getPropertyValue('--color-chart-gradient-end').trim() || 'rgba(62, 180, 137, 0.05)'
+  const chartPrimary = computedStyle.getPropertyValue('--color-chart-primary').trim() || '#3EB489'
+  const textPrimary = computedStyle.getPropertyValue('--color-text-primary').trim() || '#ffffff'
+  const bgTooltip = computedStyle.getPropertyValue('--color-bg-tooltip').trim() || '#1f1f1f'
+  const textSecondary = computedStyle.getPropertyValue('--color-text-secondary').trim() || 'rgba(255, 255, 255, 0.7)'
+  const borderColor = computedStyle.getPropertyValue('--color-border').trim() || 'rgba(255, 255, 255, 0.06)'
+  const gridColor = computedStyle.getPropertyValue('--color-grid').trim() || 'rgba(255, 255, 255, 0.06)'
+  
+  gradient.addColorStop(0, gradientStart)
+  gradient.addColorStop(1, gradientEnd)
   
   chart = new Chart(chartCanvas.value, {
     type: 'line',
@@ -119,15 +131,15 @@ const createChart = () => {
       labels,
       datasets: [{
         data,
-        borderColor: '#3EB489',
+        borderColor: chartPrimary,
         backgroundColor: gradient,
         borderWidth: 2,
         tension: 0.4,
         fill: true,
         pointRadius: 0,
         pointHoverRadius: 6,
-        pointHoverBackgroundColor: '#3EB489',
-        pointHoverBorderColor: '#fff',
+        pointHoverBackgroundColor: chartPrimary,
+        pointHoverBorderColor: textPrimary,
         pointHoverBorderWidth: 2
       }]
     },
@@ -151,10 +163,10 @@ const createChart = () => {
           display: false
         },
         tooltip: {
-          backgroundColor: '#1a1a1a',
-          titleColor: 'rgba(255, 255, 255, 0.7)',
-          bodyColor: '#fff',
-          borderColor: 'rgba(255, 255, 255, 0.1)',
+          backgroundColor: bgTooltip,
+          titleColor: textSecondary,
+          bodyColor: textPrimary,
+          borderColor: borderColor,
           borderWidth: 1,
           padding: 10,
           displayColors: false,
@@ -178,7 +190,7 @@ const createChart = () => {
             display: false
           },
           ticks: {
-            color: 'rgba(255, 255, 255, 0.5)',
+            color: textSecondary,
             font: {
               size: 10
             },
@@ -191,11 +203,11 @@ const createChart = () => {
         y: {
           display: true,
           grid: {
-            color: 'rgba(255, 255, 255, 0.03)',
+            color: gridColor,
             drawBorder: false
           },
           ticks: {
-            color: 'rgba(255, 255, 255, 0.5)',
+            color: textSecondary,
             font: {
               size: 10
             },
@@ -353,7 +365,7 @@ const changeTimeframe = (timeframe) => {
 }
 
 .title {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 0.9375rem;
   font-weight: 600;
   margin: 0;
@@ -365,8 +377,8 @@ const changeTimeframe = (timeframe) => {
 .dev-badge {
   font-size: 0.5rem;
   font-weight: 700;
-  color: #f59e0b;
-  background: rgba(245, 158, 11, 0.12);
+  color: var(--color-warning);
+  background: var(--color-warning-bg-subtle);
   padding: 0.125rem 0.25rem;
   border-radius: 3px;
   text-transform: uppercase;
@@ -377,7 +389,7 @@ const changeTimeframe = (timeframe) => {
 .value {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #3EB489;
+  color: var(--color-success);
   letter-spacing: -0.01em;
   line-height: 1;
 }
@@ -394,18 +406,18 @@ const changeTimeframe = (timeframe) => {
 }
 
 .percentage.positive {
-  color: #3EB489;
-  background: rgba(62, 180, 137, 0.12);
+  color: var(--color-success);
+  background: var(--color-success-bg-subtle);
 }
 
 .percentage.negative {
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.12);
+  color: var(--color-error);
+  background: var(--color-error-bg-subtle);
 }
 
 .percentage.neutral {
-  color: rgba(255, 255, 255, 0.5);
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-secondary);
+  background: var(--color-bg-subtle);
 }
 
 /* Timeframe Selector - inline with header */
@@ -418,10 +430,10 @@ const changeTimeframe = (timeframe) => {
 
 .timeframe-btn {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-border);
   border-radius: 3px;
   padding: 0.25rem 0.4375rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
   font-size: 0.625rem;
   font-weight: 500;
   cursor: pointer;
@@ -432,14 +444,14 @@ const changeTimeframe = (timeframe) => {
 }
 
 .timeframe-btn:hover {
-  border-color: rgba(255, 255, 255, 0.25);
-  color: rgba(255, 255, 255, 0.8);
+  border-color: var(--color-border-hover);
+  color: var(--color-text-primary);
 }
 
 .timeframe-btn.active {
-  background: rgba(62, 180, 137, 0.15);
-  border-color: rgba(62, 180, 137, 0.35);
-  color: #3EB489;
+  background: var(--color-success-bg-subtle);
+  border-color: var(--color-success-border);
+  color: var(--color-success);
 }
 
 /* Loading & Error States - adjusted for taller chart */
@@ -450,7 +462,7 @@ const changeTimeframe = (timeframe) => {
   justify-content: center;
   gap: 0.5rem;
   padding: 1.5rem 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
   font-size: 0.875rem;
   text-align: center;
   flex: 1;
@@ -460,8 +472,8 @@ const changeTimeframe = (timeframe) => {
 .loading-spinner {
   width: 24px;
   height: 24px;
-  border: 2px solid rgba(255, 255, 255, 0.06);
-  border-top-color: #3EB489;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-success);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -471,7 +483,7 @@ const changeTimeframe = (timeframe) => {
 }
 
 .error-state {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .no-data .empty-icon {
@@ -480,13 +492,13 @@ const changeTimeframe = (timeframe) => {
 }
 
 .no-data p {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 0.875rem;
   margin: 0;
 }
 
 .empty-hint {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
   font-size: 0.75rem;
 }
 

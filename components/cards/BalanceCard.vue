@@ -122,11 +122,11 @@ const formatAccountBalance = (balance) => {
 // Get account type icon/color
 const getAccountTypeStyle = (type) => {
   const styles = {
-    depository: { color: '#3EB489', icon: '💳' },
-    credit: { color: '#ef4444', icon: '💳' },
-    loan: { color: '#f59e0b', icon: '📄' },
-    investment: { color: '#3b82f6', icon: '📈' },
-    other: { color: '#6b7280', icon: '🏦' }
+    depository: { color: 'var(--color-account-depository)', icon: '💳' },
+    credit: { color: 'var(--color-account-credit)', icon: '💳' },
+    loan: { color: 'var(--color-account-loan)', icon: '📄' },
+    investment: { color: 'var(--color-account-investment)', icon: '📈' },
+    other: { color: 'var(--color-account-other)', icon: '🏦' }
   }
   return styles[type] || styles.other
 }
@@ -226,7 +226,7 @@ const getAccountTypeStyle = (type) => {
 }
 
 .title {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 1rem;
   font-weight: 600;
   margin: 0;
@@ -236,14 +236,14 @@ const getAccountTypeStyle = (type) => {
 .header-value {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #3EB489;
+  color: var(--color-success);
   letter-spacing: -0.01em;
 }
 
 /* Minimal separator */
 .separator {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
   margin: 0;
 }
 
@@ -255,15 +255,15 @@ const getAccountTypeStyle = (type) => {
   justify-content: center;
   gap: 0.5rem;
   padding: 1rem 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
   font-size: 0.875rem;
 }
 
 .loading-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.06);
-  border-top-color: #3EB489;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-success);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -273,7 +273,7 @@ const getAccountTypeStyle = (type) => {
 }
 
 .error-state {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 /* Content */
@@ -299,13 +299,13 @@ const getAccountTypeStyle = (type) => {
 }
 
 .no-accounts p {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 0.875rem;
   margin: 0;
 }
 
 .empty-hint {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
   font-size: 0.75rem;
 }
 
@@ -327,14 +327,14 @@ const getAccountTypeStyle = (type) => {
   align-items: center;
   gap: 0.625rem;
   padding: 0.5rem 0.625rem;
-  background: #151515;
+  background: var(--color-bg-card);
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .account-item:hover {
-  background: #1a1a1a;
+  background: var(--color-bg-hover);
   transform: translateX(2px);
 }
 
@@ -360,7 +360,7 @@ const getAccountTypeStyle = (type) => {
 .account-name {
   font-size: 0.8125rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -368,25 +368,25 @@ const getAccountTypeStyle = (type) => {
 
 .account-type {
   font-size: 0.6875rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
   text-transform: capitalize;
 }
 
 .account-balance {
   font-size: 0.8125rem;
   font-weight: 600;
-  color: #3EB489;
+  color: var(--color-success);
   flex-shrink: 0;
 }
 
 .account-balance.negative {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .more-accounts-hint {
   text-align: center;
   font-size: 0.6875rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
   padding: 0.125rem 0;
 }
 
@@ -403,9 +403,9 @@ const getAccountTypeStyle = (type) => {
   gap: 0.375rem;
   padding: 0.5rem;
   background: transparent;
-  border: 1px solid rgba(62, 180, 137, 0.3);
+  border: 1px solid var(--color-primary-border);
   border-radius: 6px;
-  color: #3EB489;
+  color: var(--color-primary);
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
@@ -413,8 +413,8 @@ const getAccountTypeStyle = (type) => {
 }
 
 .view-details-btn:hover {
-  background: rgba(62, 180, 137, 0.1);
-  border-color: rgba(62, 180, 137, 0.5);
+  background: var(--color-primary-bg-subtle);
+  border-color: var(--color-primary-border-hover);
 }
 
 .view-details-btn svg {

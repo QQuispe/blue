@@ -16,6 +16,14 @@
   --color-accent-dark: #2E9A6E;
   --color-accent-light: #4FD19E;
   
+  /* Primary Button/Action Colors (alias of accent) */
+  --color-primary: #3EB489;
+  --color-primary-hover: #2E9A6E;
+  --color-primary-bg: rgba(62, 180, 137, 0.15);
+  --color-primary-bg-subtle: rgba(62, 180, 137, 0.1);
+  --color-primary-border: rgba(62, 180, 137, 0.3);
+  --color-primary-border-hover: rgba(62, 180, 137, 0.5);
+  
   /* Pure White Text */
   --color-text-primary: #ffffff;
   --color-text-secondary: rgba(255, 255, 255, 0.7);
@@ -28,20 +36,68 @@
   
   /* Semantic Colors */
   --color-success: #3EB489;
+  --color-success-bg: rgba(62, 180, 137, 0.15);
+  --color-success-bg-subtle: rgba(62, 180, 137, 0.1);
+  --color-success-border: rgba(62, 180, 137, 0.3);
   --color-warning: #f59e0b;
+  --color-warning-bg: rgba(245, 158, 11, 0.15);
+  --color-warning-bg-subtle: rgba(245, 158, 11, 0.1);
+  --color-warning-border: rgba(245, 158, 11, 0.3);
   --color-error: #ef4444;
+  --color-error-bg: rgba(239, 68, 68, 0.15);
+  --color-error-bg-subtle: rgba(239, 68, 68, 0.1);
+  --color-error-border: rgba(239, 68, 68, 0.3);
+  --color-info: #3b82f6;
+  --color-info-bg: rgba(59, 130, 246, 0.15);
+  --color-orange: #f97316;
+  --color-purple: #8b5cf6;
+  --color-gray: #6b7280;
   
-  /* CSS Variables */
-  --color-background: var(--color-bg-primary);
-  --color-background-soft: var(--color-bg-secondary);
-  --color-background-mute: var(--color-bg-card);
-  --color-heading: var(--color-text-primary);
-  --color-text: var(--color-text-secondary);
-  --color-primary: var(--color-accent);
-  --color-primary-dark: var(--color-accent-dark);
-  --color-primary-light: var(--color-accent-light);
+  /* Account Type Colors */
+  --color-account-depository: #3EB489;
+  --color-account-credit: #ef4444;
+  --color-account-loan: #f59e0b;
+  --color-account-investment: #3b82f6;
+  --color-account-other: #6b7280;
   
-  --section-gap: 160px;
+  /* Chart Colors */
+  --color-chart-primary: #3EB489;
+  --color-chart-secondary: #3b82f6;
+  --color-chart-tertiary: #8b5cf6;
+  --color-chart-warning: #f59e0b;
+  --color-chart-danger: #ef4444;
+  --color-chart-neutral: #6b7280;
+  
+  /* Chart Gradient Colors (for canvas gradients) */
+  --color-chart-gradient-start: rgba(62, 180, 137, 0.3);
+  --color-chart-gradient-end: rgba(62, 180, 137, 0.05);
+  
+  /* Chart Category Colors */
+  --color-chart-1: #3EB489;
+  --color-chart-2: #3b82f6;
+  --color-chart-3: #8b5cf6;
+  --color-chart-4: #f59e0b;
+  --color-chart-5: #ef4444;
+  --color-chart-6: #6b7280;
+  
+  /* Grid Colors */
+  --color-grid: rgba(255, 255, 255, 0.06);
+  --color-grid-dark: rgba(255, 255, 255, 0.1);
+  
+  /* RGB versions for transparency */
+  --color-primary-rgb: 62, 180, 137;
+  --color-error-rgb: 239, 68, 68;
+  --color-warning-rgb: 245, 158, 11;
+  
+  /* Tooltip */
+  --color-bg-tooltip: #1f1f1f;
+  
+  /* Background Subtle */
+  --color-bg-subtle: rgba(255, 255, 255, 0.05);
+  --color-bg-hover: rgba(255, 255, 255, 0.08);
+  
+  /* Page Background */
+  --color-bg-page: #0d0d0d;
 }
 
 /* Force dark mode */

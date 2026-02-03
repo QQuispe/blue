@@ -5,7 +5,7 @@
 html, body {
   padding: 0;
   margin: 0;
-  background: #0d0d0d !important;
+  background: var(--color-bg-page) !important;
   min-height: 100vh;
 }
 
@@ -15,33 +15,33 @@ html, body {
 
 a {
   text-decoration: none;
-  color: #3EB489;
+  color: var(--color-primary);
   transition: 0.4s;
 }
 
 a:hover {
-  color: #4FD19E;
+  color: var(--color-primary-hover);
 }
 
 h1, h2, h3, h4, h5, h6 {
-  color: #ffffff;
+  color: var(--color-text-primary);
 }
 
 section {
   padding: 20px;
-  background-color: #151515;
+  background-color: var(--color-bg-card);
   margin-bottom: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
 }
 
 section:hover {
-  background-color: #111111;
-  border-color: rgba(255, 255, 255, 0.12);
+  background-color: var(--color-bg-card-hover);
+  border-color: var(--color-border-hover);
 }
 
 /* Force dark mode on all elements */
 #__nuxt, #__layout, #app {
-  background: #0d0d0d !important;
+  background: var(--color-bg-page) !important;
   min-height: 100vh;
 }

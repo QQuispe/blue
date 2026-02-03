@@ -9,8 +9,16 @@ const dashboardRef = ref(null);
 
 <template>
   <Dashboard ref="dashboardRef" />
-  <TransactionTable ref="transactionTableRef" />
+  <div class="transaction-wrapper">
+    <TransactionTable ref="transactionTableRef" />
+  </div>
 </template>
+
+<style scoped>
+.transaction-wrapper {
+  padding: 0 20px 20px 20px;
+}
+</style>
 
 <style scoped>
 </style>

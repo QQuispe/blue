@@ -96,14 +96,14 @@ defineExpose({
 .transactions-section {
   margin-top: 30px;
   padding: 20px;
-  background: #151515;
+  background: var(--color-bg-card);
   border-radius: 10px;
 }
 
 .refresh-btn {
   margin-bottom: 15px;
   padding: 8px 16px;
-  background: #3EB489;
+  background: var(--color-success);
   color: white;
   border: none;
   border-radius: 5px;
@@ -111,7 +111,7 @@ defineExpose({
 }
 
 .refresh-btn:hover {
-  background: #059669;
+  background: var(--color-accent-dark);
 }
 
 .transactions-table {
@@ -129,15 +129,15 @@ defineExpose({
 
 .transactions-table th {
   font-weight: 600;
-  color: #3EB489;
+  color: var(--color-success);
 }
 
 .negative {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .pending-badge {
-  background: #fbbf24;
+  background: var(--color-warning);
   color: #000;
   padding: 2px 8px;
   border-radius: 12px;
@@ -145,7 +145,7 @@ defineExpose({
 }
 
 .posted-badge {
-  background: #3EB489;
+  background: var(--color-success);
   color: white;
   padding: 2px 8px;
   border-radius: 12px;
@@ -156,7 +156,7 @@ defineExpose({
 .no-data {
   padding: 20px;
   text-align: center;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-muted);
 }
 
 .merchant-cell {

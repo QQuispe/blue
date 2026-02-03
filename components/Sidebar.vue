@@ -64,8 +64,8 @@ const menuItems = [
 .sidebar {
   width: 210px;
   height: 100vh;
-  background: #0d0d0d;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  background: var(--color-bg-primary);
+  border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -88,10 +88,10 @@ const menuItems = [
   transform: translateY(-50%);
   width: 24px;
   height: 24px;
-  background: #151515;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border-hover);
   border-radius: 50%;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-text-subtle);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -101,9 +101,9 @@ const menuItems = [
 }
 
 .toggle-btn:hover {
-  background: #1a1a1a;
-  color: #3EB489;
-  border-color: #3EB489;
+  background: var(--color-bg-card-hover);
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }
 
 /* User Section */
@@ -112,15 +112,15 @@ const menuItems = [
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .user-avatar {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #3EB489;
-  color: #0d0d0d;
+  background: var(--color-accent);
+  color: var(--color-bg-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -137,7 +137,7 @@ const menuItems = [
 }
 
 .user-name {
-  color: white;
+  color: var(--color-text-primary);
   font-weight: 500;
   font-size: 0.875rem;
   white-space: nowrap;
@@ -146,7 +146,7 @@ const menuItems = [
 }
 
 .user-role {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-muted);
   font-size: 0.75rem;
 }
 
@@ -168,7 +168,7 @@ const menuItems = [
   padding: 12px 18px;
   margin: 0 8px;
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-secondary);
   text-decoration: none;
   transition: background 0.2s;
   white-space: nowrap;
@@ -176,12 +176,12 @@ const menuItems = [
 
 .nav-item:hover {
   background: rgba(255, 255, 255, 0.05);
-  color: white;
+  color: var(--color-text-primary);
 }
 
 .nav-item.active {
-  background: rgba(62, 180, 137, 0.1);
-  color: #3EB489;
+  background: var(--color-success-bg);
+  color: var(--color-accent);
 }
 
 .nav-icon {
@@ -201,7 +201,7 @@ const menuItems = [
 /* Bottom Actions */
 .bottom-actions {
   padding: 16px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-top: 1px solid var(--color-border);
 }
 
 .logout-btn {
@@ -214,15 +214,15 @@ const menuItems = [
   background: transparent;
   border: none;
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-text-secondary);
   cursor: pointer;
   font-size: 0.875rem;
   transition: background 0.2s;
 }
 
 .logout-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  background: var(--color-error-bg);
+  color: var(--color-error);
 }
 
 .sidebar.collapsed .logout-btn {
@@ -252,11 +252,11 @@ const menuItems = [
 }
 
 .nav-menu::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--color-text-subtle);
   border-radius: 2px;
 }
 
 .nav-menu::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-text-muted);
 }
 </style>

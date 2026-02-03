@@ -57,15 +57,17 @@ const createChart = () => {
     data.push(otherAmount)
   }
   
-  // Color palette
+  // Get computed CSS variable values for chart colors
+  const computedStyle = getComputedStyle(document.documentElement)
   const colors = [
-    '#3EB489',
-    '#3b82f6',
-    '#8b5cf6',
-    '#f59e0b',
-    '#ef4444',
-    '#6b7280'
+    computedStyle.getPropertyValue('--color-chart-1').trim() || '#3EB489',
+    computedStyle.getPropertyValue('--color-chart-2').trim() || '#3b82f6',
+    computedStyle.getPropertyValue('--color-chart-3').trim() || '#8b5cf6',
+    computedStyle.getPropertyValue('--color-chart-4').trim() || '#f59e0b',
+    computedStyle.getPropertyValue('--color-chart-5').trim() || '#ef4444',
+    computedStyle.getPropertyValue('--color-chart-6').trim() || '#6b7280'
   ]
+  const textPrimary = computedStyle.getPropertyValue('--color-text-primary').trim() || '#ffffff'
   
   chart = new Chart(chartCanvas.value, {
     type: 'doughnut',
@@ -86,7 +88,7 @@ const createChart = () => {
         legend: {
           position: 'right',
           labels: {
-             color: 'rgba(255, 255, 255, 0.9)',
+            color: textPrimary,
             font: {
               size: 10
             },
@@ -198,7 +200,7 @@ defineExpose({ refresh })
 }
 
 .title {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 1rem;
   font-weight: 600;
   margin: 0;
@@ -208,14 +210,14 @@ defineExpose({ refresh })
 .header-value {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #ef4444;
+  color: var(--color-error);
   letter-spacing: -0.01em;
 }
 
 /* Minimal separator */
 .separator {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
   margin: 0;
 }
 
@@ -227,7 +229,7 @@ defineExpose({ refresh })
   justify-content: center;
   gap: 0.5rem;
   padding: 1rem 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-text-secondary);
   font-size: 0.875rem;
   text-align: center;
 }
@@ -235,8 +237,8 @@ defineExpose({ refresh })
 .loading-spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(255, 255, 255, 0.06);
-  border-top-color: #3EB489;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-success);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -246,7 +248,7 @@ defineExpose({ refresh })
 }
 
 .error-state {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .no-data .empty-icon {
@@ -255,7 +257,7 @@ defineExpose({ refresh })
 }
 
 .no-data p {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
   font-size: 0.875rem;
   margin: 0;
 }
@@ -285,17 +287,17 @@ defineExpose({ refresh })
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0.625rem;
-  background: #151515;
+  background: var(--color-bg-card);
   border-radius: 6px;
   font-size: 0.8125rem;
 }
 
 .top-label {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-primary);
 }
 
 .top-amount {
-  color: #3EB489;
+  color: var(--color-success);
   font-weight: 600;
 }
 </style>
