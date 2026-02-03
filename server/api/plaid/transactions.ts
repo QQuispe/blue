@@ -3,11 +3,33 @@ import { defineEventHandler, readBody, createError } from 'h3';
 import { applyTransactionUpdates } from '~/server/db/queries/transactions.ts';
 import { getItemByPlaidItemId } from '~/server/db/queries/items.ts';
 import { decrypt } from '~/server/utils/crypto.js';
-import { requireAuth } from '~/server/utils/auth.js';
+import { requireAuth } from '~/server/utils/auth.ts';
+
+interface SyncBody {
+  itemId: string;
+}
+
+interface SyncData {
+  added: any[];
+  removed: any[];
+  modified: any[];
+  nextCursor: string | null;
+}
+
+interface SyncResponse {
+  statusCode: number;
+  message: string;
+  stats: {
+    added: number;
+    modified: number;
+    removed: number;
+    newCursor: string | null;
+  };
+}
 
 // Function to fetch ALL transactions from Plaid using cursor-based sync
-const syncTransactionsFromPlaid = async (accessToken, cursor = null) => {
-  const allData = { 
+const syncTransactionsFromPlaid = async (accessToken: string, cursor: string | null = null): Promise<SyncData> => {
+  const allData: SyncData = { 
     added: [], 
     removed: [], 
     modified: [], 
@@ -53,7 +75,7 @@ const syncTransactionsFromPlaid = async (accessToken, cursor = null) => {
     }
 
     return allData;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error syncing transactions from Plaid:', error);
     
     // Handle specific Plaid error: mutation during pagination
@@ -66,11 +88,11 @@ const syncTransactionsFromPlaid = async (accessToken, cursor = null) => {
 };
 
 // Nuxt API route to handle transaction sync
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<SyncResponse> => {
   // Require authentication
   const user = await requireAuth(event);
   
-  const body = await readBody(event);
+  const body: SyncBody = await readBody(event);
   const { itemId } = body;
 
   if (!itemId) {
@@ -127,7 +149,7 @@ export default defineEventHandler(async (event) => {
       stats: result
     };
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Transaction sync failed:', error);
     throw createError({
       statusCode: error.statusCode || 500,

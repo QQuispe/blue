@@ -2,6 +2,33 @@ import { defineEventHandler, createError, setCookie } from 'h3';
 import { pool } from '~/server/db/index.js';
 import { getUserByUsername, createUser } from '~/server/db/queries/users.ts';
 
+interface SetupResponse {
+  statusCode: number;
+  message: string;
+  devMode?: boolean;
+  guestCreated?: boolean;
+  guestAvailable?: boolean;
+  hasUsers: boolean;
+  user?: {
+    id: number;
+    username: string;
+    email?: string;
+    isAdmin: boolean;
+  };
+  guestUser?: {
+    id: number;
+    username: string;
+  };
+}
+
+interface SessionData {
+  userId: number;
+  username: string;
+  email?: string;
+  isAdmin: boolean;
+  loggedInAt: string;
+}
+
 const SESSION_CONFIG = {
   name: 'blue-session',
   password: process.env.SESSION_SECRET || 'your-session-secret-minimum-32-characters-long',
@@ -12,9 +39,9 @@ const SESSION_CONFIG = {
 };
 
 // Check if we're in dev mode
-const isDevMode = () => process.env.DEV_MODE === 'true';
+const isDevMode = (): boolean => process.env.DEV_MODE === 'true';
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<SetupResponse> => {
   try {
     // Check if any users exist
     const userCount = await pool.query('SELECT COUNT(*) FROM users');
@@ -34,7 +61,7 @@ export default defineEventHandler(async (event) => {
         guestUser.is_admin = true;
         
         // Create session for guest user
-        const session = {
+        const session: SessionData = {
           userId: guestUser.id,
           username: guestUser.username,
           email: guestUser.email,
@@ -50,6 +77,7 @@ export default defineEventHandler(async (event) => {
           message: 'Guest user created and logged in',
           devMode: true,
           guestCreated: true,
+          hasUsers: false,
           user: {
             id: guestUser.id,
             username: guestUser.username,
@@ -83,11 +111,11 @@ export default defineEventHandler(async (event) => {
       statusCode: 200,
       message: 'Auth setup status',
       devMode: isDevMode(),
-      hasUsers: hasUsers,
-      guestAvailable: false
+      guestAvailable: false,
+      hasUsers: hasUsers
     };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Auth setup error:', error);
     throw createError({
       statusCode: 500,

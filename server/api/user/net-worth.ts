@@ -1,11 +1,38 @@
 import { defineEventHandler, createError, getQuery } from 'h3';
-import { requireAuth } from '~/server/utils/auth.js';
+import { requireAuth } from '~/server/utils/auth.ts';
 import { pool } from '~/server/db/index.js';
+
+interface NetWorthSnapshot {
+  date: string;
+  netWorth: number;
+  isSynthetic: boolean;
+}
+
+interface NetWorthResponse {
+  statusCode: number;
+  current: {
+    netWorth: number;
+    totalAssets: number;
+    totalLiabilities: number;
+    accountCount: number;
+    currency: string;
+    percentageChange: number;
+  };
+  history: Array<{
+    date: string;
+    netWorth: number;
+    totalAssets: number;
+    totalLiabilities: number;
+    isSynthetic: boolean;
+  }>;
+  timeframe: string;
+  hasSyntheticData: boolean;
+}
 
 // DEV ONLY: Generate synthetic historical data for testing
 // TODO: Remove this entire function before production release
-function generateSyntheticHistory(currentNetWorth, monthsBack = 12) {
-  const data = [];
+function generateSyntheticHistory(currentNetWorth: number, monthsBack: number = 12): NetWorthSnapshot[] {
+  const data: NetWorthSnapshot[] = [];
   let runningValue = currentNetWorth * (0.75 + Math.random() * 0.15); // Start 75-90% of current
   
   for (let i = monthsBack; i >= 0; i--) {
@@ -32,7 +59,7 @@ function generateSyntheticHistory(currentNetWorth, monthsBack = 12) {
 
 // DEV ONLY: Save synthetic snapshots to database
 // TODO: Remove this entire function before production release
-async function saveSyntheticSnapshots(userId, syntheticData) {
+async function saveSyntheticSnapshots(userId: number, syntheticData: NetWorthSnapshot[]): Promise<void> {
   const client = await pool.connect();
   try {
     for (const snapshot of syntheticData) {
@@ -61,11 +88,11 @@ async function saveSyntheticSnapshots(userId, syntheticData) {
   }
 }
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<NetWorthResponse> => {
   try {
     const user = await requireAuth(event);
     const query = getQuery(event);
-    const timeframe = query.timeframe || '12m'; // Default to 12 months
+    const timeframe = (query.timeframe as string) || '12m'; // Default to 12 months
     
     // Get current account balances
     const accountsResult = await pool.query(
@@ -143,7 +170,7 @@ export default defineEventHandler(async (event) => {
         break;
     }
     
-    // Get historical snapshots - always include the most recent snapshot even if outside range
+    // Get historical snapshots - always include most recent snapshot even if outside range
     const historyResult = await pool.query(
       `SELECT 
         snapshot_date as date,
@@ -168,7 +195,7 @@ export default defineEventHandler(async (event) => {
       const syntheticData = generateSyntheticHistory(currentNetWorth, monthsToGenerate);
       await saveSyntheticSnapshots(user.id, syntheticData);
       
-      // Re-fetch to include the synthetic data we just saved
+      // Re-fetch to include synthetic data we just saved
       const updatedResult = await pool.query(
         `SELECT 
           snapshot_date as date,
@@ -219,7 +246,7 @@ export default defineEventHandler(async (event) => {
       hasSyntheticData: formattedHistory.some(h => h.isSynthetic)
     };
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Net worth error:', error);
     throw createError({
       statusCode: error.statusCode || 500,

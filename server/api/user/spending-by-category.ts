@@ -1,9 +1,26 @@
 import { defineEventHandler, createError } from 'h3';
-import { requireAuth } from '~/server/utils/auth.js';
+import { requireAuth } from '~/server/utils/auth.ts';
 import { pool } from '~/server/db/index.js';
 
+interface CategorySpending {
+  category: string;
+  amount: number;
+  transactionCount: number;
+  percentage: string;
+}
+
+interface SpendingByCategoryResponse {
+  statusCode: number;
+  categories: CategorySpending[];
+  totalSpending: number;
+  period: {
+    startDate: string;
+    endDate: string;
+  };
+}
+
 // Get date range for last 30 days
-function getLast30DaysRange() {
+function getLast30DaysRange(): { startDate: string; endDate: string } {
   const now = new Date();
   const start = new Date(now);
   start.setDate(start.getDate() - 30);
@@ -13,7 +30,7 @@ function getLast30DaysRange() {
   };
 }
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<SpendingByCategoryResponse> => {
   try {
     const user = await requireAuth(event);
     const { startDate, endDate } = getLast30DaysRange();
@@ -45,7 +62,7 @@ export default defineEventHandler(async (event) => {
       category: row.category,
       amount: parseFloat(row.total_amount),
       transactionCount: parseInt(row.transaction_count),
-      percentage: totalSpending > 0 ? (parseFloat(row.total_amount) / totalSpending * 100).toFixed(1) : 0
+      percentage: totalSpending > 0 ? (parseFloat(row.total_amount) / totalSpending * 100).toFixed(1) : '0'
     }));
     
     return {
@@ -55,7 +72,7 @@ export default defineEventHandler(async (event) => {
       period: { startDate, endDate }
     };
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Spending by category error:', error);
     throw createError({
       statusCode: error.statusCode || 500,

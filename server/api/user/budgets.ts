@@ -1,5 +1,5 @@
 import { defineEventHandler, readBody, createError } from 'h3';
-import { requireAuth } from '~/server/utils/auth.js';
+import { requireAuth } from '~/server/utils/auth.ts';
 import { 
   createBudget, 
   getBudgetsByUserId, 
@@ -8,8 +8,36 @@ import {
   deleteBudget 
 } from '~/server/db/queries/budgets.ts';
 
+interface BudgetBody {
+  category?: string;
+  amount?: number;
+  period?: 'monthly' | 'weekly' | 'yearly';
+  startDate?: string;
+  endDate?: string;
+  id?: number;
+}
+
+interface BudgetResponse {
+  statusCode: number;
+  message?: string;
+  budgets?: Array<{
+    id: number;
+    category: string;
+    budgetAmount: number;
+    spentAmount: number;
+    remainingAmount: number;
+    percentageUsed: number;
+    period: string;
+  }>;
+  budget?: any;
+  period?: {
+    startDate: string;
+    endDate: string;
+  };
+}
+
 // Get date range for last 30 days
-function getLast30DaysRange() {
+function getLast30DaysRange(): { startDate: string; endDate: string } {
   const now = new Date();
   const start = new Date(now);
   start.setDate(start.getDate() - 30);
@@ -19,7 +47,7 @@ function getLast30DaysRange() {
   };
 }
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<BudgetResponse> => {
   try {
     const user = await requireAuth(event);
     const method = event.node.req.method;
@@ -45,7 +73,7 @@ export default defineEventHandler(async (event) => {
     }
     
     if (method === 'POST') {
-      const body = await readBody(event);
+      const body: BudgetBody = await readBody(event);
       const { category, amount, period = 'monthly', startDate, endDate } = body;
       
       if (!category || !amount || !startDate) {
@@ -55,7 +83,7 @@ export default defineEventHandler(async (event) => {
         });
       }
       
-      const budget = await createBudget(user.id, category, amount, period, startDate, endDate);
+      const budget = await createBudget(user.id, category!, amount!, period, startDate!, endDate);
       
       return {
         statusCode: 201,
@@ -65,7 +93,7 @@ export default defineEventHandler(async (event) => {
     }
     
     if (method === 'PUT') {
-      const body = await readBody(event);
+      const body: BudgetBody = await readBody(event);
       const { id, ...updates } = body;
       
       if (!id) {
@@ -75,7 +103,7 @@ export default defineEventHandler(async (event) => {
         });
       }
       
-      const budget = await updateBudget(id, updates);
+      const budget = await updateBudget(id!, updates);
       
       if (!budget) {
         throw createError({
@@ -92,7 +120,7 @@ export default defineEventHandler(async (event) => {
     }
     
     if (method === 'DELETE') {
-      const body = await readBody(event);
+      const body: BudgetBody = await readBody(event);
       const { id } = body;
       
       if (!id) {
@@ -102,7 +130,7 @@ export default defineEventHandler(async (event) => {
         });
       }
       
-      const budget = await deleteBudget(id);
+      const budget = await deleteBudget(id!);
       
       if (!budget) {
         throw createError({
@@ -122,7 +150,7 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Method not allowed'
     });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Budget API error:', error);
     throw createError({
       statusCode: error.statusCode || 500,

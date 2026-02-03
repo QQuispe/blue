@@ -1,14 +1,32 @@
 import { defineEventHandler, createError } from 'h3';
-import { requireAuth } from '~/server/utils/auth.js';
+import { requireAuth } from '~/server/utils/auth.ts';
 import { createInviteCode, listInviteCodes } from '~/server/db/queries/users.ts';
 import crypto from 'crypto';
 
+interface AdminInviteResponse {
+  statusCode: number;
+  message?: string;
+  invite?: {
+    code: string;
+    createdAt: Date;
+  };
+  codes?: Array<{
+    id: number;
+    code: string;
+    isUsed: boolean;
+    createdBy: string;
+    usedBy: string;
+    createdAt: Date;
+    usedAt?: Date;
+  }>;
+}
+
 // Generate a random invite code
-function generateInviteCode() {
+function generateInviteCode(): string {
   return crypto.randomBytes(16).toString('hex').toUpperCase();
 }
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<AdminInviteResponse> => {
   // Ensure user is authenticated and is admin
   const user = await requireAuth(event);
   
@@ -60,7 +78,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Invite code error:', error);
     throw createError({
       statusCode: error.statusCode || 500,

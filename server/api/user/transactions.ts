@@ -1,18 +1,26 @@
 import { defineEventHandler, createError, getQuery, getRequestURL, getMethod } from 'h3';
-import { requireAuth } from '~/server/utils/auth.js';
+import { requireAuth } from '~/server/utils/auth.ts';
 import { serverLogger } from '~/server/utils/logger.js';
 import { getTransactionsByUserId, getTransactionsByAccountId } from '~/server/db/queries/transactions.ts';
 import { getAccountById } from '~/server/db/queries/accounts.ts';
+import { Transaction } from '~/types/database';
 
-// Get cached transactions for the authenticated user
-export default defineEventHandler(async (event) => {
+interface TransactionsResponse {
+  statusCode: number;
+  transactions: Transaction[];
+  count: number;
+  accountId: number | null;
+}
+
+// Get cached transactions for authenticated user
+export default defineEventHandler(async (event): Promise<TransactionsResponse> => {
   const startTime = Date.now();
   const url = getRequestURL(event);
   const method = getMethod(event);
   
   // Get query params early for error logging
   const query = getQuery(event);
-  const accountId = query.accountId ? parseInt(query.accountId) : null;
+  const accountId = query.accountId ? parseInt(query.accountId as string) : null;
   
   serverLogger.info(`→ ${method} ${url.pathname}${url.search} - Starting request`);
   
@@ -21,13 +29,13 @@ export default defineEventHandler(async (event) => {
     const user = await requireAuth(event);
     
     // Get query params for pagination and filtering
-    const limit = parseInt(query.limit) || 50;
-    const offset = parseInt(query.offset) || 0;
+    const limit = parseInt(query.limit as string) || 50;
+    const offset = parseInt(query.offset as string) || 0;
     const accountIdParsed = accountId;
     
     serverLogger.debug(`Transaction query params`, { limit, offset, accountId: accountIdParsed });
     
-    let transactions;
+    let transactions: Transaction[];
     
     if (accountId) {
       serverLogger.info(`Fetching transactions for account ${accountId}`);
@@ -85,7 +93,7 @@ export default defineEventHandler(async (event) => {
       count: transactions.length,
       accountId: accountId || null
     };
-  } catch (error) {
+  } catch (error: any) {
     const duration = Date.now() - startTime;
     serverLogger.api(method, url.pathname, error.statusCode || 500, duration);
     serverLogger.error(`Transaction fetch failed: ${error.message}`, {

@@ -1,6 +1,11 @@
 import { defineEventHandler, createError, deleteCookie } from 'h3';
 
-export default defineEventHandler(async (event) => {
+interface LogoutResponse {
+  statusCode: number;
+  message: string;
+}
+
+export default defineEventHandler(async (event): Promise<LogoutResponse> => {
   try {
     // Clear the session cookie
     deleteCookie(event, 'blue-session');

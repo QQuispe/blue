@@ -5,6 +5,31 @@ import {
   comparePassword 
 } from '~/server/db/queries/users.ts';
 
+interface LoginBody {
+  username?: string;
+  email?: string;
+  password: string;
+}
+
+interface LoginResponse {
+  statusCode: number;
+  message: string;
+  user: {
+    id: number;
+    username: string;
+    email?: string;
+    isAdmin: boolean;
+  };
+}
+
+interface SessionData {
+  userId: number;
+  username: string;
+  email?: string;
+  isAdmin: boolean;
+  loggedInAt: string;
+}
+
 // Session config
 const SESSION_CONFIG = {
   name: 'blue-session',
@@ -15,8 +40,8 @@ const SESSION_CONFIG = {
   sameSite: 'strict'
 };
 
-export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
+export default defineEventHandler(async (event): Promise<LoginResponse> => {
+  const body: LoginBody = await readBody(event);
   const { username, email, password } = body;
 
   // Validate input
@@ -53,7 +78,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Verify password
-    const isValidPassword = await comparePassword(password, user.password_hash);
+    const isValidPassword = await comparePassword(password, user.password_hash!);
     if (!isValidPassword) {
       throw createError({
         statusCode: 401,
@@ -62,7 +87,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Create session
-    const session = {
+    const session: SessionData = {
       userId: user.id,
       username: user.username,
       email: user.email,
@@ -86,7 +111,7 @@ export default defineEventHandler(async (event) => {
       }
     };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
     throw createError({
       statusCode: error.statusCode || 500,

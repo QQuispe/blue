@@ -1,6 +1,25 @@
 import { defineEventHandler, createError, setCookie } from 'h3';
 import { getUserByUsername } from '~/server/db/queries/users.ts';
 
+interface GuestLoginResponse {
+  statusCode: number;
+  message: string;
+  user: {
+    id: number;
+    username: string;
+    email?: string;
+    isAdmin: boolean;
+  };
+}
+
+interface SessionData {
+  userId: number;
+  username: string;
+  email?: string;
+  isAdmin: boolean;
+  loggedInAt: string;
+}
+
 const SESSION_CONFIG = {
   name: 'blue-session',
   password: process.env.SESSION_SECRET || 'your-session-secret-minimum-32-characters-long',
@@ -11,9 +30,9 @@ const SESSION_CONFIG = {
 };
 
 // Check if we're in dev mode
-const isDevMode = () => process.env.DEV_MODE === 'true';
+const isDevMode = (): boolean => process.env.DEV_MODE === 'true';
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<GuestLoginResponse> => {
   // Only allow guest login in dev mode
   if (!isDevMode()) {
     throw createError({
@@ -34,7 +53,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Create session for guest user
-    const session = {
+    const session: SessionData = {
       userId: guestUser.id,
       username: guestUser.username,
       email: guestUser.email,
@@ -56,7 +75,7 @@ export default defineEventHandler(async (event) => {
       }
     };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Guest login error:', error);
     throw createError({
       statusCode: error.statusCode || 500,

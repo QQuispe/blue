@@ -1,18 +1,31 @@
 import { defineEventHandler, readBody, createError } from 'h3';
 import { plaidClient } from "~/server/api/plaid/plaid";
-import { requireAuth } from '~/server/utils/auth.js';
+import { requireAuth } from '~/server/utils/auth.ts';
 import { createItem, getItemByPlaidItemId } from '~/server/db/queries/items.ts';
 import { createAccount } from '~/server/db/queries/accounts.ts';
 import { encrypt } from '~/server/utils/crypto.js';
 import { captureNetWorthSnapshot } from '~/server/utils/snapshots.js';
+import { User } from '~/types/database';
+
+interface ExchangeBody {
+  publicToken: string;
+}
+
+interface ExchangeResponse {
+  status: string;
+  itemId: string;
+  internalId: number;
+  institutionId: string;
+  accountsCreated: number;
+}
 
 // API for exchanging the public token and persisting to database
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<ExchangeResponse> => {
   // Require authentication
   const user = await requireAuth(event);
   
-  const body = await readBody(event);
-  const publicToken = body.publicToken;
+  const body: ExchangeBody = await readBody(event);
+  const { publicToken } = body;
 
   if (!publicToken) {
     throw createError({
@@ -43,7 +56,7 @@ export default defineEventHandler(async (event) => {
         country_codes: ['US'],
       });
       institutionName = instResponse.data.institution.name;
-    } catch (instError) {
+    } catch (instError: any) {
       console.warn('Could not fetch institution name:', instError.message);
     }
 
@@ -99,11 +112,11 @@ export default defineEventHandler(async (event) => {
       try {
         await captureNetWorthSnapshot(user.id);
         console.log('Net worth snapshot captured after adding new account');
-      } catch (snapshotError) {
+      } catch (snapshotError: any) {
         console.error('Failed to capture net worth snapshot:', snapshotError);
       }
       
-    } catch (accountsError) {
+    } catch (accountsError: any) {
       console.error('Error fetching accounts for new item:', accountsError);
       // Don't fail the exchange if accounts fetch fails - they'll be synced later
     }
@@ -116,7 +129,7 @@ export default defineEventHandler(async (event) => {
       institutionId: item.plaid_institution_id,
       accountsCreated: accountsCount,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error during token exchange:", error);
     throw createError({
       statusCode: 500,

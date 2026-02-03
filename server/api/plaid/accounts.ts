@@ -3,15 +3,31 @@ import { defineEventHandler, readBody, createError } from 'h3';
 import { getItemByPlaidItemId } from '~/server/db/queries/items.ts';
 import { createAccount } from '~/server/db/queries/accounts.ts';
 import { decrypt } from '~/server/utils/crypto.js';
-import { requireAuth } from '~/server/utils/auth.js';
+import { requireAuth } from '~/server/utils/auth.ts';
 import { captureNetWorthSnapshot } from '~/server/utils/snapshots.js';
 
+interface AccountsSyncBody {
+  itemId: string;
+}
+
+interface AccountsSyncResponse {
+  statusCode: number;
+  message: string;
+  accounts: Array<{
+    id: number;
+    name: string;
+    type: string;
+    current_balance: number;
+    available_balance: number;
+  }>;
+}
+
 // Sync accounts for a specific item from Plaid
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<AccountsSyncResponse> => {
   // Require authentication
   const user = await requireAuth(event);
   
-  const body = await readBody(event);
+  const body: AccountsSyncBody = await readBody(event);
   const { itemId } = body;
 
   if (!itemId) {
@@ -75,7 +91,7 @@ export default defineEventHandler(async (event) => {
     // Capture net worth snapshot after accounts are synced
     try {
       await captureNetWorthSnapshot(user.id);
-    } catch (snapshotError) {
+    } catch (snapshotError: any) {
       console.error('Failed to capture net worth snapshot:', snapshotError);
       // Don't fail the sync if snapshot fails
     }
@@ -92,7 +108,7 @@ export default defineEventHandler(async (event) => {
       })),
     };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error syncing accounts:', error);
     throw createError({
       statusCode: error.statusCode || 500,

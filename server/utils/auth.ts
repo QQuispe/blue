@@ -1,11 +1,13 @@
-import { getUserById } from '~/server/db/queries/users.ts';
+import { H3Event } from 'h3';
 import { createError, getCookie } from 'h3';
+import { User } from '~/types/database';
+import { getUserById } from '~/server/db/queries/users.ts';
 
 /**
  * Require authentication for a route
  * Returns the user object or throws an error
  */
-export async function requireAuth(event) {
+export async function requireAuth(event: H3Event): Promise<User> {
   const sessionCookie = getCookie(event, 'blue-session');
   
   if (!sessionCookie) {
@@ -16,7 +18,7 @@ export async function requireAuth(event) {
   }
 
   // Parse session
-  let session;
+  let session: any;
   try {
     session = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
   } catch {
@@ -57,7 +59,7 @@ export async function requireAuth(event) {
  * Optional auth - returns user if logged in, null otherwise
  * Does not throw error if not authenticated
  */
-export async function getAuthUser(event) {
+export async function getAuthUser(event: H3Event): Promise<User | null> {
   try {
     const sessionCookie = getCookie(event, 'blue-session');
     
@@ -66,7 +68,7 @@ export async function getAuthUser(event) {
     }
 
     // Parse session
-    let session;
+    let session: any;
     try {
       session = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
     } catch {

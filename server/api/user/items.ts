@@ -1,5 +1,5 @@
 import { defineEventHandler, createError, getMethod, getRouterParam } from 'h3';
-import { requireAuth } from '~/server/utils/auth.js';
+import { requireAuth } from '~/server/utils/auth.ts';
 import { serverLogger } from '~/server/utils/logger.js';
 import { 
   getItemsByUserId, 
@@ -10,8 +10,29 @@ import {
 import { plaidClient } from '~/server/api/plaid/plaid.js';
 import { decrypt } from '~/server/utils/crypto.js';
 
-// Get connected items for the authenticated user OR disconnect an item
-export default defineEventHandler(async (event) => {
+interface ItemsResponse {
+  statusCode: number;
+  items?: Array<{
+    id: number;
+    plaid_item_id: string;
+    plaid_institution_id: string;
+    institution_name: string;
+    status: string;
+    error?: any;
+    created_at: Date;
+    updated_at: Date;
+    last_synced_at: Date;
+  }>;
+  message?: string;
+}
+
+interface DisconnectResponse {
+  statusCode: number;
+  message: string;
+}
+
+// Get connected items for authenticated user OR disconnect an item
+export default defineEventHandler(async (event): Promise<ItemsResponse | DisconnectResponse> => {
   const startTime = Date.now();
   const method = getMethod(event);
   let user = null;
@@ -58,7 +79,7 @@ export default defineEventHandler(async (event) => {
           access_token: accessToken
         });
         serverLogger.success('Plaid item removed successfully');
-      } catch (plaidError) {
+      } catch (plaidError: any) {
         serverLogger.warn('Plaid unlink failed (item may already be removed)', {
           error: plaidError.message
         });
@@ -87,7 +108,7 @@ export default defineEventHandler(async (event) => {
     const accounts = await getAccountsByUserId(user.id);
     
     // Create a map of item_id to institution_name
-    const institutionMap = {};
+    const institutionMap: Record<number, string> = {};
     accounts.forEach(account => {
       if (account.institution_name && !institutionMap[account.item_id]) {
         institutionMap[account.item_id] = account.institution_name;
@@ -113,7 +134,7 @@ export default defineEventHandler(async (event) => {
       statusCode: 200,
       items: safeItems,
     };
-  } catch (error) {
+  } catch (error: any) {
     serverLogger.error('Items API error', {
       error: error.message,
       method,

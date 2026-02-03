@@ -1,12 +1,20 @@
 import { defineEventHandler, createError } from 'h3';
-import { requireAuth } from '~/server/utils/auth.js';
-import { serverLogger } from '~/server/utils/logger.js';
-import { getItemById, deleteItem } from '~/server/db/queries/items.ts';
+import { requireAuth } from '~/server/utils/auth.ts';
+import { 
+  getItemById, 
+  deleteItem 
+} from '~/server/db/queries/items.ts';
 import { plaidClient } from '~/server/api/plaid/plaid.js';
 import { decrypt } from '~/server/utils/crypto.js';
+import { serverLogger } from '~/server/utils/logger.js';
+
+interface DisconnectResponse {
+  statusCode: number;
+  message: string;
+}
 
 // POST /api/user/items/:id/disconnect
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (event): Promise<DisconnectResponse> => {
   const startTime = Date.now();
   
   try {
@@ -50,7 +58,7 @@ export default defineEventHandler(async (event) => {
         access_token: accessToken
       });
       serverLogger.success('Plaid item removed successfully');
-    } catch (plaidError) {
+    } catch (plaidError: any) {
       serverLogger.warn('Plaid unlink failed (item may already be removed)', {
         error: plaidError.message
       });
@@ -70,11 +78,11 @@ export default defineEventHandler(async (event) => {
       message: 'Bank connection removed successfully'
     };
     
-  } catch (error) {
+  } catch (error: any) {
     serverLogger.error('Disconnect item failed', {
       error: error.message,
       stack: error.stack,
-      userId: user?.id
+      userId: error?.id
     });
     
     throw createError({

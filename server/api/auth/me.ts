@@ -1,8 +1,26 @@
 import { defineEventHandler, createError, getCookie } from 'h3';
 import { getUserById } from '~/server/db/queries/users.ts';
 
-// Get current user from session
-export default defineEventHandler(async (event) => {
+interface MeResponse {
+  statusCode: number;
+  message?: string;
+  user: {
+    id: number;
+    username: string;
+    email?: string;
+    isAdmin: boolean;
+  } | null;
+}
+
+interface SessionData {
+  userId: number;
+  username: string;
+  email?: string;
+  isAdmin: boolean;
+  loggedInAt: string;
+}
+
+export default defineEventHandler(async (event): Promise<MeResponse> => {
   try {
     // Get session from cookie
     const sessionCookie = getCookie(event, 'blue-session');
@@ -16,7 +34,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Parse session
-    let session;
+    let session: SessionData;
     try {
       session = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
     } catch {

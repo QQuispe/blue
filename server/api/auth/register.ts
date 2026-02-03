@@ -5,8 +5,25 @@ import {
   getUserByEmailWithPassword
 } from '~/server/db/queries/users.ts';
 
-export default defineEventHandler(async (event) => {
-  const body = await readBody(event);
+interface RegisterBody {
+  username: string;
+  email?: string;
+  password: string;
+}
+
+interface RegisterResponse {
+  statusCode: number;
+  message: string;
+  user: {
+    id: number;
+    username: string;
+    email?: string;
+    isAdmin: boolean;
+  };
+}
+
+export default defineEventHandler(async (event): Promise<RegisterResponse> => {
+  const body: RegisterBody = await readBody(event);
   const { username, email, password } = body;
 
   // Validate input
@@ -82,7 +99,7 @@ export default defineEventHandler(async (event) => {
       }
     };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('Registration error:', error);
     throw createError({
       statusCode: error.statusCode || 500,
