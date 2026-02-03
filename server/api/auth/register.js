@@ -3,7 +3,7 @@ import {
   createUser, 
   getUserByUsername, 
   getUserByEmailWithPassword
-} from '~/server/db/queries/users.js';
+} from '~/server/db/queries/users.ts';
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);

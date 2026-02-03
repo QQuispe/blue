@@ -1,21 +1,22 @@
 import { pool } from '../index.js';
+import type { Account, QueryResult, QueryResultArray } from '~/types';
 
 /**
  * Create a new account
  */
 export async function createAccount(
-  itemId,
-  plaidAccountId,
-  name,
-  mask,
-  officialName,
-  currentBalance,
-  availableBalance,
-  isoCurrencyCode,
-  unofficialCurrencyCode,
-  type,
-  subtype
-) {
+  itemId: number,
+  plaidAccountId: string,
+  name: string,
+  mask: string | null,
+  officialName: string | null,
+  currentBalance: number,
+  availableBalance: number | null,
+  isoCurrencyCode: string | null,
+  unofficialCurrencyCode: string | null,
+  type: 'depository' | 'credit' | 'loan' | 'investment' | 'other',
+  subtype: string | null
+): Promise<Account> {
   const result = await pool.query(
     `INSERT INTO accounts (
       item_id, plaid_account_id, name, mask, official_name,
@@ -46,7 +47,7 @@ export async function createAccount(
 /**
  * Get account by internal ID
  */
-export async function getAccountById(id) {
+export async function getAccountById(id: number): Promise<QueryResult<Account>> {
   const result = await pool.query(
     `SELECT * FROM accounts WHERE id = $1`,
     [id]
@@ -57,7 +58,7 @@ export async function getAccountById(id) {
 /**
  * Get account by Plaid account ID
  */
-export async function getAccountByPlaidAccountId(plaidAccountId) {
+export async function getAccountByPlaidAccountId(plaidAccountId: string): Promise<QueryResult<Account>> {
   const result = await pool.query(
     `SELECT * FROM accounts WHERE plaid_account_id = $1`,
     [plaidAccountId]
@@ -68,7 +69,7 @@ export async function getAccountByPlaidAccountId(plaidAccountId) {
 /**
  * Get all accounts for an item
  */
-export async function getAccountsByItemId(itemId) {
+export async function getAccountsByItemId(itemId: number): Promise<QueryResultArray<Account>> {
   const result = await pool.query(
     `SELECT * FROM accounts WHERE item_id = $1 ORDER BY name`,
     [itemId]
@@ -79,7 +80,7 @@ export async function getAccountsByItemId(itemId) {
 /**
  * Get all accounts for a user (across all items)
  */
-export async function getAccountsByUserId(userId) {
+export async function getAccountsByUserId(userId: number): Promise<QueryResultArray<Account>> {
   const result = await pool.query(
     `SELECT a.* FROM accounts a
      JOIN items i ON a.item_id = i.id
@@ -93,7 +94,11 @@ export async function getAccountsByUserId(userId) {
 /**
  * Update account balances
  */
-export async function updateAccountBalances(id, currentBalance, availableBalance) {
+export async function updateAccountBalances(
+  id: number,
+  currentBalance: number,
+  availableBalance: number | null
+): Promise<QueryResult<Account>> {
   const result = await pool.query(
     `UPDATE accounts 
      SET current_balance = $1, available_balance = $2, updated_at = CURRENT_TIMESTAMP
@@ -107,7 +112,7 @@ export async function updateAccountBalances(id, currentBalance, availableBalance
 /**
  * Delete an account
  */
-export async function deleteAccount(id) {
+export async function deleteAccount(id: number): Promise<{ deleted: boolean }> {
   await pool.query(
     `DELETE FROM accounts WHERE id = $1`,
     [id]
@@ -118,7 +123,11 @@ export async function deleteAccount(id) {
 /**
  * Get total balance for a user
  */
-export async function getTotalBalanceForUser(userId) {
+export async function getTotalBalanceForUser(userId: number): Promise<{
+  total_current: number;
+  total_available: number;
+  account_count: number;
+}> {
   const result = await pool.query(
     `SELECT 
       COALESCE(SUM(a.current_balance), 0) as total_current,

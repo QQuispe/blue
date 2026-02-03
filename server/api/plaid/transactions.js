@@ -1,7 +1,7 @@
 import { plaidClient } from "~/server/api/plaid/plaid";
 import { defineEventHandler, readBody, createError } from 'h3';
-import { applyTransactionUpdates } from '~/server/db/queries/transactions.js';
-import { getItemByPlaidItemId } from '~/server/db/queries/items.js';
+import { applyTransactionUpdates } from '~/server/db/queries/transactions.ts';
+import { getItemByPlaidItemId } from '~/server/db/queries/items.ts';
 import { decrypt } from '~/server/utils/crypto.js';
 import { requireAuth } from '~/server/utils/auth.js';
 
@@ -109,7 +109,7 @@ export default defineEventHandler(async (event) => {
     const result = await applyTransactionUpdates(item.id, syncData);
     
     // Step 5: Update last_synced_at timestamp
-    const { updateItemSync } = await import('~/server/db/queries/items.js');
+    const { updateItemSync } = await import('~/server/db/queries/items.ts');
     await updateItemSync(item.id, syncData.nextCursor);
 
     console.log('Transaction sync completed:', {

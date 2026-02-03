@@ -6,7 +6,7 @@ import {
   getItemById, 
   deleteItem,
   updateItemStatus 
-} from '~/server/db/queries/items.js';
+} from '~/server/db/queries/items.ts';
 import { plaidClient } from '~/server/api/plaid/plaid.js';
 import { decrypt } from '~/server/utils/crypto.js';
 
@@ -83,7 +83,7 @@ export default defineEventHandler(async (event) => {
     const items = await getItemsByUserId(user.id);
     
     // Get accounts to extract institution names
-    const { getAccountsByUserId } = await import('~/server/db/queries/accounts.js');
+    const { getAccountsByUserId } = await import('~/server/db/queries/accounts.ts');
     const accounts = await getAccountsByUserId(user.id);
     
     // Create a map of item_id to institution_name

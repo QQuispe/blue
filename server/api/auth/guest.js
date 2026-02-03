@@ -1,5 +1,5 @@
 import { defineEventHandler, createError, setCookie } from 'h3';
-import { getUserByUsername } from '~/server/db/queries/users.js';
+import { getUserByUsername } from '~/server/db/queries/users.ts';
 
 const SESSION_CONFIG = {
   name: 'blue-session',

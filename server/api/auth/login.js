@@ -3,7 +3,7 @@ import {
   getUserByUsernameWithPassword, 
   getUserByEmailWithPassword,
   comparePassword 
-} from '~/server/db/queries/users.js';
+} from '~/server/db/queries/users.ts';
 
 // Session config
 const SESSION_CONFIG = {

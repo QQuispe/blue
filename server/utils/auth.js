@@ -1,4 +1,4 @@
-import { getUserById } from '~/server/db/queries/users.js';
+import { getUserById } from '~/server/db/queries/users.ts';
 import { createError, getCookie } from 'h3';
 
 /**

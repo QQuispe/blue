@@ -1,23 +1,48 @@
 import { pool } from '../index.js';
+import type { Transaction, QueryResult, QueryResultArray } from '~/types';
+import type { SyncData, SyncResult } from '~/types';
+
+// Transaction updates type
+interface TransactionUpdates {
+  plaidCategoryId?: string;
+  category?: string;
+  name?: string;
+  amount?: number;
+  date?: string;
+  pending?: boolean;
+}
+
+// Transaction with account info (for getTransactionsByUserId)
+interface TransactionWithAccount extends Transaction {
+  account_name: string;
+  account_type: string;
+}
+
+// Summary result type
+interface TransactionsSummary {
+  transaction_count: number;
+  total_amount: number;
+  active_days: number;
+}
 
 /**
  * Create a new transaction
  */
 export async function createTransaction(
-  accountId,
-  plaidTransactionId,
-  plaidCategoryId,
-  category,
-  type,
-  name,
-  amount,
-  isoCurrencyCode,
-  unofficialCurrencyCode,
-  date,
-  pending,
-  accountOwner,
-  pendingTransactionId = null
-) {
+  accountId: number,
+  plaidTransactionId: string,
+  plaidCategoryId: string | null,
+  category: string | null,
+  type: string | null,
+  name: string,
+  amount: number,
+  isoCurrencyCode: string | null,
+  unofficialCurrencyCode: string | null,
+  date: string,
+  pending: boolean,
+  accountOwner: string | null,
+  pendingTransactionId: string | null = null
+): Promise<QueryResult<Partial<Transaction>>> {
   const result = await pool.query(
     `INSERT INTO transactions (
       account_id, plaid_transaction_id, plaid_category_id, category,
@@ -37,7 +62,7 @@ export async function createTransaction(
 /**
  * Get transaction by internal ID
  */
-export async function getTransactionById(id) {
+export async function getTransactionById(id: number): Promise<QueryResult<Transaction>> {
   const result = await pool.query(
     `SELECT * FROM transactions WHERE id = $1`,
     [id]
@@ -48,7 +73,9 @@ export async function getTransactionById(id) {
 /**
  * Get transaction by Plaid transaction ID
  */
-export async function getTransactionByPlaidTransactionId(plaidTransactionId) {
+export async function getTransactionByPlaidTransactionId(
+  plaidTransactionId: string
+): Promise<QueryResult<Transaction>> {
   const result = await pool.query(
     `SELECT * FROM transactions WHERE plaid_transaction_id = $1`,
     [plaidTransactionId]
@@ -59,7 +86,11 @@ export async function getTransactionByPlaidTransactionId(plaidTransactionId) {
 /**
  * Get all transactions for an account
  */
-export async function getTransactionsByAccountId(accountId, limit = 100, offset = 0) {
+export async function getTransactionsByAccountId(
+  accountId: number, 
+  limit: number = 100, 
+  offset: number = 0
+): Promise<QueryResultArray<Transaction>> {
   const result = await pool.query(
     `SELECT * FROM transactions 
      WHERE account_id = $1 
@@ -73,7 +104,11 @@ export async function getTransactionsByAccountId(accountId, limit = 100, offset 
 /**
  * Get all transactions for a user (across all accounts)
  */
-export async function getTransactionsByUserId(userId, limit = 100, offset = 0) {
+export async function getTransactionsByUserId(
+  userId: number, 
+  limit: number = 100, 
+  offset: number = 0
+): Promise<QueryResultArray<TransactionWithAccount>> {
   const result = await pool.query(
     `SELECT t.*, a.name as account_name, a.type as account_type
      FROM transactions t
@@ -91,11 +126,11 @@ export async function getTransactionsByUserId(userId, limit = 100, offset = 0) {
  * Update a transaction (for modified transactions from Plaid)
  */
 export async function updateTransaction(
-  plaidTransactionId,
-  updates
-) {
-  const fields = [];
-  const values = [];
+  plaidTransactionId: string,
+  updates: TransactionUpdates
+): Promise<QueryResult<Transaction>> {
+  const fields: string[] = [];
+  const values: (string | number | boolean | null)[] = [];
   let paramIndex = 1;
 
   if (updates.plaidCategoryId !== undefined) {
@@ -137,10 +172,18 @@ export async function updateTransaction(
   return result.rows[0] || null;
 }
 
+// Simple deletion result type
+interface DeletedTransaction {
+  id: number;
+  plaid_transaction_id: string;
+}
+
 /**
  * Delete a transaction (for removed transactions from Plaid)
  */
-export async function deleteTransaction(plaidTransactionId) {
+export async function deleteTransaction(
+  plaidTransactionId: string
+): Promise<QueryResult<DeletedTransaction>> {
   const result = await pool.query(
     `DELETE FROM transactions WHERE plaid_transaction_id = $1
      RETURNING id, plaid_transaction_id`,
@@ -153,7 +196,10 @@ export async function deleteTransaction(plaidTransactionId) {
  * Apply transaction updates from Plaid sync to database
  * This runs in a database transaction for atomicity
  */
-export async function applyTransactionUpdates(itemId, syncData) {
+export async function applyTransactionUpdates(
+  itemId: number, 
+  syncData: SyncData
+): Promise<SyncResult> {
   const client = await pool.connect();
   
   try {
@@ -268,7 +314,7 @@ export async function applyTransactionUpdates(itemId, syncData) {
 /**
  * Get stored cursor for an item
  */
-export async function getTransactionCursor(itemId) {
+export async function getTransactionCursor(itemId: number): Promise<string | null> {
   const result = await pool.query(
     `SELECT transactions_cursor FROM items WHERE id = $1`,
     [itemId]
@@ -276,10 +322,18 @@ export async function getTransactionCursor(itemId) {
   return result.rows[0]?.transactions_cursor || null;
 }
 
+// Item with cursor result type
+interface ItemWithCursor {
+  id: number;
+  transactions_cursor: string | null;
+}
+
 /**
  * Get item by access token (to find item_id for sync)
  */
-export async function getItemByAccessToken(accessToken) {
+export async function getItemByAccessToken(
+  accessToken: string
+): Promise<QueryResult<ItemWithCursor>> {
   const result = await pool.query(
     `SELECT id, transactions_cursor FROM items WHERE plaid_access_token = $1`,
     [accessToken]
@@ -290,7 +344,10 @@ export async function getItemByAccessToken(accessToken) {
 /**
  * Get recent transactions summary for dashboard
  */
-export async function getRecentTransactionsSummary(userId, days = 30) {
+export async function getRecentTransactionsSummary(
+  userId: number, 
+  days: number = 30
+): Promise<TransactionsSummary> {
   const result = await pool.query(
     `SELECT 
       COUNT(*) as transaction_count,

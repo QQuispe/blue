@@ -1,7 +1,7 @@
 import { defineEventHandler, createError, getRequestURL, getMethod } from 'h3';
 import { requireAuth } from '~/server/utils/auth.js';
 import { serverLogger } from '~/server/utils/logger.js';
-import { getTotalBalanceForUser, getAccountsByUserId } from '~/server/db/queries/accounts.js';
+import { getTotalBalanceForUser, getAccountsByUserId } from '~/server/db/queries/accounts.ts';
 
 // Get balance summary for the authenticated user
 export default defineEventHandler(async (event) => {

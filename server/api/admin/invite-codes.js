@@ -1,6 +1,6 @@
 import { defineEventHandler, createError } from 'h3';
 import { requireAuth } from '~/server/utils/auth.js';
-import { createInviteCode, listInviteCodes } from '~/server/db/queries/users.js';
+import { createInviteCode, listInviteCodes } from '~/server/db/queries/users.ts';
 import crypto from 'crypto';
 
 // Generate a random invite code

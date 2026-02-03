@@ -1,15 +1,29 @@
 import { pool } from '../index.js';
 import crypto from 'crypto';
+import type { User, QueryResult, QueryResultArray } from '~/types';
 
 const SALT_LENGTH = 32;
 const KEY_LENGTH = 64;
 const ITERATIONS = 100000;
 const DIGEST = 'sha512';
 
+// Invite code type based on database schema
+interface InviteCode {
+  id: number;
+  code: string;
+  is_used: boolean;
+  created_at: Date;
+  created_by?: number;
+  used_by?: number;
+  used_at?: Date;
+  created_by_username?: string;
+  used_by_username?: string;
+}
+
 /**
  * Hash a password using PBKDF2 (Node native)
  */
-export async function hashPassword(password) {
+export async function hashPassword(password: string): Promise<string> {
   const salt = crypto.randomBytes(SALT_LENGTH).toString('hex');
   const hash = crypto.pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST).toString('hex');
   return `${salt}:${hash}`;
@@ -18,7 +32,7 @@ export async function hashPassword(password) {
 /**
  * Compare a password with a hash
  */
-export async function comparePassword(password, storedHash) {
+export async function comparePassword(password: string, storedHash: string): Promise<boolean> {
   const [salt, hash] = storedHash.split(':');
   if (!salt || !hash) return false;
   
@@ -29,7 +43,11 @@ export async function comparePassword(password, storedHash) {
 /**
  * Create a new user with password
  */
-export async function createUser(username, email, password) {
+export async function createUser(
+  username: string, 
+  email: string | null, 
+  password: string | null
+): Promise<QueryResult<Partial<User>>> {
   const passwordHash = password ? await hashPassword(password) : null;
   
   const result = await pool.query(
@@ -45,7 +63,7 @@ export async function createUser(username, email, password) {
 /**
  * Get user by ID (without password hash)
  */
-export async function getUserById(id) {
+export async function getUserById(id: number): Promise<QueryResult<User>> {
   const result = await pool.query(
     `SELECT id, username, email, is_active, is_admin, created_at, updated_at 
      FROM users WHERE id = $1`,
@@ -57,7 +75,7 @@ export async function getUserById(id) {
 /**
  * Get user by ID with password (for auth)
  */
-export async function getUserByIdWithPassword(id) {
+export async function getUserByIdWithPassword(id: number): Promise<QueryResult<User>> {
   const result = await pool.query(
     `SELECT * FROM users WHERE id = $1`,
     [id]
@@ -68,7 +86,7 @@ export async function getUserByIdWithPassword(id) {
 /**
  * Get user by username (without password hash)
  */
-export async function getUserByUsername(username) {
+export async function getUserByUsername(username: string): Promise<QueryResult<User>> {
   const result = await pool.query(
     `SELECT id, username, email, is_active, is_admin, created_at, updated_at 
      FROM users WHERE username = $1`,
@@ -80,7 +98,7 @@ export async function getUserByUsername(username) {
 /**
  * Get user by username with password (for login)
  */
-export async function getUserByUsernameWithPassword(username) {
+export async function getUserByUsernameWithPassword(username: string): Promise<QueryResult<User>> {
   const result = await pool.query(
     `SELECT * FROM users WHERE username = $1`,
     [username]
@@ -91,7 +109,7 @@ export async function getUserByUsernameWithPassword(username) {
 /**
  * Get user by email with password (for login)
  */
-export async function getUserByEmailWithPassword(email) {
+export async function getUserByEmailWithPassword(email: string): Promise<QueryResult<User>> {
   const result = await pool.query(
     `SELECT * FROM users WHERE email = $1`,
     [email]
@@ -102,7 +120,10 @@ export async function getUserByEmailWithPassword(email) {
 /**
  * Update user's password
  */
-export async function updateUserPassword(userId, newPassword) {
+export async function updateUserPassword(
+  userId: number, 
+  newPassword: string
+): Promise<QueryResult<Partial<User>>> {
   const passwordHash = await hashPassword(newPassword);
   
   const result = await pool.query(
@@ -119,7 +140,7 @@ export async function updateUserPassword(userId, newPassword) {
  * Get or create default user (for Phase 1 migration/legacy support)
  * Uses atomic INSERT ... ON CONFLICT to handle race conditions
  */
-export async function getOrCreateDefaultUser() {
+export async function getOrCreateDefaultUser(): Promise<QueryResult<Partial<User>>> {
   const username = 'default_user';
   
   // Try to create the user (will return null if already exists due to ON CONFLICT)
@@ -138,7 +159,10 @@ export async function getOrCreateDefaultUser() {
 /**
  * Create an invite code
  */
-export async function createInviteCode(code, createdBy) {
+export async function createInviteCode(
+  code: string, 
+  createdBy: number
+): Promise<InviteCode> {
   const result = await pool.query(
     `INSERT INTO invite_codes (code, created_by) 
      VALUES ($1, $2) 
@@ -151,7 +175,7 @@ export async function createInviteCode(code, createdBy) {
 /**
  * Get invite code by code string
  */
-export async function getInviteCode(code) {
+export async function getInviteCode(code: string): Promise<QueryResult<InviteCode>> {
   const result = await pool.query(
     `SELECT * FROM invite_codes WHERE code = $1 AND is_used = false`,
     [code]
@@ -162,7 +186,10 @@ export async function getInviteCode(code) {
 /**
  * Mark invite code as used
  */
-export async function useInviteCode(codeId, usedBy) {
+export async function useInviteCode(
+  codeId: number, 
+  usedBy: number
+): Promise<QueryResult<Partial<InviteCode>>> {
   const result = await pool.query(
     `UPDATE invite_codes 
      SET is_used = true, used_by = $1, used_at = CURRENT_TIMESTAMP
@@ -176,7 +203,7 @@ export async function useInviteCode(codeId, usedBy) {
 /**
  * List all invite codes (for admin)
  */
-export async function listInviteCodes() {
+export async function listInviteCodes(): Promise<QueryResultArray<InviteCode>> {
   const result = await pool.query(
     `SELECT ic.*, 
             creator.username as created_by_username,

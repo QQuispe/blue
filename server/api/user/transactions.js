@@ -1,8 +1,8 @@
 import { defineEventHandler, createError, getQuery, getRequestURL, getMethod } from 'h3';
 import { requireAuth } from '~/server/utils/auth.js';
 import { serverLogger } from '~/server/utils/logger.js';
-import { getTransactionsByUserId, getTransactionsByAccountId } from '~/server/db/queries/transactions.js';
-import { getAccountById } from '~/server/db/queries/accounts.js';
+import { getTransactionsByUserId, getTransactionsByAccountId } from '~/server/db/queries/transactions.ts';
+import { getAccountById } from '~/server/db/queries/accounts.ts';
 
 // Get cached transactions for the authenticated user
 export default defineEventHandler(async (event) => {
@@ -47,7 +47,7 @@ export default defineEventHandler(async (event) => {
       
       // Get item to verify ownership
       const itemStart = Date.now();
-      const { getItemById } = await import('~/server/db/queries/items.js');
+      const { getItemById } = await import('~/server/db/queries/items.ts');
       const item = await getItemById(account.item_id);
       serverLogger.db('getItemById', Date.now() - itemStart, item ? 1 : 0);
       

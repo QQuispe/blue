@@ -1,8 +1,8 @@
 import { defineEventHandler, readBody, createError } from 'h3';
 import { plaidClient } from "~/server/api/plaid/plaid";
 import { requireAuth } from '~/server/utils/auth.js';
-import { createItem, getItemByPlaidItemId } from '~/server/db/queries/items.js';
-import { createAccount } from '~/server/db/queries/accounts.js';
+import { createItem, getItemByPlaidItemId } from '~/server/db/queries/items.ts';
+import { createAccount } from '~/server/db/queries/accounts.ts';
 import { encrypt } from '~/server/utils/crypto.js';
 import { captureNetWorthSnapshot } from '~/server/utils/snapshots.js';
 

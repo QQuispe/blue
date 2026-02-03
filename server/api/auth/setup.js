@@ -1,6 +1,6 @@
 import { defineEventHandler, createError, setCookie } from 'h3';
 import { pool } from '~/server/db/index.js';
-import { getUserByUsername, createUser } from '~/server/db/queries/users.js';
+import { getUserByUsername, createUser } from '~/server/db/queries/users.ts';
 
 const SESSION_CONFIG = {
   name: 'blue-session',

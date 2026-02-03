@@ -6,7 +6,7 @@ import {
   getBudgetsWithSpending,
   updateBudget,
   deleteBudget 
-} from '~/server/db/queries/budgets.js';
+} from '~/server/db/queries/budgets.ts';
 
 // Get date range for last 30 days
 function getLast30DaysRange() {

@@ -1,9 +1,37 @@
 import { pool } from '../index.js';
+import type { Budget, QueryResult, QueryResultArray } from '~/types';
+
+// Budget with spending data type
+interface BudgetWithSpending {
+  id: number;
+  category: string;
+  budget_amount: number;
+  period: string;
+  spent_amount: number;
+  remaining_amount: number;
+  percentage_used: number;
+}
+
+// Budget update input type
+interface BudgetUpdates {
+  amount?: number;
+  period?: Budget['period'];
+  startDate?: string;
+  endDate?: string | null;
+  isActive?: boolean;
+}
 
 /**
  * Create a new budget
  */
-export async function createBudget(userId, category, amount, period = 'monthly', startDate, endDate = null) {
+export async function createBudget(
+  userId: number, 
+  category: string, 
+  amount: number, 
+  period: Budget['period'] = 'monthly', 
+  startDate: string, 
+  endDate: string | null = null
+): Promise<Budget> {
   const result = await pool.query(
     `INSERT INTO budgets (user_id, category, amount, period, start_date, end_date)
      VALUES ($1, $2, $3, $4, $5, $6)
@@ -22,7 +50,7 @@ export async function createBudget(userId, category, amount, period = 'monthly',
 /**
  * Get all budgets for a user
  */
-export async function getBudgetsByUserId(userId) {
+export async function getBudgetsByUserId(userId: number): Promise<QueryResultArray<Budget>> {
   const result = await pool.query(
     `SELECT * FROM budgets 
      WHERE user_id = $1 AND is_active = true
@@ -35,7 +63,7 @@ export async function getBudgetsByUserId(userId) {
 /**
  * Get budget by ID
  */
-export async function getBudgetById(id) {
+export async function getBudgetById(id: number): Promise<QueryResult<Budget>> {
   const result = await pool.query(
     `SELECT * FROM budgets WHERE id = $1`,
     [id]
@@ -46,7 +74,10 @@ export async function getBudgetById(id) {
 /**
  * Update a budget
  */
-export async function updateBudget(id, updates) {
+export async function updateBudget(
+  id: number, 
+  updates: BudgetUpdates
+): Promise<QueryResult<Budget>> {
   const { amount, period, startDate, endDate, isActive } = updates;
   
   const result = await pool.query(
@@ -67,7 +98,7 @@ export async function updateBudget(id, updates) {
 /**
  * Delete (soft delete) a budget
  */
-export async function deleteBudget(id) {
+export async function deleteBudget(id: number): Promise<QueryResult<Budget>> {
   const result = await pool.query(
     `UPDATE budgets 
      SET is_active = false, updated_at = CURRENT_TIMESTAMP
@@ -81,7 +112,11 @@ export async function deleteBudget(id) {
 /**
  * Get budgets with spending data
  */
-export async function getBudgetsWithSpending(userId, startDate, endDate) {
+export async function getBudgetsWithSpending(
+  userId: number, 
+  startDate: string, 
+  endDate: string
+): Promise<QueryResultArray<BudgetWithSpending>> {
   const result = await pool.query(
     `SELECT 
        b.id,

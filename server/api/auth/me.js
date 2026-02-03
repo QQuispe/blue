@@ -1,5 +1,5 @@
 import { defineEventHandler, createError, getCookie } from 'h3';
-import { getUserById } from '~/server/db/queries/users.js';
+import { getUserById } from '~/server/db/queries/users.ts';
 
 // Get current user from session
 export default defineEventHandler(async (event) => {

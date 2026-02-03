@@ -1,7 +1,7 @@
 import { defineEventHandler, createError } from 'h3';
 import { requireAuth } from '~/server/utils/auth.js';
 import { serverLogger } from '~/server/utils/logger.js';
-import { getItemById, deleteItem } from '~/server/db/queries/items.js';
+import { getItemById, deleteItem } from '~/server/db/queries/items.ts';
 import { plaidClient } from '~/server/api/plaid/plaid.js';
 import { decrypt } from '~/server/utils/crypto.js';
 
