@@ -80,16 +80,30 @@ export default defineEventHandler(async (event) => {
       [user.id]
     );
     
-    // Calculate current net worth
+    // Calculate current net worth based on account types
     let totalAssets = 0;
     let totalLiabilities = 0;
     
     accountsResult.rows.forEach(account => {
       const balance = parseFloat(account.current_balance) || 0;
-      if (balance >= 0) {
+      const accountType = account.type;
+      
+      // Assets: depository (checking/savings) and investment accounts
+      if (accountType === 'depository' || accountType === 'investment') {
         totalAssets += balance;
-      } else {
-        totalLiabilities += Math.abs(balance);
+      }
+      // Liabilities: credit cards and loans (treat positive balance as debt)
+      else if (accountType === 'credit' || accountType === 'loan') {
+        // Credit cards: positive = debt owed, negative = overpayment (credit)
+        if (balance > 0) {
+          totalLiabilities += balance;
+        } else {
+          totalAssets += Math.abs(balance); // Overpayment is an asset
+        }
+      }
+      // Other account types: treat as assets
+      else {
+        totalAssets += balance;
       }
     });
     

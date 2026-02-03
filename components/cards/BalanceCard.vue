@@ -78,12 +78,17 @@ const navigateToFullPage = () => {
   router.push('/dashboard/balance')
 }
 
-// Computed properties for display
+// Computed properties for display - show Total Assets only (depository + investment accounts)
 const displayBalance = computed(() => {
   if (!balanceData.value) return { amount: 0, currency: 'USD', accountCount: 0 }
   
+  // Calculate total assets (depository and investment accounts only)
+  const totalAssets = accounts.value
+    .filter(acc => acc.type === 'depository' || acc.type === 'investment')
+    .reduce((sum, acc) => sum + (Number(acc.currentBalance) || 0), 0)
+  
   return {
-    amount: balanceData.value.totalCurrent,
+    amount: totalAssets,
     currency: balanceData.value.currency,
     accountCount: balanceData.value.accountCount
   }
@@ -131,7 +136,7 @@ const getAccountTypeStyle = (type) => {
   <div class="balance-card">
     <!-- Header Row: Title left, Value right -->
     <div class="card-header-row">
-      <h3 class="title">Balance</h3>
+      <h3 class="title">Total Assets</h3>
       <div v-if="!isLoading && !error && displayBalance.accountCount > 0" class="header-value">
         ${{ formattedAmount }}
       </div>
@@ -181,8 +186,8 @@ const getAccountTypeStyle = (type) => {
               <span class="account-name">{{ account.name }}</span>
               <span class="account-type">{{ account.type }}</span>
             </div>
-            <div class="account-balance" :class="{ 'negative': account.currentBalance < 0 }">
-              <span v-if="account.currentBalance < 0">-</span>${{ formatAccountBalance(Math.abs(account.currentBalance)) }}
+            <div class="account-balance" :class="{ 'negative': account.type === 'credit' ? account.currentBalance > 0 : account.currentBalance < 0 }">
+              <span v-if="account.type === 'credit' ? account.currentBalance > 0 : account.currentBalance < 0">-</span>${{ formatAccountBalance(Math.abs(account.currentBalance)) }}
             </div>
           </div>
           
