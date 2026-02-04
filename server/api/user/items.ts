@@ -80,18 +80,14 @@ export default defineEventHandler(async (event): Promise<ItemsResponse | Disconn
         });
         serverLogger.success('Plaid item removed successfully');
       } catch (plaidError: any) {
-        serverLogger.warn('Plaid unlink failed (item may already be removed)', {
-          error: plaidError.message
-        });
+        serverLogger.warn('Plaid unlink failed (item may already be removed)');
         // Continue - we still want to delete from our DB
       }
       
       // Delete from our database
       await deleteItem(itemId);
       
-      serverLogger.success(`Item ${itemId} disconnected`, {
-        duration: Date.now() - startTime
-      });
+      serverLogger.success(`Item ${itemId} disconnected`);
       
       return {
         statusCode: 200,
@@ -135,11 +131,7 @@ export default defineEventHandler(async (event): Promise<ItemsResponse | Disconn
       items: safeItems,
     };
   } catch (error: any) {
-    serverLogger.error('Items API error', {
-      error: error.message,
-      method,
-      userId: user?.id
-    });
+    serverLogger.error('Items API error');
     
     throw createError({
       statusCode: error.statusCode || 500,

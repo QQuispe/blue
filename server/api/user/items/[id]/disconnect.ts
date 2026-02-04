@@ -59,19 +59,14 @@ export default defineEventHandler(async (event): Promise<DisconnectResponse> => 
       });
       serverLogger.success('Plaid item removed successfully');
     } catch (plaidError: any) {
-      serverLogger.warn('Plaid unlink failed (item may already be removed)', {
-        error: plaidError.message
-      });
+      serverLogger.warn('Plaid unlink failed (item may already be removed)');
       // Continue - we still want to delete from our DB
     }
     
     // Delete from our database (cascades to accounts and transactions)
     await deleteItem(item.id);
     
-    serverLogger.success(`Item ${itemId} disconnected`, {
-      duration: Date.now() - startTime,
-      userId: user.id
-    });
+    serverLogger.success(`Item ${itemId} disconnected`);
     
     return {
       statusCode: 200,
@@ -79,11 +74,7 @@ export default defineEventHandler(async (event): Promise<DisconnectResponse> => 
     };
     
   } catch (error: any) {
-    serverLogger.error('Disconnect item failed', {
-      error: error.message,
-      stack: error.stack,
-      userId: error?.id
-    });
+    serverLogger.error('Disconnect item failed');
     
     throw createError({
       statusCode: error.statusCode || 500,

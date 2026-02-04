@@ -5,15 +5,13 @@ import BudgetsCard from "./cards/BudgetsCard.vue";
 import TopSpendingCategoriesCard from "./cards/TopSpendingCategoriesCard.vue";
 import NetWorthCard from "./cards/NetWorthCard.vue";
 
-// Refs to card components
 const balanceCardRef: Ref<any> = ref(null)
 const netWorthCardRef: Ref<any> = ref(null)
 const spendingCardRef: Ref<any> = ref(null)
 const budgetsCardRef: Ref<any> = ref(null)
 
-const auth = useAuth()
+const { fetchUser } = useAuth()
 
-// Refresh all cards
 const refreshAll = (): void => {
   balanceCardRef.value?.refresh()
   netWorthCardRef.value?.refresh()
@@ -21,15 +19,10 @@ const refreshAll = (): void => {
   budgetsCardRef.value?.refresh()
 }
 
-// Refresh auth and cards on mount
 onMounted(async () => {
-  // Force refresh auth state first
-  await auth.fetchUser()
-  // Then refresh all cards
+  await fetchUser()
   refreshAll()
 })
-
-// defineExpose({ refreshAll }) // Removed as it's now available by default in Vue 3
 </script>
 <template>
   <div class="page-container">
@@ -60,7 +53,7 @@ onMounted(async () => {
 
 <style scoped>
 .page-container {
-  padding: 20px;
+  padding: 16px;
   min-height: 100vh;
 }
 
@@ -76,7 +69,7 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: auto auto;
-  gap: 20px;
+  gap: 16px;
   width: 100%;
 }
 
@@ -87,8 +80,8 @@ onMounted(async () => {
 .card {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 20px;
+  border-radius: 10px;
+  padding: 16px;
   transition: all 0.3s ease;
 }
 
@@ -111,15 +104,15 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
   .page-container {
-    padding: 10px;
+    padding: 8px;
   }
   
   .grid-container {
-    gap: 15px;
+    gap: 10px;
   }
   
   .card {
-    padding: 15px;
+    padding: 10px;
   }
 }
 </style>

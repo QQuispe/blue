@@ -60,10 +60,7 @@ export default defineEventHandler(async (event): Promise<BalanceResponse> => {
     
     const duration = Date.now() - startTime;
     serverLogger.api(method, url.pathname, 200, duration, user.id);
-    serverLogger.success(`Balance fetched for user ${user.id}`, {
-      accountCount: formattedAccounts.length,
-      totalBalance: balanceSummary.total_current
-    });
+    serverLogger.success(`Balance fetched for user ${user.id}`);
     
     return {
       statusCode: 200,
@@ -75,13 +72,10 @@ export default defineEventHandler(async (event): Promise<BalanceResponse> => {
       },
       accounts: formattedAccounts
     };
-  } catch (error: any) {
+   } catch (error: any) {
     const duration = Date.now() - startTime;
     serverLogger.api(method, url.pathname, error.statusCode || 500, duration);
-    serverLogger.error(`Balance fetch failed: ${error.message}`, {
-      stack: error.stack,
-      statusCode: error.statusCode
-    });
+    serverLogger.error(`Balance fetch failed: ${error.message}`);
     
     throw createError({
       statusCode: error.statusCode || 500,

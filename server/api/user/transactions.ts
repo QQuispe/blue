@@ -33,7 +33,7 @@ export default defineEventHandler(async (event): Promise<TransactionsResponse> =
     const offset = parseInt(query.offset as string) || 0;
     const accountIdParsed = accountId;
     
-    serverLogger.debug(`Transaction query params`, { limit, offset, accountId: accountIdParsed });
+    serverLogger.debug(`Transaction query params`);
     
     let transactions: Transaction[];
     
@@ -80,12 +80,7 @@ export default defineEventHandler(async (event): Promise<TransactionsResponse> =
     
     const duration = Date.now() - startTime;
     serverLogger.api(method, url.pathname, 200, duration, user.id);
-    serverLogger.success(`Transactions fetched`, {
-      accountId: accountId || 'all',
-      count: transactions.length,
-      limit,
-      offset
-    });
+    serverLogger.success(`Transactions fetched`);
     
     return {
       statusCode: 200,
@@ -96,11 +91,7 @@ export default defineEventHandler(async (event): Promise<TransactionsResponse> =
   } catch (error: any) {
     const duration = Date.now() - startTime;
     serverLogger.api(method, url.pathname, error.statusCode || 500, duration);
-    serverLogger.error(`Transaction fetch failed: ${error.message}`, {
-      stack: error.stack,
-      statusCode: error.statusCode,
-      accountId: query.accountId
-    });
+    serverLogger.error(`Transaction fetch failed: ${error.message}`);
     
     throw createError({
       statusCode: error.statusCode || 500,
