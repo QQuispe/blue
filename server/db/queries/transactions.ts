@@ -363,3 +363,305 @@ export async function getRecentTransactionsSummary(
   );
   return result.rows[0];
 }
+
+/**
+ * Filter options for transactions
+ */
+export interface TransactionFilters {
+  search?: string;
+  category?: string;
+  accountId?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  minAmount?: number;
+  maxAmount?: number;
+  excludePending?: boolean;
+}
+
+export interface TransactionSort {
+  field: 'date' | 'amount' | 'name';
+  direction: 'asc' | 'desc';
+}
+
+/**
+ * Get filtered transactions with search, filter, and sort support
+ */
+export async function getFilteredTransactions(
+  userId: number,
+  filters: TransactionFilters,
+  sort: TransactionSort,
+  limit: number = 50,
+  offset: number = 0
+): Promise<QueryResultArray<TransactionWithAccount>> {
+  let whereClause = `i.user_id = $1`;
+  const params: (string | number | boolean | null)[] = [userId];
+  let paramIndex = 2;
+
+  if (filters.search) {
+    whereClause += ` AND t.name ILIKE $${paramIndex}`;
+    params.push(`%${filters.search}%`);
+    paramIndex++;
+  }
+
+  if (filters.category) {
+    whereClause += ` AND t.category = $${paramIndex}`;
+    params.push(filters.category);
+    paramIndex++;
+  }
+
+  if (filters.accountId) {
+    whereClause += ` AND t.account_id = $${paramIndex}`;
+    params.push(filters.accountId);
+    paramIndex++;
+  }
+
+  if (filters.dateFrom) {
+    whereClause += ` AND t.date >= $${paramIndex}`;
+    params.push(filters.dateFrom);
+    paramIndex++;
+  }
+
+  if (filters.dateTo) {
+    whereClause += ` AND t.date <= $${paramIndex}`;
+    params.push(filters.dateTo);
+    paramIndex++;
+  }
+
+  if (filters.minAmount !== undefined) {
+    whereClause += ` AND ABS(t.amount) >= $${paramIndex}`;
+    params.push(filters.minAmount);
+    paramIndex++;
+  }
+
+  if (filters.maxAmount !== undefined) {
+    whereClause += ` AND ABS(t.amount) <= $${paramIndex}`;
+    params.push(filters.maxAmount);
+    paramIndex++;
+  }
+
+  if (filters.excludePending !== false) {
+    whereClause += ` AND NOT t.pending`;
+  }
+
+  const sortField = sort.field === 'amount' ? 'ABS(t.amount)' : sort.field === 'name' ? 't.name' : 't.date';
+  const sortDirection = sort.direction.toUpperCase();
+
+  params.push(limit, offset);
+
+  const result = await pool.query(
+    `SELECT t.*, a.name as account_name, a.type as account_type
+     FROM transactions t
+     JOIN accounts a ON t.account_id = a.id
+     JOIN items i ON a.item_id = i.id
+     WHERE ${whereClause}
+     ORDER BY ${sortField} ${sortDirection}, t.created_at DESC
+     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
+    params
+  );
+  return result.rows;
+}
+
+/**
+ * Get filtered transaction count
+ */
+export async function getFilteredTransactionCount(
+  userId: number,
+  filters: TransactionFilters
+): Promise<number> {
+  let whereClause = `i.user_id = $1`;
+  const params: (string | number | boolean | null)[] = [userId];
+  let paramIndex = 2;
+
+  if (filters.search) {
+    whereClause += ` AND t.name ILIKE $${paramIndex}`;
+    params.push(`%${filters.search}%`);
+    paramIndex++;
+  }
+
+  if (filters.category) {
+    whereClause += ` AND t.category = $${paramIndex}`;
+    params.push(filters.category);
+    paramIndex++;
+  }
+
+  if (filters.accountId) {
+    whereClause += ` AND t.account_id = $${paramIndex}`;
+    params.push(filters.accountId);
+    paramIndex++;
+  }
+
+  if (filters.dateFrom) {
+    whereClause += ` AND t.date >= $${paramIndex}`;
+    params.push(filters.dateFrom);
+    paramIndex++;
+  }
+
+  if (filters.dateTo) {
+    whereClause += ` AND t.date <= $${paramIndex}`;
+    params.push(filters.dateTo);
+    paramIndex++;
+  }
+
+  if (filters.minAmount !== undefined) {
+    whereClause += ` AND ABS(t.amount) >= $${paramIndex}`;
+    params.push(filters.minAmount);
+    paramIndex++;
+  }
+
+  if (filters.maxAmount !== undefined) {
+    whereClause += ` AND ABS(t.amount) <= $${paramIndex}`;
+    params.push(filters.maxAmount);
+    paramIndex++;
+  }
+
+  if (filters.excludePending !== false) {
+    whereClause += ` AND NOT t.pending`;
+  }
+
+  const result = await pool.query(
+    `SELECT COUNT(*) as count
+     FROM transactions t
+     JOIN accounts a ON t.account_id = a.id
+     JOIN items i ON a.item_id = i.id
+     WHERE ${whereClause}`,
+    params
+  );
+  return parseInt(result.rows[0].count);
+}
+
+/**
+ * Get unique categories for a user
+ */
+export async function getUserCategories(userId: number): Promise<string[]> {
+  const result = await pool.query(
+    `SELECT DISTINCT category
+     FROM transactions t
+     JOIN accounts a ON t.account_id = a.id
+     JOIN items i ON a.item_id = i.id
+     WHERE i.user_id = $1 AND category IS NOT NULL
+     ORDER BY category`,
+    [userId]
+  );
+  return result.rows.map(row => row.category as string);
+}
+
+/**
+ * Get total spend for filtered transactions
+ */
+export async function getFilteredTotalSpend(
+  userId: number,
+  filters: TransactionFilters
+): Promise<number> {
+  let whereClause = `i.user_id = $1 AND t.amount < 0`;
+  const params: (string | number | boolean | null)[] = [userId];
+  let paramIndex = 2;
+
+  if (filters.search) {
+    whereClause += ` AND t.name ILIKE $${paramIndex}`;
+    params.push(`%${filters.search}%`);
+    paramIndex++;
+  }
+
+  if (filters.category) {
+    whereClause += ` AND t.category = $${paramIndex}`;
+    params.push(filters.category);
+    paramIndex++;
+  }
+
+  if (filters.accountId) {
+    whereClause += ` AND t.account_id = $${paramIndex}`;
+    params.push(filters.accountId);
+    paramIndex++;
+  }
+
+  if (filters.dateFrom) {
+    whereClause += ` AND t.date >= $${paramIndex}`;
+    params.push(filters.dateFrom);
+    paramIndex++;
+  }
+
+  if (filters.dateTo) {
+    whereClause += ` AND t.date <= $${paramIndex}`;
+    params.push(filters.dateTo);
+    paramIndex++;
+  }
+
+  if (filters.excludePending !== false) {
+    whereClause += ` AND NOT t.pending`;
+  }
+
+  const result = await pool.query(
+    `SELECT COALESCE(SUM(t.amount), 0) as total
+     FROM transactions t
+     JOIN accounts a ON t.account_id = a.id
+     JOIN items i ON a.item_id = i.id
+     WHERE ${whereClause}`,
+    params
+  );
+  return parseFloat(result.rows[0].total);
+}
+
+/**
+ * Get category breakdown for filtered transactions
+ */
+export async function getFilteredCategoryBreakdown(
+  userId: number,
+  filters: TransactionFilters
+): Promise<{ category: string; amount: number; count: number }[]> {
+  let whereClause = `i.user_id = $1 AND t.amount < 0`;
+  const params: (string | number | boolean | null)[] = [userId];
+  let paramIndex = 2;
+
+  if (filters.search) {
+    whereClause += ` AND t.name ILIKE $${paramIndex}`;
+    params.push(`%${filters.search}%`);
+    paramIndex++;
+  }
+
+  if (filters.category) {
+    whereClause += ` AND t.category = $${paramIndex}`;
+    params.push(filters.category);
+    paramIndex++;
+  }
+
+  if (filters.accountId) {
+    whereClause += ` AND t.account_id = $${paramIndex}`;
+    params.push(filters.accountId);
+    paramIndex++;
+  }
+
+  if (filters.dateFrom) {
+    whereClause += ` AND t.date >= $${paramIndex}`;
+    params.push(filters.dateFrom);
+    paramIndex++;
+  }
+
+  if (filters.dateTo) {
+    whereClause += ` AND t.date <= $${paramIndex}`;
+    params.push(filters.dateTo);
+    paramIndex++;
+  }
+
+  if (filters.excludePending !== false) {
+    whereClause += ` AND NOT t.pending`;
+  }
+
+  const result = await pool.query(
+    `SELECT 
+       COALESCE(t.category, 'Uncategorized') as category,
+       SUM(t.amount) as amount,
+       COUNT(*) as count
+     FROM transactions t
+     JOIN accounts a ON t.account_id = a.id
+     JOIN items i ON a.item_id = i.id
+     WHERE ${whereClause}
+     GROUP BY category
+     ORDER BY amount ASC`,
+    params
+  );
+  return result.rows.map(row => ({
+    category: row.category,
+    amount: parseFloat(row.amount),
+    count: parseInt(row.count)
+  }));
+}

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, type Ref } from 'vue'
 import { logger } from '~/utils/logger'
+import BaseButton from '~/components/BaseButton.vue'
 
 interface Transaction {
   id: number;
@@ -91,12 +92,12 @@ const navigateToTransactions = () => {
         </svg>
         <h3>Recent Transactions</h3>
       </div>
-      <button class="view-all-btn" @click="navigateToTransactions">
+      <BaseButton variant="secondary" size="sm" class="view-all-btn" @click="navigateToTransactions">
         View All
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 18l6-6-6-6"/>
         </svg>
-      </button>
+      </BaseButton>
     </div>
 
     <div class="separator"></div>
@@ -185,25 +186,6 @@ h3 {
   font-size: 0.875rem;
   font-weight: 600;
   margin: 0;
-}
-
-.view-all-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: none;
-  border: none;
-  color: var(--color-accent);
-  font-size: 0.75rem;
-  font-weight: 500;
-  cursor: pointer;
-  padding: 0.375rem 0.625rem;
-  border-radius: 6px;
-  transition: background 0.2s;
-}
-
-.view-all-btn:hover {
-  background: var(--color-primary-bg);
 }
 
 .separator {
@@ -338,5 +320,17 @@ h3 {
 .transaction-date {
   color: var(--color-text-muted);
   font-size: 0.6875rem;
+}
+
+.view-all-btn {
+  background: var(--color-bg-card) !important;
+  color: var(--color-text-secondary) !important;
+  border-color: var(--color-border) !important;
+}
+
+.view-all-btn:hover {
+  background: var(--color-bg-hover) !important;
+  color: var(--color-accent) !important;
+  border-color: var(--color-accent) !important;
 }
 </style>
