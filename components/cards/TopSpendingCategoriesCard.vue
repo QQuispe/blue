@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, type Ref } from 'vue'
 import Chart from 'chart.js/auto'
+import { formatCategoryName } from '~/utils/categoryFormatter'
 
 const categories: Ref<any[]> = ref([])
 const totalSpending: Ref<number> = ref(0)
@@ -50,7 +51,7 @@ const createChart = () => {
   const topCategories = categories.value.slice(0, 5)
   const otherAmount = categories.value.slice(5).reduce((sum, cat) => sum + cat.amount, 0)
   
-  const labels = topCategories.map(c => c.category)
+  const labels = topCategories.map(c => formatCategoryName(c.category))
   const data = topCategories.map(c => c.amount)
   
   if (otherAmount > 0) {
@@ -179,7 +180,7 @@ defineExpose({ refresh })
       
       <!-- Top Category -->
       <div v-if="topCategory" class="top-category">
-        <span class="top-label">Top: {{ topCategory.category }}</span>
+        <span class="top-label">Top: {{ formatCategoryName(topCategory.category) }}</span>
         <span class="top-amount">${{ topCategory.amount.toFixed(2) }} ({{ topCategory.percentage }}%)</span>
       </div>
     </div>
