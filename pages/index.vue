@@ -1,10 +1,15 @@
-<script setup>
-import { ref } from "vue";
+<script setup lang="ts">
+import { ref, type Ref } from "vue";
 import TransactionTable from "~/components/TransactionTable.vue";
 import Dashboard from "~/components/Dashboard.vue";
 
-const transactionTableRef = ref(null);
-const dashboardRef = ref(null);
+// Apply auth middleware
+definePageMeta({
+  middleware: 'auth'
+});
+
+const transactionTableRef: Ref<any> = ref(null);
+const dashboardRef: Ref<any> = ref(null);
 </script>
 
 <template>
@@ -18,7 +23,4 @@ const dashboardRef = ref(null);
 .transaction-wrapper {
   padding: 0 20px 20px 20px;
 }
-</style>
-
-<style scoped>
 </style>

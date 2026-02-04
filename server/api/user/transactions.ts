@@ -1,6 +1,6 @@
 import { defineEventHandler, createError, getQuery, getRequestURL, getMethod } from 'h3';
 import { requireAuth } from '~/server/utils/auth.ts';
-import { serverLogger } from '~/server/utils/logger.js';
+import { serverLogger } from '~/server/utils/logger';
 import { getTransactionsByUserId, getTransactionsByAccountId } from '~/server/db/queries/transactions.ts';
 import { getAccountById } from '~/server/db/queries/accounts.ts';
 import { Transaction } from '~/types/database';

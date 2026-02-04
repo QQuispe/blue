@@ -1,11 +1,28 @@
-<script setup>
-import { ref, onMounted, computed } from 'vue'
-import { logger } from '~/utils/logger.js'
+<script setup lang="ts">
+import { ref, onMounted, computed, type Ref } from 'vue'
+import { logger } from '~/utils/logger'
 
-const balanceData = ref(null)
-const accounts = ref([])
-const isLoading = ref(true)
-const error = ref(null)
+interface BalanceData {
+  summary: {
+    totalCurrent: number;
+    totalAvailable: number;
+    accountCount: number;
+    currency: string;
+  };
+  accounts: Array<{
+    id: number;
+    name: string;
+    type: string;
+    currentBalance: number;
+    availableBalance: number;
+    currency: string;
+  }>;
+}
+
+const balanceData: Ref<BalanceData | null> = ref(null)
+const accounts: Ref<any[]> = ref([])
+const isLoading: Ref<boolean> = ref(true)
+const error: Ref<string | null> = ref(null)
 
 const route = useRoute()
 const router = useRouter()
@@ -26,7 +43,7 @@ const fetchBalance = async () => {
     const duration = Date.now() - startTime
     
     if (!response.ok) {
-      logger.api('GET', '/api/user/balance', response.status, duration, { error: 'Request failed' })
+      logger.api('GET', '/api/user/balance', response.status, duration)
       throw new Error('Failed to fetch balance')
     }
     
@@ -34,22 +51,20 @@ const fetchBalance = async () => {
     balanceData.value = data.summary
     accounts.value = data.accounts || []
     
-    logger.api('GET', '/api/user/balance', response.status, duration, { 
-      accountCount: data.accounts?.length || 0,
-      totalBalance: data.summary?.totalCurrent 
-    })
+    logger.api('GET', '/api/user/balance', response.status, duration)
     logger.component('BalanceCard', 'fetch_success', { 
-      accountsLoaded: accounts.value.length,
-      duration 
+      accountsFetched: accounts.value.length,
+      balance: balanceData.value?.summary?.totalCurrent
     })
   } catch (err) {
     const duration = Date.now() - startTime
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     logger.error('Failed to fetch balance data', {
-      error: err.message,
-      stack: err.stack,
+      error: errorMessage,
+      stack: err instanceof Error ? err.stack : 'No stack trace',
       duration
     })
-    error.value = err.message
+    error.value = errorMessage
   } finally {
     isLoading.value = false
   }
@@ -65,7 +80,7 @@ onMounted(() => {
 
 // Expose refresh method for parent component
 const refresh = () => {
-  logger.action('refresh_balance_card')
+  logger.info('refresh_balance_card', { component: 'BalanceCard' })
   fetchBalance()
 }
 
@@ -73,24 +88,25 @@ defineExpose({ refresh })
 
 // Navigate to full page
 const navigateToFullPage = () => {
-  logger.action('navigate_to_balance_fullpage', { from: route.path })
+  logger.info('navigate_to_balance_fullpage', { from: route.path })
   logger.navigation(route.path, '/dashboard/balance')
   router.push('/dashboard/balance')
 }
 
 // Computed properties for display - show Total Assets only (depository + investment accounts)
 const displayBalance = computed(() => {
-  if (!balanceData.value) return { amount: 0, currency: 'USD', accountCount: 0 }
+  if (!balanceData.value) {
+    return { amount: 0, currency: 'USD', accountCount: 0 }
+  }
   
   // Calculate total assets (depository and investment accounts only)
-  const totalAssets = accounts.value
-    .filter(acc => acc.type === 'depository' || acc.type === 'investment')
-    .reduce((sum, acc) => sum + (Number(acc.currentBalance) || 0), 0)
+  const filteredAccounts = accounts.value.filter(acc => acc.type === 'depository' || acc.type === 'investment')
+  const totalAssets = filteredAccounts.reduce((sum, acc) => sum + (Number(acc.currentBalance) || 0), 0)
   
   return {
     amount: totalAssets,
-    currency: balanceData.value.currency,
-    accountCount: balanceData.value.accountCount
+    currency: balanceData.value?.summary?.currency || 'USD',
+    accountCount: filteredAccounts.length
   }
 })
 
@@ -112,7 +128,7 @@ const hasMoreAccounts = computed(() => {
 })
 
 // Format individual account balance
-const formatAccountBalance = (balance) => {
+const formatAccountBalance = (balance: number): string => {
   return balance.toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
@@ -120,13 +136,13 @@ const formatAccountBalance = (balance) => {
 }
 
 // Get account type icon/color
-const getAccountTypeStyle = (type) => {
-  const styles = {
+const getAccountTypeStyle = (type: string) => {
+  const styles: Record<string, { color: string; icon: string }> = {
     depository: { color: 'var(--color-account-depository)', icon: '💳' },
     credit: { color: 'var(--color-account-credit)', icon: '💳' },
     loan: { color: 'var(--color-account-loan)', icon: '📄' },
     investment: { color: 'var(--color-account-investment)', icon: '📈' },
-    other: { color: 'var(--color-account-other)', icon: '🏦' }
+    other: { color: 'var(--color-account-other)', icon: '💰' }
   }
   return styles[type] || styles.other
 }
@@ -137,7 +153,7 @@ const getAccountTypeStyle = (type) => {
     <!-- Header Row: Title left, Value right -->
     <div class="card-header-row">
       <h3 class="title">Total Assets</h3>
-      <div v-if="!isLoading && !error && displayBalance.accountCount > 0" class="header-value">
+      <div v-if="!isLoading && !error && displayBalance.amount > 0" class="header-value">
         ${{ formattedAmount }}
       </div>
     </div>
@@ -164,7 +180,7 @@ const getAccountTypeStyle = (type) => {
     <!-- Content -->
     <div v-else class="card-content">
       <!-- No Accounts State -->
-      <div v-if="displayBalance.accountCount === 0" class="no-accounts">
+      <div v-if="displayBalance.amount === 0" class="no-accounts">
         <div class="empty-icon">🏦</div>
         <p>No connected accounts</p>
         <span class="empty-hint">Connect a bank to see your balance</span>

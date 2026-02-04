@@ -1,6 +1,6 @@
 import { defineEventHandler, createError, getRequestURL, getMethod } from 'h3';
 import { requireAuth } from '~/server/utils/auth.ts';
-import { serverLogger } from '~/server/utils/logger.js';
+import { serverLogger } from '~/server/utils/logger';
 import { getTotalBalanceForUser, getAccountsByUserId } from '~/server/db/queries/accounts.ts';
 
 interface BalanceResponse {
@@ -70,7 +70,7 @@ export default defineEventHandler(async (event): Promise<BalanceResponse> => {
       summary: {
         totalCurrent: parseFloat(balanceSummary.total_current) || 0,
         totalAvailable: parseFloat(balanceSummary.total_available) || 0,
-        accountCount: parseInt(balanceSummary.account_count) || 0,
+        accountCount: formattedAccounts.length,
         currency: formattedAccounts[0]?.currency || 'USD'
       },
       accounts: formattedAccounts

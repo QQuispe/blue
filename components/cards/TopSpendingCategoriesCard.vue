@@ -1,13 +1,13 @@
-<script setup>
-import { ref, onMounted, computed } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, computed, type Ref } from 'vue'
 import Chart from 'chart.js/auto'
 
-const categories = ref([])
-const totalSpending = ref(0)
-const isLoading = ref(true)
-const error = ref(null)
-const period = ref(null)
-const chartCanvas = ref(null)
+const categories: Ref<any[]> = ref([])
+const totalSpending: Ref<number> = ref(0)
+const isLoading: Ref<boolean> = ref(true)
+const error: Ref<string | null> = ref(null)
+const period: Ref<any> = ref(null)
+const chartCanvas: Ref<any> = ref(null)
 let chart = null
 
 // Fetch spending data from API
@@ -30,7 +30,8 @@ const fetchSpending = async () => {
     period.value = data.period
   } catch (err) {
     console.error('Error fetching spending:', err)
-    error.value = err.message
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    error.value = errorMessage
   } finally {
     isLoading.value = false
   }
@@ -97,15 +98,15 @@ const createChart = () => {
           }
         },
         tooltip: {
-          callbacks: {
-            label: (context) => {
-              const value = context.raw
-              const percentage = totalSpending.value > 0 
-                ? ((value / totalSpending.value) * 100).toFixed(1)
-                : 0
-              return `$${value.toFixed(2)} (${percentage}%)`
+            callbacks: {
+              label: (context: any) => {
+                const value = context.raw
+                const percentage = totalSpending.value > 0 
+                  ? ((value / totalSpending.value) * 100).toFixed(1)
+                  : 0
+                return `$${Number(value.toFixed(2))} (${percentage}%)`
+              }
             }
-          }
         }
       },
       cutout: '65%'

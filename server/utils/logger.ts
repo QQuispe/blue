@@ -28,21 +28,38 @@ const LOG_COLORS = {
   BG_WHITE: '\x1b[47m'
 };
 
+interface LogData {
+  query?: string;
+  [key: string]: unknown;
+}
+
+interface NavigationData {
+  fromName?: string;
+  toName?: string;
+  fromParams?: Record<string, string>;
+  toParams?: Record<string, string>;
+  fromQuery?: Record<string, string>;
+  toQuery?: Record<string, string>;
+  timestamp: string;
+}
+
 class ServerLogger {
+  private minLevel: number;
+
   constructor() {
     this.minLevel = process.env.NODE_ENV === 'development' ? 0 : 1;
   }
 
-  getTimestamp() {
+  private getTimestamp(): string {
     return new Date().toISOString();
   }
 
-  formatLevel(level, color) {
+  private formatLevel(level: string, color: string): string {
     const padded = level.padEnd(5);
     return `${color}${LOG_COLORS.BRIGHT}${padded}${LOG_COLORS.RESET}`;
   }
 
-  log(level, color, message, data = null) {
+  private log(level: string, color: string, message: string, data: LogData | null = null): void {
     const timestamp = this.getTimestamp();
     const levelStr = this.formatLevel(level, color);
     
@@ -59,29 +76,29 @@ class ServerLogger {
     console.log(output);
   }
 
-  debug(message, data) {
+  debug(message: string, data?: LogData): void {
     if (this.minLevel <= 0) {
-      this.log('DEBUG', LOG_COLORS.DIM, message, data);
+      this.log('DEBUG', LOG_COLORS.DIM, message, data ?? null);
     }
   }
 
-  info(message, data) {
-    this.log('INFO', LOG_COLORS.BLUE, message, data);
+  info(message: string, data?: LogData): void {
+    this.log('INFO', LOG_COLORS.BLUE, message, data ?? null);
   }
 
-  success(message, data) {
-    this.log('SUCCESS', LOG_COLORS.GREEN, message, data);
+  success(message: string, data?: LogData): void {
+    this.log('SUCCESS', LOG_COLORS.GREEN, message, data ?? null);
   }
 
-  warn(message, data) {
-    this.log('WARN', LOG_COLORS.YELLOW, message, data);
+  warn(message: string, data?: LogData): void {
+    this.log('WARN', LOG_COLORS.YELLOW, message, data ?? null);
   }
 
-  error(message, data) {
-    this.log('ERROR', LOG_COLORS.RED, message, data);
+  error(message: string, data?: LogData): void {
+    this.log('ERROR', LOG_COLORS.RED, message, data ?? null);
   }
 
-  api(method, path, statusCode, duration, userId = null) {
+  api(method: string, path: string, statusCode: number, duration: number, userId: number | null = null): void {
     const color = statusCode >= 500 ? LOG_COLORS.RED : 
                   statusCode >= 400 ? LOG_COLORS.YELLOW :
                   statusCode >= 300 ? LOG_COLORS.CYAN :
@@ -93,16 +110,16 @@ class ServerLogger {
     this.info(`API ${method.padEnd(6)} ${path.padEnd(40)} ${status} (${duration}ms)${user}`);
   }
 
-  navigation(from, to, userId = null) {
-    const user = userId ? ` [User: ${userId}]` : '';
+  navigation(from: string, to: string, data?: NavigationData): void {
+    const user = data?.fromName ? ` [User: ${data.fromName}]` : '';
     this.info(`NAVIGATION ${from} → ${to}${user}`);
   }
 
-  action(userId, action, details = {}) {
+  action(userId: number, action: string, details: Record<string, unknown> = {}): void {
     this.info(`USER_ACTION [${userId}] ${action}`, details);
   }
 
-  db(query, duration, rows = null) {
+  db(query: string, duration: number, rows: number | null = null): void {
     const rowsInfo = rows !== null ? ` (${rows} rows)` : '';
     this.debug(`DB ${duration}ms${rowsInfo}`, { query: query.substring(0, 100) });
   }
@@ -132,14 +149,15 @@ export const requestLogger = defineEventHandler(async (event) => {
     serverLogger.api(method, url.pathname, statusCode, duration);
     
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     const duration = Date.now() - start;
-    const statusCode = error.statusCode || 500;
+    const errorWithStatus = error as { statusCode?: number; message: string; stack?: string };
+    const statusCode = errorWithStatus.statusCode || 500;
     
     // Log error
     serverLogger.api(method, url.pathname, statusCode, duration);
-    serverLogger.error(`Request failed: ${error.message}`, {
-      stack: error.stack,
+    serverLogger.error(`Request failed: ${errorWithStatus.message}`, {
+      stack: errorWithStatus.stack,
       statusCode
     });
     

@@ -1,15 +1,15 @@
-<script setup>
-import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted, computed, watch, nextTick, type Ref } from 'vue'
 import Chart from 'chart.js/auto'
 
-const currentData = ref(null)
-const historyData = ref([])
-const isLoading = ref(true)
-const error = ref(null)
-const selectedTimeframe = ref('12m')
-const hasSyntheticData = ref(false)
+const currentData: Ref<any> = ref(null)
+const historyData: Ref<any[]> = ref([])
+const isLoading: Ref<boolean> = ref(true)
+const error: Ref<string | null> = ref(null)
+const selectedTimeframe: Ref<string> = ref('12m')
+const hasSyntheticData: Ref<boolean> = ref(false)
 const chartCanvas = ref(null)
-let chart = null
+let chart: any = null
 
 const timeframes = [
   { value: '1m', label: '1M' },
@@ -44,7 +44,8 @@ const fetchNetWorth = async () => {
     hasSyntheticData.value = data.hasSyntheticData || false
   } catch (err) {
     console.error('Error fetching net worth:', err)
-    error.value = err.message
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    error.value = errorMessage
   } finally {
     isLoading.value = false
   }
@@ -59,171 +60,9 @@ onUnmounted(() => {
   if (chart) {
     chart.destroy()
     chart = null
-  }
-})
-
-// Watch for timeframe changes
-watch(selectedTimeframe, () => {
-  // Clear chart immediately to prevent visual flash
-  if (chart) {
-    chart.destroy()
-    chart = null
-  }
-  historyData.value = []
-  fetchNetWorth()
-})
-
-// Watch for data changes and create/update chart
-watch([historyData, isLoading], async () => {
-  if (!isLoading.value && historyData.value.length > 0) {
-    await nextTick() // Wait for DOM to render the canvas
-    createChart()
-  }
-})
-
-// Create or update chart
-const createChart = () => {
-  if (!chartCanvas.value) {
-    console.log('[NetWorthCard] Canvas not ready yet')
-    return
-  }
-  
-  if (historyData.value.length === 0) {
-    console.log('[NetWorthCard] No history data to display')
-    return
-  }
-  
-  // Destroy existing chart
-  if (chart) {
-    chart.destroy()
-    chart = null
-  }
-  
-  const labels = historyData.value.map(d => {
-    const date = new Date(d.date)
-    return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
-  })
-  
-  const data = historyData.value.map(d => d.netWorth)
-  
-  // Create gradient for fill
-  const chartHeight = chartCanvas.value?.offsetHeight || 200
-  const ctx = chartCanvas.value.getContext('2d')
-  const gradient = ctx.createLinearGradient(0, 0, 0, chartHeight)
-  
-  // Get computed CSS variable values for canvas
-  const computedStyle = getComputedStyle(document.documentElement)
-  const gradientStart = computedStyle.getPropertyValue('--color-chart-gradient-start').trim() || 'rgba(62, 180, 137, 0.3)'
-  const gradientEnd = computedStyle.getPropertyValue('--color-chart-gradient-end').trim() || 'rgba(62, 180, 137, 0.05)'
-  const chartPrimary = computedStyle.getPropertyValue('--color-chart-primary').trim() || '#3EB489'
-  const textPrimary = computedStyle.getPropertyValue('--color-text-primary').trim() || '#ffffff'
-  const bgTooltip = computedStyle.getPropertyValue('--color-bg-tooltip').trim() || '#1f1f1f'
-  const textSecondary = computedStyle.getPropertyValue('--color-text-secondary').trim() || 'rgba(255, 255, 255, 0.7)'
-  const borderColor = computedStyle.getPropertyValue('--color-border').trim() || 'rgba(255, 255, 255, 0.06)'
-  const gridColor = computedStyle.getPropertyValue('--color-grid').trim() || 'rgba(255, 255, 255, 0.06)'
-  
-  gradient.addColorStop(0, gradientStart)
-  gradient.addColorStop(1, gradientEnd)
-  
-  chart = new Chart(chartCanvas.value, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        data,
-        borderColor: chartPrimary,
-        backgroundColor: gradient,
-        borderWidth: 2,
-        tension: 0.4,
-        fill: true,
-        pointRadius: 0,
-        pointHoverRadius: 6,
-        pointHoverBackgroundColor: chartPrimary,
-        pointHoverBorderColor: textPrimary,
-        pointHoverBorderWidth: 2
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      layout: {
-        padding: {
-          top: 5,
-          right: 5,
-          bottom: 5,
-          left: 5
-        }
-      },
-      interaction: {
-        intersect: false,
-        mode: 'index'
-      },
-      plugins: {
-        legend: {
-          display: false
-        },
-        tooltip: {
-          backgroundColor: bgTooltip,
-          titleColor: textSecondary,
-          bodyColor: textPrimary,
-          borderColor: borderColor,
-          borderWidth: 1,
-          padding: 10,
-          displayColors: false,
-          callbacks: {
-            title: (context) => {
-              const index = context[0].dataIndex
-              const date = new Date(historyData.value[index].date)
-              return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-            },
-            label: (context) => {
-              const value = context.raw
-              return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          display: true,
-          grid: {
-            display: false
-          },
-          ticks: {
-            color: textSecondary,
-            font: {
-              size: 10
-            },
-            autoSkip: true,
-            autoSkipPadding: 10,
-            maxRotation: 0,
-            minRotation: 0
-          }
-        },
-        y: {
-          display: true,
-          grid: {
-            color: gridColor,
-            drawBorder: false
-          },
-          ticks: {
-            color: textSecondary,
-            font: {
-              size: 10
-            },
-            maxTicksLimit: 6,
-            callback: (value) => {
-              if (value >= 1000000) return '$' + (value / 1000000).toFixed(1) + 'M'
-              if (value >= 1000) return '$' + (value / 1000).toFixed(0) + 'k'
-              return '$' + value
-            }
-          }
-        }
-      }
     }
   })
-}
-
+ 
 // Expose refresh method for parent component
 const refresh = () => {
   fetchNetWorth()
@@ -261,6 +100,114 @@ const changeIcon = computed(() => {
 const changeTimeframe = (timeframe) => {
   selectedTimeframe.value = timeframe
 }
+
+// Initialize Chart.js
+const initChart = () => {
+  if (!chartCanvas.value || !historyData.value.length) return
+  
+  const ctx = chartCanvas.value.getContext('2d')
+  if (!ctx) return
+  
+  // Destroy existing chart
+  if (chart) {
+    chart.destroy()
+  }
+  
+  const labels = historyData.value.map(d => {
+    const date = new Date(d.date)
+    return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+  })
+  
+  const values = historyData.value.map(d => d.netWorth)
+  
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Net Worth',
+        data: values,
+        borderColor: '#10b981',
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: '#10b981'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        intersect: false,
+        mode: 'index'
+      },
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          backgroundColor: '#1f2937',
+          titleColor: '#f9fafb',
+          bodyColor: '#f9fafb',
+          borderColor: '#374151',
+          borderWidth: 1,
+          padding: 12,
+          displayColors: false,
+          callbacks: {
+            label: (context) => `$${context.parsed.y.toLocaleString()}`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            color: '#6b7280',
+            maxTicksLimit: 6,
+            font: {
+              size: 10
+            }
+          },
+          border: {
+            display: false
+          }
+        },
+        y: {
+          grid: {
+            color: 'rgba(107, 114, 128, 0.1)'
+          },
+          ticks: {
+            color: '#6b7280',
+            font: {
+              size: 10
+            },
+            callback: (value) => `$${(value as number / 1000).toFixed(0)}k`
+          },
+          border: {
+            display: false
+          }
+        }
+      }
+    }
+  })
+}
+
+// Watch for data changes and update chart
+watch(historyData, () => {
+  nextTick(() => {
+    initChart()
+  })
+}, { deep: true })
+
+// Watch for timeframe changes
+watch(selectedTimeframe, () => {
+  fetchNetWorth()
+})
 </script>
 
 <template>

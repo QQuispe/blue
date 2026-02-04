@@ -1,25 +1,35 @@
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, type Ref } from 'vue'
 import BalanceCard from "./cards/BalanceCard.vue";
 import BudgetsCard from "./cards/BudgetsCard.vue";
 import TopSpendingCategoriesCard from "./cards/TopSpendingCategoriesCard.vue";
 import NetWorthCard from "./cards/NetWorthCard.vue";
 
 // Refs to card components
-const balanceCardRef = ref(null)
-const netWorthCardRef = ref(null)
-const spendingCardRef = ref(null)
-const budgetsCardRef = ref(null)
+const balanceCardRef: Ref<any> = ref(null)
+const netWorthCardRef: Ref<any> = ref(null)
+const spendingCardRef: Ref<any> = ref(null)
+const budgetsCardRef: Ref<any> = ref(null)
+
+const auth = useAuth()
 
 // Refresh all cards
-const refreshAll = () => {
+const refreshAll = (): void => {
   balanceCardRef.value?.refresh()
   netWorthCardRef.value?.refresh()
   spendingCardRef.value?.refresh()
   budgetsCardRef.value?.refresh()
 }
 
-defineExpose({ refreshAll })
+// Refresh auth and cards on mount
+onMounted(async () => {
+  // Force refresh auth state first
+  await auth.fetchUser()
+  // Then refresh all cards
+  refreshAll()
+})
+
+// defineExpose({ refreshAll }) // Removed as it's now available by default in Vue 3
 </script>
 <template>
   <div class="page-container">
@@ -27,7 +37,7 @@ defineExpose({ refreshAll })
       <!-- Main Content -->
       <div class="main-content">
         <main class="grid-container">
-          <!-- Row 1: Net Worth (wide) + Balance -->
+          <!-- Row 1: Net Worth (wide - 2 columns) + Balance -->
           <div class="card card-wide">
             <NetWorthCard ref="netWorthCardRef" />
           </div>
@@ -35,7 +45,7 @@ defineExpose({ refreshAll })
             <BalanceCard ref="balanceCardRef" />
           </div>
           
-          <!-- Row 2: Spending + Budgets -->
+          <!-- Row 2: Spending + Budgets (side by side, each 1 column) -->
           <div class="card">
             <TopSpendingCategoriesCard ref="spendingCardRef" />
           </div>
@@ -50,69 +60,66 @@ defineExpose({ refreshAll })
 
 <style scoped>
 .page-container {
-  display: flex;
-  flex-direction: column;
-  padding-top: 10px;
+  padding: 20px;
+  min-height: 100vh;
 }
 
-/* Layout */
 .dashboard {
-  display: flex;
+  width: 100%;
 }
 
-@media (min-width: 768px) {
-  .sidebar {
-    display: block;
-  }
-}
-
-/* Main Content */
 .main-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  width: 100%;
 }
 
-/* Grid Layout - 3 columns with Net Worth spanning 2 */
 .grid-container {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-  padding: 10px 20px 20px 20px;
-}
-
-@media (min-width: 768px) {
-  .grid-container {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  
-  .card-wide {
-    grid-column: span 2;
-  }
-}
-
-@media (min-width: 1024px) {
-  .grid-container {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  
-  .card-wide {
-    grid-column: span 2;
-  }
-}
-
-/* Card Style - consistent height across all cards */
-.card {
-  background: #151515;
-  padding: 20px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  display: flex;
-  flex-direction: column;
-  height: 300px;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: auto auto;
+  gap: 20px;
+  width: 100%;
 }
 
 .card-wide {
-  height: 300px;
+  grid-column: span 2;
+}
+
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  background: var(--color-bg-card-hover);
+  border-color: var(--color-border-hover);
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .grid-container {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+  }
+  
+  .card-wide {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 10px;
+  }
+  
+  .grid-container {
+    gap: 15px;
+  }
+  
+  .card {
+    padding: 15px;
+  }
 }
 </style>

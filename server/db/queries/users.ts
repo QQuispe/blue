@@ -98,7 +98,7 @@ export async function getUserByUsername(username: string): Promise<QueryResult<U
 /**
  * Get user by username with password (for login)
  */
-export async function getUserByUsernameWithPassword(username: string): Promise<QueryResult<User>> {
+export async function getUserByUsernameWithPassword(username: string): Promise<User | null> {
   const result = await pool.query(
     `SELECT * FROM users WHERE username = $1`,
     [username]
@@ -109,7 +109,7 @@ export async function getUserByUsernameWithPassword(username: string): Promise<Q
 /**
  * Get user by email with password (for login)
  */
-export async function getUserByEmailWithPassword(email: string): Promise<QueryResult<User>> {
+export async function getUserByEmailWithPassword(email: string): Promise<User | null> {
   const result = await pool.query(
     `SELECT * FROM users WHERE email = $1`,
     [email]

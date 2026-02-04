@@ -1,6 +1,6 @@
 import { defineEventHandler, createError, getMethod, getRouterParam } from 'h3';
 import { requireAuth } from '~/server/utils/auth.ts';
-import { serverLogger } from '~/server/utils/logger.js';
+import { serverLogger } from '~/server/utils/logger';
 import { 
   getItemsByUserId, 
   getItemById, 

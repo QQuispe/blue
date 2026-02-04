@@ -263,6 +263,6 @@ export async function createTables() {
 }
 
 // If this file is run directly with `node database/create.js`, run createTables().
-if (fileURLToPath(import.meta.url) === process.argv[1]) {
+if (process.argv[1] && process.argv[1].includes('database/create.js')) {
     createTables();
 }

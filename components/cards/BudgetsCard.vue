@@ -1,10 +1,10 @@
-<script setup>
-import { ref, onMounted, computed } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, computed, type Ref } from 'vue'
 
-const budgets = ref([])
-const isLoading = ref(true)
-const error = ref(null)
-const period = ref(null)
+const budgets: Ref<any[]> = ref([])
+const isLoading: Ref<boolean> = ref(true)
+const error: Ref<string | null> = ref(null)
+const period: Ref<any> = ref(null)
 
 // Fetch budgets data from API
 const fetchBudgets = async () => {
@@ -25,7 +25,8 @@ const fetchBudgets = async () => {
     period.value = data.period
   } catch (err) {
     console.error('Error fetching budgets:', err)
-    error.value = err.message
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    error.value = errorMessage
   } finally {
     isLoading.value = false
   }
@@ -59,18 +60,18 @@ const totalRemaining = computed(() => {
 
 const overallPercentage = computed(() => {
   if (totalBudget.value === 0) return 0
-  return (totalSpent.value / totalBudget.value * 100).toFixed(1)
+  return parseFloat((totalSpent.value / totalBudget.value * 100).toFixed(1))
 })
 
 // Get color based on percentage used
-const getProgressColor = (percentage) => {
+const getProgressColor = (percentage: number): string => {
   if (percentage < 50) return 'var(--color-success)'
   if (percentage < 75) return 'var(--color-warning)'
   if (percentage < 90) return 'var(--color-orange)'
   return 'var(--color-error)'
 }
 
-const formatCurrency = (amount) => {
+const formatCurrency = (amount: number): string => {
   return amount.toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
@@ -122,9 +123,9 @@ const formatCurrency = (amount) => {
           ></div>
         </div>
         <div class="progress-stats">
-          <span class="stat">${{ formatCurrency(totalSpent) }} / ${{ formatCurrency(totalBudget) }}</span>
+          <span class="stat">{{ formatCurrency(totalSpent.value) }} / {{ formatCurrency(totalBudget.value) }}</span>
           <span class="remaining" :class="{ 'over-budget': totalRemaining < 0 }">
-            {{ totalRemaining >= 0 ? '' : '-' }}${{ formatCurrency(Math.abs(totalRemaining)) }} remaining
+            {{ totalRemaining >= 0 ? '' : '-' }}{{ formatCurrency(Math.abs(totalRemaining)) }} remaining
           </span>
         </div>
       </div>

@@ -1,8 +1,17 @@
-<script setup>
-import { ref, onMounted, defineExpose } from 'vue';
+<script setup lang="ts">
+import { ref, onMounted, type Ref } from 'vue';
 
-const transactions = ref([]);
-const isLoading = ref(false);
+interface Transaction {
+  id: number;
+  name: string;
+  amount: number;
+  date: string;
+  category?: string;
+  pending: boolean;
+}
+
+const transactions: Ref<Transaction[]> = ref([]);
+const isLoading: Ref<boolean> = ref(false);
 
 // Fetch cached transactions from database
 const fetchTransactions = async () => {
@@ -44,9 +53,9 @@ const formatCategory = (category) => {
 };
 
 // Expose method to parent so it can trigger refresh after sync
-defineExpose({
-  refresh: fetchTransactions
-});
+// defineExpose({
+//   refresh: fetchTransactions
+// }); // Removed as it's now available by default in Vue 3
 </script>
 
 <template>

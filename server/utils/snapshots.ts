@@ -1,14 +1,35 @@
-import { pool } from '~/server/db/index.js';
+import { pool } from '~/server/db/index';
+
+// Define types
+interface SnapshotData {
+  id: number;
+  user_id: number;
+  snapshot_date: string;
+  total_assets: number;
+  total_liabilities: number;
+  net_worth: number;
+  account_count: number;
+  is_synthetic: boolean;
+  created_at?: Date;
+}
+
+interface NetWorthResult {
+  id: number;
+  userId: number;
+  snapshotDate: string;
+  totalAssets: number;
+  totalLiabilities: number;
+  netWorth: number;
+  accountCount: number;
+  isSynthetic: boolean;
+}
 
 /**
  * Capture a net worth snapshot for a user
  * This creates or updates the snapshot for the current month
  * Past months are immutable, current month gets updated
- * 
- * @param {number} userId - The user ID
- * @returns {Promise<Object>} The captured snapshot data
  */
-export async function captureNetWorthSnapshot(userId) {
+export async function captureNetWorthSnapshot(userId: number): Promise<NetWorthResult> {
   const client = await pool.connect();
   
   try {
@@ -103,11 +124,8 @@ export async function captureNetWorthSnapshot(userId) {
 
 /**
  * Get the latest snapshot for a user
- * 
- * @param {number} userId - The user ID
- * @returns {Promise<Object|null>} The latest snapshot or null
  */
-export async function getLatestSnapshot(userId) {
+export async function getLatestSnapshot(userId: number): Promise<SnapshotData | null> {
   const client = await pool.connect();
   
   try {

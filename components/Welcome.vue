@@ -1,6 +1,16 @@
-<script setup>
-const { user } = useAuth();
-const username = computed(() => user.value?.username || 'Guest');
+<script setup lang="ts">
+import { computed, type Ref } from 'vue'
+import { useAuth } from '~/composables/useAuth';
+
+interface User {
+  id: number;
+  username: string;
+  email?: string;
+  isAdmin: boolean;
+}
+
+const { user }: { user: Ref<User | null> } = useAuth();
+const username = computed((): string => user.value?.username || 'Guest');
 </script>
 
 <template>

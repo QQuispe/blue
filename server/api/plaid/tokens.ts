@@ -1,5 +1,4 @@
 import { plaidClient } from "~/server/api/plaid/plaid";
-//import { getLoggedInUserId } from "~/server/api/plaid/utils";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,8 +15,9 @@ export default defineEventHandler(async (event) => {
     });
 
     return tokenResponse.data;
-  } catch (error) {
-    console.error("Error generating link token:", error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error("Error generating link token:", errorMessage);
     throw createError({
       statusCode: 500,
       statusMessage: "Link token creation failed",

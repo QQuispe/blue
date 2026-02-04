@@ -1,7 +1,7 @@
 // Router navigation logging plugin
 // Logs all navigation events with detailed information
 
-import { logger } from '~/utils/logger.js'
+import { logger } from '~/utils/logger'
 
 export default defineNuxtPlugin((nuxtApp) => {
   const router = nuxtApp.$router
@@ -9,8 +9,8 @@ export default defineNuxtPlugin((nuxtApp) => {
   // Log before navigation starts
   router.beforeEach((to, from) => {
     logger.navigation(from.path, to.path, {
-      fromName: from.name,
-      toName: to.name,
+      fromName: from.name ?? undefined,
+      toName: to.name ?? undefined,
       fromParams: from.params,
       toParams: to.params,
       fromQuery: from.query,
@@ -33,7 +33,7 @@ export default defineNuxtPlugin((nuxtApp) => {
   router.onError((error, to, from) => {
     logger.error('Navigation error', {
       error: error.message,
-      stack: error.stack,
+      stack: error.stack ?? undefined,
       from: from?.path,
       to: to?.path,
       timestamp: new Date().toISOString()

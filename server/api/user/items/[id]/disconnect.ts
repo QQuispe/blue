@@ -6,7 +6,7 @@ import {
 } from '~/server/db/queries/items.ts';
 import { plaidClient } from '~/server/api/plaid/plaid.js';
 import { decrypt } from '~/server/utils/crypto.js';
-import { serverLogger } from '~/server/utils/logger.js';
+import { serverLogger } from '~/server/utils/logger';
 
 interface DisconnectResponse {
   statusCode: number;

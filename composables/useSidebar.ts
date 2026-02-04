@@ -1,9 +1,9 @@
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
 
-const isCollapsed = ref(false)
+const isCollapsed: Ref<boolean> = ref(false)
 
 export const useSidebar = () => {
-  const toggle = () => {
+  const toggle = (): void => {
     isCollapsed.value = !isCollapsed.value
   }
 

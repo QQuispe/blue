@@ -1,16 +1,16 @@
-<script setup>
-import { ref, onMounted, computed } from 'vue'
-import { logger } from '~/utils/logger.js'
+<script setup lang="ts">
+import { ref, onMounted, computed, type Ref } from 'vue'
+import { logger } from '~/utils/logger'
 
-const accounts = ref([])
-const items = ref([])
-const isLoading = ref(true)
-const error = ref(null)
-const syncingItem = ref(null)
-const disconnectingItem = ref(null)
-const showDisconnectConfirm = ref(null)
-const linkToken = ref('')
-const isLinkLoading = ref(false)
+const accounts: Ref<any[]> = ref([])
+const items: Ref<any[]> = ref([])
+const isLoading: Ref<boolean> = ref(true)
+const error: Ref<string | null> = ref(null)
+const syncingItem: Ref<string | null> = ref(null)
+const disconnectingItem: Ref<string | null> = ref(null)
+const showDisconnectConfirm: Ref<string | null> = ref(null)
+const linkToken: Ref<string> = ref('')
+const isLinkLoading: Ref<boolean> = ref(false)
 
 const route = useRoute()
 const router = useRouter()

@@ -10,6 +10,7 @@ export interface User {
   email?: string;
   password_hash?: string;
   is_active: boolean;
+  is_admin: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -27,6 +28,7 @@ export interface Item {
   last_synced_at?: Date;
   created_at: Date;
   updated_at: Date;
+  error?: any;
 }
 
 // Account entity
@@ -45,6 +47,7 @@ export interface Account {
   subtype?: string;
   created_at: Date;
   updated_at: Date;
+  institution_name?: string;
 }
 
 // Transaction entity
@@ -62,6 +65,7 @@ export interface Transaction {
   date: string; // ISO date string
   pending: boolean;
   account_owner?: string;
+  account_name?: string;
   logo_url?: string;
   created_at: Date;
   updated_at: Date;

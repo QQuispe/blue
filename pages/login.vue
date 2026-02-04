@@ -1,94 +1,32 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
+const { login: authLogin } = useAuth();
 
 const username = ref('');
 const password = ref('');
 const error = ref('');
 const isLoading = ref(false);
-const isGuestLoading = ref(false);
-const devMode = ref(false);
-const guestAvailable = ref(false);
-const hasUsers = ref(true);
-
-// Check dev mode status on mount
-onMounted(async () => {
-  try {
-    const response = await fetch('/api/auth/setup');
-    const data = await response.json();
-    
-    if (response.ok) {
-      devMode.value = data.devMode;
-      guestAvailable.value = data.guestAvailable;
-      hasUsers.value = data.hasUsers;
-      
-      // If guest was auto-created and logged in, redirect to home
-      if (data.guestCreated) {
-        router.push('/');
-      }
-    }
-  } catch (err) {
-    console.error('Failed to check auth setup:', err);
-  }
-});
 
 const handleLogin = async () => {
   error.value = '';
   isLoading.value = true;
 
   try {
-    const response = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        username: username.value,
-        password: password.value
-      })
-    });
+    const response = await authLogin(username.value, password.value);
 
-    const data = await response.json();
-
-    if (response.ok) {
-      // Redirect to home page on success
+    if (response.statusCode === 200) {
       router.push('/');
     } else {
-      error.value = data.statusMessage || 'Login failed';
+      error.value = response.message || 'Login failed';
     }
   } catch (err) {
     error.value = 'Network error. Please try again.';
+    console.error('Login error:', err);
   } finally {
     isLoading.value = false;
-  }
-};
-
-const handleGuestLogin = async () => {
-  error.value = '';
-  isGuestLoading.value = true;
-
-  try {
-    const response = await fetch('/api/auth/guest', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      // Redirect to home page on success
-      router.push('/');
-    } else {
-      error.value = data.statusMessage || 'Guest login failed';
-    }
-  } catch (err) {
-    error.value = 'Network error. Please try again.';
-  } finally {
-    isGuestLoading.value = false;
   }
 };
 </script>
@@ -136,21 +74,6 @@ const handleGuestLogin = async () => {
           {{ isLoading ? 'Signing in...' : 'Sign In' }}
         </button>
       </form>
-
-      <!-- Dev Mode Guest Login -->
-      <div v-if="devMode" class="guest-section">
-        <div class="divider">
-          <span>or</span>
-        </div>
-        <button
-          @click="handleGuestLogin"
-          class="guest-btn"
-          :disabled="isGuestLoading"
-        >
-          {{ isGuestLoading ? 'Logging in...' : 'Continue as Guest' }}
-        </button>
-        <p class="guest-note">Development mode - quick access without account</p>
-      </div>
 
       <div class="register-link">
         Don't have an account?
@@ -282,61 +205,5 @@ input:disabled {
 
 .register-link a:hover {
   text-decoration: underline;
-}
-
-/* Guest Login Styles */
-.guest-section {
-  margin-top: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.divider {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  color: var(--color-text-secondary);
-  font-size: 0.875rem;
-}
-
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.divider span {
-  padding: 0 12px;
-}
-
-.guest-btn {
-  background: var(--color-bg-card);
-  color: var(--color-text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 14px;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.guest-btn:hover:not(:disabled) {
-  background: var(--color-bg-card-hover);
-  border-color: var(--color-border-hover);
-}
-
-.guest-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.guest-note {
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-  margin: 0;
 }
 </style>

@@ -8,14 +8,14 @@ const SALT_LENGTH = 64;
 /**
  * Derive a key from the encryption key and salt using PBKDF2
  */
-function deriveKey(key, salt) {
+function deriveKey(key: string, salt: Buffer): Buffer {
   return crypto.pbkdf2Sync(key, salt, 100000, 32, 'sha256');
 }
 
 /**
  * Get raw encryption key from environment
  */
-function getRawKey() {
+function getRawKey(): string {
   return process.env.ENCRYPTION_KEY || 'default-key-change-in-production';
 }
 
@@ -23,7 +23,7 @@ function getRawKey() {
  * Encrypt a string using AES-256-GCM
  * Returns base64 encoded string with salt, IV, and auth tag
  */
-export function encrypt(text) {
+export function encrypt(text: string): string | null {
   if (!text) return null;
 
   try {
@@ -51,7 +51,7 @@ export function encrypt(text) {
  * Decrypt a string using AES-256-GCM
  * Expects base64 encoded string with salt, IV, and auth tag
  */
-export function decrypt(encryptedText) {
+export function decrypt(encryptedText: string): string | null {
   if (!encryptedText) return null;
 
   try {
@@ -85,6 +85,6 @@ export function decrypt(encryptedText) {
 /**
  * Hash a string (one-way, for comparison)
  */
-export function hash(text) {
+export function hash(text: string): string {
   return crypto.createHash('sha256').update(text).digest('hex');
 }
