@@ -191,6 +191,14 @@ defineExpose({ refresh })
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  flex: 1;
+}
+
+.card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 /* Header Row - Standardized */

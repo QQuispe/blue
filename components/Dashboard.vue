@@ -2,11 +2,13 @@
 import { ref, onMounted, type Ref } from 'vue'
 import BalanceCard from "./cards/BalanceCard.vue";
 import BudgetsCard from "./cards/BudgetsCard.vue";
+import TransactionsCard from "./cards/TransactionsCard.vue";
 import TopSpendingCategoriesCard from "./cards/TopSpendingCategoriesCard.vue";
 import NetWorthCard from "./cards/NetWorthCard.vue";
 
 const balanceCardRef: Ref<any> = ref(null)
 const netWorthCardRef: Ref<any> = ref(null)
+const transactionsCardRef: Ref<any> = ref(null)
 const spendingCardRef: Ref<any> = ref(null)
 const budgetsCardRef: Ref<any> = ref(null)
 
@@ -15,6 +17,7 @@ const { fetchUser } = useAuth()
 const refreshAll = (): void => {
   balanceCardRef.value?.refresh()
   netWorthCardRef.value?.refresh()
+  transactionsCardRef.value?.refresh()
   spendingCardRef.value?.refresh()
   budgetsCardRef.value?.refresh()
 }
@@ -27,10 +30,8 @@ onMounted(async () => {
 <template>
   <div class="page-container">
     <div class="dashboard">
-      <!-- Main Content -->
       <div class="main-content">
         <main class="grid-container">
-          <!-- Row 1: Net Worth (wide - 2 columns) + Balance -->
           <div class="card card-wide">
             <NetWorthCard ref="netWorthCardRef" />
           </div>
@@ -38,9 +39,11 @@ onMounted(async () => {
             <BalanceCard ref="balanceCardRef" />
           </div>
           
-          <!-- Row 2: Spending + Budgets (side by side, each 1 column) -->
           <div class="card">
             <TopSpendingCategoriesCard ref="spendingCardRef" />
+          </div>
+          <div class="card">
+            <TransactionsCard ref="transactionsCardRef" />
           </div>
           <div class="card">
             <BudgetsCard ref="budgetsCardRef" />
@@ -54,23 +57,32 @@ onMounted(async () => {
 <style scoped>
 .page-container {
   padding: 16px;
-  min-height: 100vh;
+  min-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
 }
 
 .dashboard {
   width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .main-content {
   width: 100%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .grid-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: auto auto;
+  grid-template-rows: 1fr 1fr;
   gap: 16px;
   width: 100%;
+  flex: 1;
 }
 
 .card-wide {
@@ -83,6 +95,8 @@ onMounted(async () => {
   border-radius: 10px;
   padding: 16px;
   transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .card:hover {
@@ -90,11 +104,11 @@ onMounted(async () => {
   border-color: var(--color-border-hover);
 }
 
-/* Responsive design */
 @media (max-width: 1024px) {
   .grid-container {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto auto;
+    grid-template-rows: auto auto;
+    flex: none;
   }
   
   .card-wide {
@@ -105,6 +119,7 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .page-container {
     padding: 8px;
+    min-height: calc(100vh - 50px);
   }
   
   .grid-container {

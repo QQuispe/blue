@@ -167,6 +167,14 @@ const formatCurrency = (amount: number): string => {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  flex: 1;
+}
+
+.budgets-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 /* Header Row - Standardized */

@@ -280,6 +280,14 @@ watch(selectedTimeframe, () => {
   gap: 0.5rem;
   height: 100%;
   overflow: hidden;
+  flex: 1;
+}
+
+.card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 /* Header row: Title (left) | Timeframe (center) | Value (right) */
@@ -449,11 +457,11 @@ watch(selectedTimeframe, () => {
   font-size: 0.75rem;
 }
 
-/* Chart Container - maximized height ~210px */
+/* Chart Container - flex to fill available space */
 .chart-container {
   flex: 1;
-  min-height: 200px;
-  max-height: 210px;
+  min-height: 120px;
+  max-height: 300px;
   position: relative;
   width: 100%;
 }
