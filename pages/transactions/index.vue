@@ -110,6 +110,17 @@ const handlePageSizeChange = (size: number) => {
   fetchData()
 }
 
+const handleSort = (field: string) => {
+  const currentField = sortBy.value.split('-')[0]
+  const currentDirection = sortBy.value.split('-')[1] || 'desc'
+  
+  if (currentField === field) {
+    sortBy.value = `${field}-${currentDirection === 'asc' ? 'desc' : 'asc'}`
+  } else {
+    sortBy.value = `${field}-desc`
+  }
+}
+
 const handleTransactionClick = (transaction: Transaction) => {
   selectedTransaction.value = transaction
   showDetail.value = true
@@ -155,10 +166,12 @@ const handleDetailClose = () => {
       :page="currentPage"
       :page-size="pageSize"
       :total="totalCount"
+      :sort-by="sortBy"
       @transaction-click="handleTransactionClick"
       @page-change="handlePageChange"
       @page-size-change="handlePageSizeChange"
       @refresh="fetchData"
+      @sort="handleSort"
     />
 
     <TransactionDetail

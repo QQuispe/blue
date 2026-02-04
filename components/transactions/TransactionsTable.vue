@@ -22,6 +22,7 @@ const props = defineProps<{
   page: number
   pageSize: number
   total: number
+  sortBy: string
 }>()
 
 const emit = defineEmits<{
@@ -29,7 +30,22 @@ const emit = defineEmits<{
   (e: 'page-change', page: number): void
   (e: 'page-size-change', size: number): void
   (e: 'refresh'): void
+  (e: 'sort', field: string): void
 }>()
+
+const sortableColumns = [
+  { key: 'date', label: 'Date' },
+  { key: 'name', label: 'Name' },
+  { key: 'category', label: 'Category' },
+  { key: 'amount', label: 'Amount' },
+]
+
+const currentSortField = computed(() => props.sortBy.split('-')[0])
+const currentSortDirection = computed(() => props.sortBy.split('-')[1] || 'desc')
+
+const handleSort = (field: string) => {
+  emit('sort', field)
+}
 
 const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr)
@@ -111,11 +127,23 @@ const handlePageSizeChange = (e: Event) => {
       <table class="transactions-table">
         <thead>
           <tr>
-            <th class="col-date">Date</th>
-            <th class="col-name">Name</th>
-            <th class="col-category">Category</th>
+            <th 
+              v-for="col in sortableColumns" 
+              :key="col.key"
+              :class="['col-' + col.key, { 'sortable': true, 'active': currentSortField === col.key }]"
+              @click="handleSort(col.key)"
+            >
+              {{ col.label }}
+              <span class="sort-icon" v-if="currentSortField === col.key">
+                <svg v-if="currentSortDirection === 'asc'" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 15l-6-6-6 6"/>
+                </svg>
+                <svg v-else xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 9l6 6 6-6"/>
+                </svg>
+              </span>
+            </th>
             <th class="col-account">Account</th>
-            <th class="col-amount">Amount</th>
           </tr>
         </thead>
         <tbody>
@@ -250,7 +278,27 @@ const handlePageSizeChange = (e: Event) => {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 1px solid var(--color-border);
-  background: var(--color-bg-secondary);
+}
+
+.transactions-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.transactions-table th.sortable:hover {
+  color: var(--color-text-primary);
+}
+
+.transactions-table th.active {
+  color: var(--color-accent);
+}
+
+.sort-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  vertical-align: middle;
 }
 
 .transactions-table td {
