@@ -66,6 +66,12 @@ const handleRegister = async () => {
 <template>
   <div class="register-container">
     <div class="register-box">
+      <NuxtLink to="/login" class="back-link" title="Back to login">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </NuxtLink>
+      
       <h1>Create Account</h1>
       <p class="subtitle">Join Blue Finance</p>
 
@@ -194,6 +200,26 @@ const handleRegister = async () => {
   width: 100%;
   max-width: 400px;
   border: 1px solid var(--color-border);
+  position: relative;
+}
+
+.back-link {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: color 0.2s, background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-link:hover {
+  color: var(--color-text-primary);
+  background: var(--color-bg-hover);
 }
 
 h1 {
@@ -201,6 +227,7 @@ h1 {
   margin: 0 0 8px 0;
   font-size: 1.75rem;
   text-align: center;
+  padding-top: 8px;
 }
 
 .subtitle {
