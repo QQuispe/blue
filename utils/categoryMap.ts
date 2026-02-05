@@ -1,5 +1,4 @@
-// Auto-generated from data/pfc-taxonomy.csv
-// DO NOT EDIT MANUALLY - regenerate with: node scripts/generate-category-map.cjs
+// Auto-generated from pfc-taxonomy.csv. This file was downloaded from the plaid docs
 
 export const primaryCategoryMap: Record<string, string> = {
   'BANK_FEES': 'Bank Fees',
