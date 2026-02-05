@@ -16,11 +16,12 @@ interface Transaction {
   name: string
   amount: number
   category: string | null
+  categoryPrimary: string | null
+  logo_url: string | null
   account_id: number
   account_name: string
   account_type: string
   pending: boolean
-  logo_url: string | null
 }
 
 const transactions: Ref<Transaction[]> = ref([])
@@ -46,68 +47,93 @@ const accounts: Ref<{ id: number; name: string }[]> = ref([])
 const selectedTransaction: Ref<Transaction | null> = ref(null)
 const showDetail: Ref<boolean> = ref(false)
 
-const fetchData = async () => {
-  isLoading.value = true
-  error.value = null
+let fetchTimeout: ReturnType<typeof setTimeout> | null = null
 
-  try {
-    // Build filter params
-    const params = new URLSearchParams({
-      page: currentPage.value.toString(),
-      limit: pageSize.value.toString(),
-      sort: sortBy.value
-    })
+const fetchTransactions = async (params: URLSearchParams) => {
+  const response = await fetch(`/api/user/transactions?${params}`, { credentials: 'include' })
+  if (!response.ok) throw new Error('Failed to fetch transactions')
+  const data = await response.json()
+  return data
+}
 
-    if (search.value) params.append('search', search.value)
-    if (selectedAccount.value) params.append('accountId', selectedAccount.value)
-    params.append('datePreset', datePreset.value)
-
-    const [transactionsRes, summaryRes, filtersRes] = await Promise.all([
-      fetch(`/api/user/transactions?${params}`, { credentials: 'include' }),
-      fetch(`/api/user/transactions/summary?${params}`, { credentials: 'include' }),
-      fetch('/api/user/transactions/filters', { credentials: 'include' })
-    ])
-
-    if (!transactionsRes.ok) throw new Error('Failed to fetch transactions')
-    
-    const transactionsData = await transactionsRes.json()
-    transactions.value = transactionsData.transactions || []
-    totalCount.value = transactionsData.count || 0
-
-    if (summaryRes.ok) {
-      const summaryData = await summaryRes.json()
-      totalSpend.value = summaryData.totalSpend || 0
-    }
-
-    if (filtersRes.ok) {
-      const filtersData = await filtersRes.json()
-      accounts.value = filtersData.accounts || []
-    }
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Unknown error'
-  } finally {
-    isLoading.value = false
+const fetchSummary = async (params: URLSearchParams) => {
+  const response = await fetch(`/api/user/transactions/summary?${params}`, { credentials: 'include' })
+  if (response.ok) {
+    const data = await response.json()
+    return data.totalSpend || 0
   }
+  return null
+}
+
+const fetchData = async (showLoading = true) => {
+  if (fetchTimeout) {
+    clearTimeout(fetchTimeout)
+  }
+
+  fetchTimeout = setTimeout(async () => {
+    if (showLoading) {
+      isLoading.value = true
+    }
+    error.value = null
+
+    try {
+      const params = new URLSearchParams({
+        page: currentPage.value.toString(),
+        limit: pageSize.value.toString(),
+        sort: sortBy.value
+      })
+
+      if (search.value) params.append('search', search.value)
+      if (selectedAccount.value) params.append('accountId', selectedAccount.value)
+      params.append('datePreset', datePreset.value)
+
+      const [transactionsData, summaryData] = await Promise.all([
+        fetchTransactions(params),
+        fetchSummary(params)
+      ])
+
+      transactions.value = transactionsData.transactions || []
+      totalCount.value = transactionsData.count || 0
+      if (summaryData !== null) {
+        totalSpend.value = summaryData
+      }
+
+      if (showLoading && accounts.value.length === 0) {
+        const filtersRes = await fetch('/api/user/transactions/filters', { credentials: 'include' })
+        if (filtersRes.ok) {
+          const filtersData = await filtersRes.json()
+          accounts.value = filtersData.accounts || []
+        }
+      }
+    } catch (err) {
+      if (showLoading) {
+        error.value = err instanceof Error ? err.message : 'Unknown error'
+      }
+    } finally {
+      isLoading.value = false
+      fetchTimeout = null
+    }
+  }, showLoading ? 0 : 150)
 }
 
 onMounted(() => {
-  fetchData()
+  fetchData(true)
 })
 
 watch([search, selectedAccount, datePreset, sortBy], () => {
   currentPage.value = 1
-  fetchData()
+  fetchData(false)
 }, { deep: true })
 
 const handlePageChange = (page: number) => {
   currentPage.value = page
-  fetchData()
+  fetchData(false)
 }
 
 const handlePageSizeChange = (size: number) => {
   pageSize.value = size
   currentPage.value = 1
-  fetchData()
+  fetchData(false)
 }
 
 const handleSort = (field: string) => {
