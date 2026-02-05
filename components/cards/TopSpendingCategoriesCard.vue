@@ -281,7 +281,7 @@ defineExpose({ refresh })
 
 .chart-container {
   flex: 0 0 auto;
-  height: 110px;
+  height: 180px;
   position: relative;
   width: 100%;
 }
