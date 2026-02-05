@@ -299,7 +299,7 @@ export async function applyTransactionUpdates(
       added: added.length,
       modified: modified.length,
       removed: removed.length,
-      newCursor: nextCursor
+      newCursor: nextCursor || undefined
     };
     
   } catch (error) {
@@ -369,7 +369,6 @@ export async function getRecentTransactionsSummary(
  */
 export interface TransactionFilters {
   search?: string;
-  category?: string;
   accountId?: number;
   dateFrom?: string;
   dateTo?: string;
@@ -400,12 +399,6 @@ export async function getFilteredTransactions(
   if (filters.search) {
     whereClause += ` AND t.name ILIKE $${paramIndex}`;
     params.push(`%${filters.search}%`);
-    paramIndex++;
-  }
-
-  if (filters.category) {
-    whereClause += ` AND t.category = $${paramIndex}`;
-    params.push(filters.category);
     paramIndex++;
   }
 
@@ -475,12 +468,6 @@ export async function getFilteredTransactionCount(
   if (filters.search) {
     whereClause += ` AND t.name ILIKE $${paramIndex}`;
     params.push(`%${filters.search}%`);
-    paramIndex++;
-  }
-
-  if (filters.category) {
-    whereClause += ` AND t.category = $${paramIndex}`;
-    params.push(filters.category);
     paramIndex++;
   }
 
@@ -562,12 +549,6 @@ export async function getFilteredTotalSpend(
     paramIndex++;
   }
 
-  if (filters.category) {
-    whereClause += ` AND t.category = $${paramIndex}`;
-    params.push(filters.category);
-    paramIndex++;
-  }
-
   if (filters.accountId) {
     whereClause += ` AND t.account_id = $${paramIndex}`;
     params.push(filters.accountId);
@@ -615,12 +596,6 @@ export async function getFilteredCategoryBreakdown(
   if (filters.search) {
     whereClause += ` AND t.name ILIKE $${paramIndex}`;
     params.push(`%${filters.search}%`);
-    paramIndex++;
-  }
-
-  if (filters.category) {
-    whereClause += ` AND t.category = $${paramIndex}`;
-    params.push(filters.category);
     paramIndex++;
   }
 

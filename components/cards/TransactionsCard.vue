@@ -62,15 +62,27 @@ const formatAmount = (amount: number): string => {
 
 const getCategoryColor = (category: string | null): string => {
   const colors: Record<string, string> = {
-    'Food': '#f59e0b',
-    'Shopping': '#3b82f6',
-    'Transport': '#8b5cf6',
-    'Bills': '#ef4444',
-    'Entertainment': '#10b981',
-    'Income': '#10b981',
-    'Transfer': '#6b7280',
+    'BANK_FEES': '#ef4444',
+    'ENTERTAINMENT': '#8b5cf6',
+    'FOOD_AND_DRINK': '#f59e0b',
+    'GENERAL_MERCHANDISE': '#3b82f6',
+    'GENERAL_SERVICES': '#6b7280',
+    'GOVERNMENT_AND_NON_PROFIT': '#f97316',
+    'HOME_IMPROVEMENT': '#14b8a6',
+    'INCOME': '#10b981',
+    'LOAN_DISBURSEMENTS': '#ec4899',
+    'LOAN_PAYMENTS': '#f43f5e',
+    'MEDICAL': '#06b6d4',
+    'OTHER': '#6b7280',
+    'PERSONAL_CARE': '#a855f7',
+    'RENT_AND_UTILITIES': '#84cc16',
+    'TRANSFER_IN': '#10b981',
+    'TRANSFER_OUT': '#ef4444',
+    'TRANSPORTATION': '#6366f1',
+    'TRAVEL': '#0ea5e9',
   }
-  return colors[category || ''] || '#6b7280'
+  const primaryCategory = category ? (primaryCategoryMap[category] || category.split('_')[0]) : ''
+  return colors[primaryCategory] || colors[category || ''] || '#6b7280'
 }
 
 const navigateToTransactions = () => {
@@ -136,7 +148,7 @@ const navigateToTransactions = () => {
         </div>
         <div class="transaction-info">
           <span class="transaction-name">{{ transaction.name || 'Transaction' }}</span>
-          <span class="transaction-category">{{ transaction.category || 'Uncategorized' }}</span>
+          <span class="transaction-category">{{ transaction.categoryPrimary || 'Uncategorized' }}</span>
         </div>
         <div class="transaction-right">
           <span class="transaction-amount" :class="{ 'negative': transaction.amount < 0, 'positive': transaction.amount > 0 }">

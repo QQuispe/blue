@@ -23,7 +23,7 @@ interface SyncResponse {
     added: number;
     modified: number;
     removed: number;
-    newCursor: string | null;
+    newCursor?: string;
   };
 }
 
@@ -42,7 +42,7 @@ const syncTransactionsFromPlaid = async (accessToken: string, cursor: string | n
     while (hasMore) {
       const response = await plaidClient.transactionsSync({
         access_token: accessToken,
-        cursor: allData.nextCursor,
+        cursor: allData.nextCursor || undefined,
       });
 
       const data = response.data;
@@ -125,7 +125,7 @@ export default defineEventHandler(async (event): Promise<SyncResponse> => {
     const accessToken = decrypt(item.plaid_access_token);
 
     // Step 3: Fetch all transaction updates from Plaid using cursor
-    const syncData = await syncTransactionsFromPlaid(accessToken, item.transactions_cursor);
+    const syncData = await syncTransactionsFromPlaid(accessToken, item.transactions_cursor || undefined);
 
     // Step 4: Apply updates to database and save new cursor (atomic operation)
     const result = await applyTransactionUpdates(item.id, syncData);

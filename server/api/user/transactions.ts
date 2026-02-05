@@ -6,6 +6,7 @@ import {
   getFilteredTransactionCount
 } from '~/server/db/queries/transactions';
 import type { Transaction } from '~/types/database';
+import { getPrimaryCategoryName } from '~/server/utils/categoryMap';
 
 interface TransactionsResponse {
   statusCode: number;
@@ -48,7 +49,10 @@ export default defineEventHandler(async (event): Promise<TransactionsResponse> =
 
     return {
       statusCode: 200,
-      transactions,
+      transactions: transactions.map(t => ({
+        ...t,
+        categoryPrimary: getPrimaryCategoryName(t.category)
+      })),
       count,
       accountId: null
     };

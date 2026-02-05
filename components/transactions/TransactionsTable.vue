@@ -37,6 +37,7 @@ const sortableColumns = [
   { key: 'date', label: 'Date' },
   { key: 'name', label: 'Name' },
   { key: 'category', label: 'Category' },
+  { key: 'account', label: 'Account' },
   { key: 'amount', label: 'Amount' },
 ]
 
@@ -143,7 +144,6 @@ const handlePageSizeChange = (e: Event) => {
                 </svg>
               </span>
             </th>
-            <th class="col-account">Account</th>
           </tr>
         </thead>
         <tbody>
@@ -171,7 +171,7 @@ const handlePageSizeChange = (e: Event) => {
                 class="category-badge"
                 :style="{ backgroundColor: getCategoryColor(transaction.category) + '20', color: getCategoryColor(transaction.category) }"
               >
-                {{ transaction.category || 'Uncategorized' }}
+                {{ transaction.categoryPrimary || 'Uncategorized' }}
               </span>
             </td>
             <td class="col-account">
@@ -266,7 +266,15 @@ const handlePageSizeChange = (e: Event) => {
 
 .transactions-table {
   width: 100%;
+  table-layout: fixed;
   border-collapse: collapse;
+}
+
+.transactions-table th,
+.transactions-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .transactions-table th {
@@ -284,6 +292,7 @@ const handlePageSizeChange = (e: Event) => {
   cursor: pointer;
   user-select: none;
   transition: color 0.15s;
+  white-space: nowrap;
 }
 
 .transactions-table th.sortable:hover {
@@ -297,8 +306,8 @@ const handlePageSizeChange = (e: Event) => {
 .sort-icon {
   display: inline-flex;
   align-items: center;
-  margin-left: 4px;
-  vertical-align: middle;
+  margin-left: 6px;
+  flex-shrink: 0;
 }
 
 .transactions-table td {
@@ -323,11 +332,27 @@ const handlePageSizeChange = (e: Event) => {
   opacity: 0.6;
 }
 
-.col-date { width: 90px; }
-.col-name { width: auto; min-width: 180px; }
-.col-category { width: 140px; }
-.col-account { width: 140px; }
-.col-amount { width: 100px; text-align: right; }
+.col-date { 
+  width: 90px; 
+  max-width: 90px;
+}
+.col-name { 
+  width: 1fr; 
+  min-width: 150px;
+}
+.col-category { 
+  width: max-content;
+  min-width: 130px;
+}
+.col-account { 
+  width: max-content;
+  min-width: 140px;
+}
+.col-amount { 
+  width: 100px; 
+  max-width: 100px;
+  text-align: right;
+}
 
 .date {
   color: var(--color-text-secondary);

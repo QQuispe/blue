@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, type Ref } from 'vue'
+import { formatCategoryName } from '~/utils/categoryMap'
 
 interface Transaction {
   id: number
@@ -98,7 +99,7 @@ onUnmounted(() => {
           <div class="detail-row">
             <span class="detail-label">Category</span>
             <span class="detail-value category">
-              {{ transaction.category || 'Uncategorized' }}
+              {{ formatCategoryName(transaction.category) }}
             </span>
           </div>
           

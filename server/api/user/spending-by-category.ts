@@ -1,10 +1,11 @@
 import { defineEventHandler, createError } from 'h3';
-import { requireAuth } from '~/server/utils/auth.ts';
-import { pool } from '~/server/db/index.js';
-import { formatCategoryName } from '~/server/utils/categoryFormatter.ts';
+import { requireAuth } from '~/server/utils/auth';
+import { pool } from '~/server/db';
+import { formatCategoryName, getPrimaryCategoryName } from '~/server/utils/categoryMap';
 
 interface CategorySpending {
   category: string;
+  categoryPrimary: string;
   amount: number;
   transactionCount: number;
   percentage: string;
@@ -60,7 +61,8 @@ export default defineEventHandler(async (event): Promise<SpendingByCategoryRespo
     
     // Format categories with percentages
     const categories = result.rows.map(row => ({
-      category: formatCategoryName(row.category),
+      category: row.category,
+      categoryPrimary: getPrimaryCategoryName(row.category),
       amount: parseFloat(row.total_amount),
       transactionCount: parseInt(row.transaction_count),
       percentage: totalSpending > 0 ? (parseFloat(row.total_amount) / totalSpending * 100).toFixed(1) : '0'
