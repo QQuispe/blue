@@ -34,6 +34,7 @@ class Logger {
   warn(message: string, data?: Record<string, unknown>): void { this.log('WARN', '#f59e0b', message, data); }
   error(message: string, data?: Record<string, unknown>): void { this.log('ERROR', '#ef4444', message, data); }
 
+  action(action: string, data?: Record<string, unknown>): void { this.log('ACTION', '#8b5cf6', action, data); }
   component(name: string, action: string, data?: Record<string, unknown>): void { this.debug(`[${name}] ${action}`, data); }
   api(method: string, url: string, status: number, duration: number, userId?: number): void { this.info(`API ${method} ${url}`, { status, duration, userId }); }
   navigation(from: string, to: string, duration?: number): void { this.info('NAVIGATION', { from, to, duration }); }
