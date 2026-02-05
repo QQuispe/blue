@@ -8,6 +8,7 @@ interface Transaction {
   name: string
   amount: number
   category: string | null
+  categoryPrimary: string | null
   account_id: number
   account_name: string
   account_type: string
@@ -58,17 +59,18 @@ const formatAmount = (amount: number): string => {
   return amount < 0 ? `-$${formatted}` : `+$${formatted}`
 }
 
-const getCategoryColor = (category: string | null): string => {
-  const colors: Record<string, string> = {
-    'Food': '#f59e0b',
-    'Shopping': '#3b82f6',
-    'Transport': '#8b5cf6',
-    'Bills': '#ef4444',
-    'Entertainment': '#10b981',
-    'Income': '#10b981',
-    'Transfer': '#6b7280',
-  }
-  return colors[category || ''] || '#6b7280'
+const categoryColors = [
+  '#3EB489',
+  '#3b82f6',
+  '#8b5cf6',
+  '#f59e0b',
+  '#ef4444',
+  '#6b7280'
+]
+
+const getCategoryColor = (categoryName: string): string => {
+  const hash = categoryName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  return categoryColors[hash % categoryColors.length]
 }
 
 const totalPages = computed(() => Math.ceil(props.total / props.pageSize))
@@ -160,7 +162,7 @@ const handlePageSizeChange = (e: Event) => {
             </td>
             <td class="col-name">
               <div class="name-cell">
-                <div class="transaction-icon" :style="{ backgroundColor: getCategoryColor(transaction.category) + '20', color: getCategoryColor(transaction.category) }">
+                <div class="transaction-icon" :style="{ backgroundColor: getCategoryColor(transaction.categoryPrimary || 'Uncategorized') + '20', color: getCategoryColor(transaction.categoryPrimary || 'Uncategorized') }">
                   {{ (transaction.name || 'T').charAt(0).toUpperCase() }}
                 </div>
                 <span class="name" :title="transaction.name">{{ transaction.name }}</span>
@@ -169,7 +171,7 @@ const handlePageSizeChange = (e: Event) => {
             <td class="col-category">
               <span 
                 class="category-badge"
-                :style="{ backgroundColor: getCategoryColor(transaction.category) + '20', color: getCategoryColor(transaction.category) }"
+                :style="{ backgroundColor: getCategoryColor(transaction.categoryPrimary || 'Uncategorized') }"
               >
                 {{ transaction.categoryPrimary || 'Uncategorized' }}
               </span>
@@ -342,11 +344,11 @@ const handlePageSizeChange = (e: Event) => {
 }
 .col-category { 
   width: max-content;
-  min-width: 130px;
+  min-width: 110px;
 }
 .col-account { 
   width: max-content;
-  min-width: 140px;
+  min-width: 120px;
 }
 .col-amount { 
   width: 100px; 
@@ -402,6 +404,10 @@ const handlePageSizeChange = (e: Event) => {
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 500;
+  color: white;
+  white-space: nowrap;
+  min-width: 90px;
+  text-align: center;
 }
 
 .account-name {
