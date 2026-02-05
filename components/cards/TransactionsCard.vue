@@ -9,6 +9,8 @@ interface Transaction {
   name: string;
   amount: number;
   category: string | null;
+  categoryPrimary: string | null;
+  logo_url: string | null;
   account_id: number;
 }
 
@@ -143,7 +145,10 @@ const navigateToTransactions = () => {
         :key="transaction.id"
         class="transaction-item"
       >
-        <div class="transaction-icon" :style="{ backgroundColor: getCategoryColor(transaction.category) + '20', color: getCategoryColor(transaction.category) }">
+        <div v-if="transaction.logo_url" class="transaction-logo">
+          <img :src="transaction.logo_url" :alt="transaction.name" />
+        </div>
+        <div v-else class="transaction-icon" :style="{ backgroundColor: getCategoryColor(transaction.categoryPrimary || 'Uncategorized') + '20', color: getCategoryColor(transaction.categoryPrimary || 'Uncategorized') }">
           {{ (transaction.name || 'T').charAt(0).toUpperCase() }}
         </div>
         <div class="transaction-info">
@@ -281,6 +286,24 @@ h3 {
   font-size: 0.8125rem;
   font-weight: 600;
   flex-shrink: 0;
+}
+
+.transaction-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-card);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.transaction-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .transaction-info {

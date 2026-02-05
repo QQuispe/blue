@@ -162,7 +162,10 @@ const handlePageSizeChange = (e: Event) => {
             </td>
             <td class="col-name">
               <div class="name-cell">
-                <div class="transaction-icon" :style="{ backgroundColor: getCategoryColor(transaction.categoryPrimary || 'Uncategorized') + '20', color: getCategoryColor(transaction.categoryPrimary || 'Uncategorized') }">
+                <div v-if="transaction.logo_url" class="transaction-logo">
+                  <img :src="transaction.logo_url" :alt="transaction.name" />
+                </div>
+                <div v-else class="transaction-icon" :style="{ backgroundColor: getCategoryColor(transaction.categoryPrimary || 'Uncategorized') + '20', color: getCategoryColor(transaction.categoryPrimary || 'Uncategorized') }">
                   {{ (transaction.name || 'T').charAt(0).toUpperCase() }}
                 </div>
                 <span class="name" :title="transaction.name">{{ transaction.name }}</span>
@@ -351,9 +354,16 @@ const handlePageSizeChange = (e: Event) => {
   min-width: 120px;
 }
 .col-amount { 
-  width: 100px; 
-  max-width: 100px;
+  width: 120px;
+  max-width: 120px;
   text-align: right;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: nowrap;
+}
+
+.col-amount .amount {
+  white-space: nowrap;
 }
 
 .date {
@@ -388,6 +398,24 @@ const handlePageSizeChange = (e: Event) => {
   font-size: 0.8125rem;
   font-weight: 600;
   flex-shrink: 0;
+}
+
+.transaction-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-card);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.transaction-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .name {

@@ -86,9 +86,16 @@ onUnmounted(() => {
         </div>
 
         <div class="detail-section">
+          <div v-if="transaction.logo_url" class="detail-row logo-row">
+            <span class="detail-label">Merchant</span>
+            <div class="merchant-logo">
+              <img :src="transaction.logo_url" :alt="transaction.name" />
+            </div>
+          </div>
+          
           <div class="detail-row">
-            <span class="detail-label">Date</span>
-            <span class="detail-value">{{ formatDate(transaction.date) }}</span>
+            <span class="detail-label">Merchant</span>
+            <span class="detail-value">{{ transaction.name }}</span>
           </div>
           
           <div class="detail-row">
@@ -253,6 +260,26 @@ onUnmounted(() => {
 
 .detail-value.category {
   color: var(--color-accent);
+}
+
+.merchant-logo {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.merchant-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.logo-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .edit-section {
