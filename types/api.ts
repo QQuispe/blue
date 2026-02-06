@@ -178,3 +178,19 @@ export interface UserItemsResponse {
     created_at: string;
   }[];
 }
+
+// ============================================
+// Cash Flow API Types
+// ============================================
+
+export interface CashFlowResponse {
+  months: string[];
+  income: number[];
+  expenses: number[];
+  totals: {
+    income: number;
+    expenses: number;
+    saved: number;
+    net: number;
+  };
+}
