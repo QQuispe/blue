@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, type Ref } from 'vue'
+import { ref, onMounted, onUnmounted, type Ref } from 'vue'
 import BalanceCard from "./cards/BalanceCard.vue";
 import BudgetsCard from "./cards/BudgetsCard.vue";
 import TransactionsCard from "./cards/TransactionsCard.vue";
@@ -34,20 +34,32 @@ const scrollToCard = (index: number) => {
   cards?.[index]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
 }
 
+const handleCarouselScroll = () => {
+  const container = carouselContainer.value
+  if (!container) return
+  
+  const cards = container.querySelectorAll('.carousel-card')
+  const scrollLeft = container.scrollLeft
+  const cardWidth = cards[0]?.clientWidth || 0
+  const gap = 16
+  const index = Math.round(scrollLeft / (cardWidth + gap))
+  activeDot.value = Math.min(index, cards.length - 1)
+}
+
 onMounted(async () => {
   await fetchUser()
   refreshAll()
   
   const container = carouselContainer.value
   if (container) {
-    container.addEventListener('scroll', () => {
-      const cards = container.querySelectorAll('.carousel-card')
-      const scrollLeft = container.scrollLeft
-      const cardWidth = cards[0]?.clientWidth || 0
-      const gap = 16
-      const index = Math.round(scrollLeft / (cardWidth + gap))
-      activeDot.value = Math.min(index, cards.length - 1)
-    })
+    container.addEventListener('scroll', handleCarouselScroll)
+  }
+})
+
+onUnmounted(() => {
+  const container = carouselContainer.value
+  if (container) {
+    container.removeEventListener('scroll', handleCarouselScroll)
   }
 })
 </script>

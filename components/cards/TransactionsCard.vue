@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, type Ref } from 'vue'
 import { logger } from '~/utils/logger'
+import { getCategoryColor } from '~/composables/useCategoryColors'
 import BaseButton from '~/components/BaseButton.vue'
 
 interface Transaction {
@@ -60,31 +61,6 @@ const formatDate = (dateStr: string): string => {
 const formatAmount = (amount: number): string => {
   const formatted = Math.abs(amount).toFixed(2)
   return amount < 0 ? `-$${formatted}` : `+$${formatted}`
-}
-
-const getCategoryColor = (category: string | null): string => {
-  const colors: Record<string, string> = {
-    'BANK_FEES': '#ef4444',
-    'ENTERTAINMENT': '#8b5cf6',
-    'FOOD_AND_DRINK': '#f59e0b',
-    'GENERAL_MERCHANDISE': '#3b82f6',
-    'GENERAL_SERVICES': '#6b7280',
-    'GOVERNMENT_AND_NON_PROFIT': '#f97316',
-    'HOME_IMPROVEMENT': '#14b8a6',
-    'INCOME': '#10b981',
-    'LOAN_DISBURSEMENTS': '#ec4899',
-    'LOAN_PAYMENTS': '#f43f5e',
-    'MEDICAL': '#06b6d4',
-    'OTHER': '#6b7280',
-    'PERSONAL_CARE': '#a855f7',
-    'RENT_AND_UTILITIES': '#84cc16',
-    'TRANSFER_IN': '#10b981',
-    'TRANSFER_OUT': '#ef4444',
-    'TRANSPORTATION': '#6366f1',
-    'TRAVEL': '#0ea5e9',
-  }
-  const primaryCategory = category ? (primaryCategoryMap[category] || category.split('_')[0]) : ''
-  return colors[primaryCategory] || colors[category || ''] || '#6b7280'
 }
 
 const navigateToTransactions = () => {
@@ -232,9 +208,6 @@ h3 {
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
 
 .error-state {
   color: var(--color-error);

@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, type Ref } from 'vue'
+import { ref, onMounted, onUnmounted, computed, type Ref } from 'vue'
 import Chart from 'chart.js/auto'
+import { useCashFlowChart } from '~/composables/useCashFlowChart'
 
 interface CashFlowData {
   months: string[]
@@ -43,6 +44,8 @@ const fetchData = async () => {
   }
 }
 
+const { createChartData, createChartOptions } = useCashFlowChart()
+
 const createChart = () => {
   if (!chartCanvas.value || !data.value) return
   
@@ -53,109 +56,31 @@ const createChart = () => {
   const ctx = chartCanvas.value.getContext('2d')
   if (!ctx) return
 
-  const incomeData = data.value!.income
-  const expenseData = data.value!.expenses
+  const chartData = createChartData({
+    months: data.value.months,
+    income: data.value.income,
+    expenses: data.value.expenses
+  })
 
-  const floatingData = incomeData.map((inc, i) => [0, inc])
-  const expenseFloating = expenseData.map(exp => [-exp, 0])
+  const chartOptions = createChartOptions(data.value.totals.income)
   
   chart = new Chart(ctx, {
     type: 'bar',
-    data: {
-      labels: data.value!.months,
-      datasets: [
-        {
-          data: floatingData,
-          backgroundColor: '#10b981',
-          borderRadius: 4,
-          borderSkipped: false,
-          barPercentage: 0.6,
-          categoryPercentage: 0.8,
-        },
-        {
-          data: expenseFloating,
-          backgroundColor: '#ef4444',
-          borderRadius: 4,
-          borderSkipped: false,
-          barPercentage: 0.6,
-          categoryPercentage: 0.8,
-        }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      resizeDelay: 0,
-      plugins: {
-        legend: {
-          display: false
-        },
-        tooltip: {
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          titleColor: '#fff',
-          bodyColor: '#fff',
-          padding: 12,
-          cornerRadius: 8,
-          callbacks: {
-            label: (context: any) => {
-              const value = Math.abs(context.raw[1] - context.raw[0])
-              const formatted = value.toLocaleString('en-US', {
-                style: 'currency',
-                currency: 'USD',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-              })
-              const label = context.datasetIndex === 0 ? 'Income' : 'Expenses'
-              return `${label}: ${formatted}`
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          stacked: true,
-          grid: {
-            display: false
-          },
-          ticks: {
-            color: '#6b7280',
-            font: {
-              size: 10
-            }
-          }
-        },
-        y: {
-          stacked: true,
-          grid: {
-            color: 'rgba(255, 255, 255, 0.06)',
-            drawBorder: false
-          },
-          ticks: {
-            color: '#6b7280',
-            font: {
-              size: 10
-            },
-            callback: (value: number) => {
-              const absValue = Math.abs(value)
-              if (absValue >= 1000) {
-                return '$' + (absValue / 1000).toFixed(0) + 'k'
-              }
-              return '$' + absValue
-            }
-          }
-        }
-      },
-      interaction: {
-        intersect: false,
-        mode: 'index'
-      }
-    }
+    data: chartData,
+    options: chartOptions
   })
 }
 
 onMounted(async () => {
   await fetchData()
   createChart()
+})
+
+onUnmounted(() => {
+  if (chart) {
+    chart.destroy()
+    chart = null
+  }
 })
 
 const formatCurrency = (value: number) => {
@@ -304,9 +229,6 @@ defineExpose({ refresh })
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
 
 .error-state {
   color: var(--color-error);

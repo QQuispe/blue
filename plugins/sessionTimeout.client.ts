@@ -1,5 +1,6 @@
 export default defineNuxtPlugin(() => {
   const LAST_ACTIVITY_KEY = 'session-last-activity'
+  const TAB_HIDDEN_KEY = 'session-tab-hidden'
   let checkInterval: ReturnType<typeof setInterval> | null = null
   let lastMouseMove = 0
 
@@ -49,6 +50,7 @@ export default defineNuxtPlugin(() => {
     window.addEventListener('scroll', updateActivity, { passive: true })
     window.addEventListener('touchstart', updateActivity)
     window.addEventListener('mousemove', throttledMouseMove)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
   }
 
   const stopSession = (): void => {
@@ -58,12 +60,14 @@ export default defineNuxtPlugin(() => {
     }
 
     localStorage.removeItem(LAST_ACTIVITY_KEY)
+    localStorage.removeItem(TAB_HIDDEN_KEY)
 
     window.removeEventListener('mousedown', updateActivity)
     window.removeEventListener('keydown', updateActivity)
     window.removeEventListener('scroll', updateActivity)
     window.removeEventListener('touchstart', updateActivity)
     window.removeEventListener('mousemove', throttledMouseMove)
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
   }
 
   const throttledMouseMove = (): void => {
@@ -71,6 +75,24 @@ export default defineNuxtPlugin(() => {
     if (now - lastMouseMove > 1000) {
       lastMouseMove = now
       updateActivity()
+    }
+  }
+
+  const handleVisibilityChange = (): void => {
+    if (document.hidden) {
+      // Tab hidden - store the time when it was hidden
+      localStorage.setItem(TAB_HIDDEN_KEY, Date.now().toString())
+    } else {
+      // Tab visible again - calculate elapsed hidden time
+      const hiddenTime = localStorage.getItem(TAB_HIDDEN_KEY)
+      if (hiddenTime) {
+        const elapsedHidden = Date.now() - parseInt(hiddenTime)
+        const lastActivity = parseInt(localStorage.getItem(LAST_ACTIVITY_KEY) || '0')
+        // Add the hidden time to the last activity timestamp
+        // so the timeout doesn't count hidden time against the user
+        localStorage.setItem(LAST_ACTIVITY_KEY, (lastActivity + elapsedHidden).toString())
+        localStorage.removeItem(TAB_HIDDEN_KEY)
+      }
     }
   }
 

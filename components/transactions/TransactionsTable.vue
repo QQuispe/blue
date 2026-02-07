@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, type Ref } from 'vue'
+import { getCategoryColor } from '~/composables/useCategoryColors'
 import BaseButton from '~/components/BaseButton.vue'
 
 interface Transaction {
@@ -57,20 +58,6 @@ const formatDate = (dateStr: string): string => {
 const formatAmount = (amount: number): string => {
   const formatted = Math.abs(amount).toFixed(2)
   return amount < 0 ? `-$${formatted}` : `+$${formatted}`
-}
-
-const categoryColors = [
-  '#3EB489',
-  '#3b82f6',
-  '#8b5cf6',
-  '#f59e0b',
-  '#ef4444',
-  '#6b7280'
-]
-
-const getCategoryColor = (categoryName: string): string => {
-  const hash = categoryName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-  return categoryColors[hash % categoryColors.length]
 }
 
 const totalPages = computed(() => Math.ceil(props.total / props.pageSize))
@@ -256,9 +243,6 @@ const handlePageSizeChange = (e: Event) => {
   animation: spin 1s linear infinite;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
 
 .error-state svg, .empty-state svg {
   opacity: 0.5;

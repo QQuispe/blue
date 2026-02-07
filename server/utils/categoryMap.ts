@@ -168,16 +168,26 @@ export function formatCategoryName(category: string | null | undefined): string 
 export function getPrimaryCategoryName(category: string | null | undefined): string {
   if (!category) return 'Uncategorized'
 
+  // If it's already a primary category, return its display name
   if (primaryCategoryMap[category]) {
     return primaryCategoryMap[category]
   }
 
+  // If it's a detailed category, extract the primary code and look it up
   if (detailedCategoryMap[category]) {
-    const detailed = detailedCategoryMap[category]
-    const colonIndex = detailed.indexOf(':')
-    return colonIndex > 0 ? detailed.substring(0, colonIndex) : detailed
+    // Try to find the longest matching prefix that is a primary category
+    const parts = category.split('_')
+    
+    // Try progressively shorter combinations
+    for (let i = parts.length; i > 0; i--) {
+      const candidateCode = parts.slice(0, i).join('_')
+      if (primaryCategoryMap[candidateCode]) {
+        return primaryCategoryMap[candidateCode]
+      }
+    }
   }
 
+  // Fallback: format the raw category code
   return category
     .split(/[._]/)
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())

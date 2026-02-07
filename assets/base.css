@@ -137,3 +137,8 @@ main {
   display: block;
   padding: 0;
 }
+
+/* Global Animations */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
