@@ -2,10 +2,8 @@
 const { isCollapsed } = useSidebar()
 const auth = useAuth()
 
-// Public routes where sidebar should be hidden
 const publicRoutes = ['/login', '/register']
 
-// Determine if sidebar should be shown
 const showSidebar = computed(() => {
   const route = useRoute()
   if (publicRoutes.includes(route.path)) {
@@ -22,7 +20,6 @@ const showSidebar = computed(() => {
 
 <template>
   <div class="app-wrapper">
-    <!-- Show sidebar based on authentication state -->
     <Sidebar v-if="showSidebar" />
     <div class="main-layout" :class="{ 
       'sidebar-collapsed': showSidebar && isCollapsed,

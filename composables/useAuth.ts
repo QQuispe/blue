@@ -59,6 +59,7 @@ export const useAuth = () => {
       // Ignore logout API errors
     }
     user.value = null;
+    localStorage.removeItem('session-start-time');
     await navigateTo('/login');
   };
 
