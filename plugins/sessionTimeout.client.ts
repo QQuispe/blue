@@ -20,6 +20,10 @@ export default defineNuxtPlugin(() => {
 
   const checkTimeout = (): void => {
     const timeout = getTimeout()
+    
+    // Skip check if timeout is disabled (0)
+    if (timeout <= 0) return
+    
     const stored = localStorage.getItem(LAST_ACTIVITY_KEY)
     const lastActivity = stored ? parseInt(stored) : 0
     const now = Date.now()

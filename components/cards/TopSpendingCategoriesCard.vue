@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, type Ref } from 'vue'
+import { ref, onMounted, onUnmounted, computed, type Ref } from 'vue'
 import Chart from 'chart.js/auto'
 
 const categories: Ref<any[]> = ref([])
@@ -8,7 +8,13 @@ const isLoading: Ref<boolean> = ref(true)
 const error: Ref<string | null> = ref(null)
 const period: Ref<any> = ref(null)
 const chartCanvas: Ref<any> = ref(null)
-let chart = null
+let chart: any = null
+
+const handleResize = () => {
+  if (chart) {
+    chart.resize()
+  }
+}
 
 // Fetch spending data from API
 const fetchSpending = async () => {
@@ -114,17 +120,22 @@ const createChart = () => {
   })
 
   // Add resize handler
-  window.addEventListener('resize', () => {
-    if (chart) {
-      chart.resize()
-    }
-  })
+  window.addEventListener('resize', handleResize)
 }
 
 // Watch for data changes and create chart
 onMounted(async () => {
   await fetchSpending()
   createChart()
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  if (chart) {
+    chart.destroy()
+    chart = null
+  }
+  window.removeEventListener('resize', handleResize)
 })
 
 // Computed properties
