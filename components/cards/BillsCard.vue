@@ -216,6 +216,13 @@ onMounted(() => {
 })
 
 const activeBills = computed(() => bills.value.filter(b => b.isActive))
+
+// Expose refresh method for parent component
+const refresh = () => {
+  fetchBills()
+}
+
+defineExpose({ refresh })
 </script>
 
 <template>
