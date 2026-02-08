@@ -115,10 +115,8 @@ export interface NetWorthResponse {
     netWorth: number;
     totalAssets: number;
     totalLiabilities: number;
-    isSynthetic: boolean;
   }[];
   timeframe: string;
-  hasSyntheticData: boolean;
 }
 
 export interface TransactionsResponse {

@@ -1,4 +1,5 @@
 import { plaidClient } from "~/server/api/plaid/plaid";
+import { Products, CountryCode } from "plaid";
 
 export default defineEventHandler(async (event) => {
   try {
@@ -8,10 +9,10 @@ export default defineEventHandler(async (event) => {
     const userObject = { client_user_id: userId };
     const tokenResponse = await plaidClient.linkTokenCreate({
       user: userObject,
-      products: ["transactions"],
+      products: [Products.Transactions, Products.Liabilities],
       client_name: "Blue",
       language: "en",
-      country_codes: ["US"],
+      country_codes: [CountryCode.Us],
     });
 
     return tokenResponse.data;

@@ -7,7 +7,6 @@ const historyData: Ref<any[]> = ref([])
 const isLoading: Ref<boolean> = ref(true)
 const error: Ref<string | null> = ref(null)
 const selectedTimeframe: Ref<string> = ref('12m')
-const hasSyntheticData: Ref<boolean> = ref(false)
 const chartCanvas = ref(null)
 let chart: any = null
 
@@ -26,8 +25,6 @@ const fetchNetWorth = async () => {
     isLoading.value = true
     error.value = null
     
-    console.log(`[NetWorthCard] Fetching data for timeframe: ${selectedTimeframe.value}`)
-    
     const response = await fetch(`/api/user/net-worth?timeframe=${selectedTimeframe.value}`, {
       credentials: 'include'
     })
@@ -37,13 +34,10 @@ const fetchNetWorth = async () => {
     }
     
     const data = await response.json()
-    console.log(`[NetWorthCard] Received ${data.history?.length || 0} data points, synthetic: ${data.hasSyntheticData}`)
     
     currentData.value = data.current
     historyData.value = data.history || []
-    hasSyntheticData.value = data.hasSyntheticData || false
   } catch (err) {
-    console.error('Error fetching net worth:', err)
     const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     error.value = errorMessage
   } finally {
@@ -214,11 +208,10 @@ watch(selectedTimeframe, () => {
   <div class="net-worth-card">
     <!-- Header: Title (left) | Timeframe (center) | Value (right) -->
     <div class="header-row">
-      <!-- Left: Title + DEV badge -->
+      <!-- Left: Title -->
       <div class="header-left">
         <div class="title-section">
           <h3 class="title">Net Worth</h3>
-          <span v-if="hasSyntheticData" class="dev-badge">DEV</span>
         </div>
       </div>
       
@@ -325,19 +318,6 @@ watch(selectedTimeframe, () => {
   font-weight: 600;
   margin: 0;
   letter-spacing: -0.01em;
-  line-height: 1;
-}
-
-/* DEV badge inline with title */
-.dev-badge {
-  font-size: 0.5rem;
-  font-weight: 700;
-  color: var(--color-warning);
-  background: var(--color-warning-bg-subtle);
-  padding: 0.125rem 0.25rem;
-  border-radius: 3px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
   line-height: 1;
 }
 

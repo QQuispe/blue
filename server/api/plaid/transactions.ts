@@ -47,42 +47,15 @@ const syncTransactionsFromPlaid = async (accessToken: string, cursor: string | n
 
       const data = response.data;
       
-      // DEBUG: Log first transaction to see what Plaid is sending
-      if (data.added.length > 0 && !allData.nextCursor) {
-        const sampleTxn = data.added[0];
-        console.log('[DEBUG] Sample transaction from Plaid:', {
-          name: sampleTxn.name,
-          hasPersonalFinanceCategory: !!sampleTxn.personal_finance_category,
-          personalFinanceCategory: sampleTxn.personal_finance_category,
-          hasLogoUrl: !!sampleTxn.logo_url,
-          logoUrl: sampleTxn.logo_url,
-          hasMerchantName: !!sampleTxn.merchant_name,
-          merchantName: sampleTxn.merchant_name,
-          rawKeys: Object.keys(sampleTxn).slice(0, 20) // First 20 keys
-        });
-      }
-      
-      // Collect all changes
       allData.added.push(...data.added);
       allData.modified.push(...data.modified);
       allData.removed.push(...data.removed);
       allData.nextCursor = data.next_cursor;
       hasMore = data.has_more;
-
-      console.log(
-        `Sync page - Added: ${data.added.length}, Modified: ${data.modified.length}, Removed: ${data.removed.length}, Has more: ${hasMore}`
-      );
     }
 
     return allData;
   } catch (error: any) {
-    console.error('Error syncing transactions from Plaid:', error);
-    
-    // Handle specific Plaid error: mutation during pagination
-    if (error.response?.data?.error_code === 'TRANSACTIONS_SYNC_MUTATION_DURING_PAGINATION') {
-      console.error('Transaction data changed during pagination. Sync will retry from last saved cursor.');
-    }
-    
     throw error;
   }
 };
@@ -133,15 +106,6 @@ export default defineEventHandler(async (event): Promise<SyncResponse> => {
     // Step 5: Update last_synced_at timestamp
     const { updateItemSync } = await import('~/server/db/queries/items.ts');
     await updateItemSync(item.id, syncData.nextCursor);
-
-    console.log('Transaction sync completed:', {
-      userId: user.id,
-      itemId: item.id,
-      added: result.added,
-      modified: result.modified,
-      removed: result.removed,
-      newCursor: result.newCursor ? 'saved' : 'null',
-    });
 
     return { 
       statusCode: 200,

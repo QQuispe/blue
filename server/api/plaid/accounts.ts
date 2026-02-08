@@ -65,11 +65,7 @@ export default defineEventHandler(async (event): Promise<AccountsSyncResponse> =
     });
 
     const accounts = accountsResponse.data.accounts;
-    const itemData = accountsResponse.data.item;
 
-    console.log(`Fetched ${accounts.length} accounts for item ${itemId}`);
-
-    // Save accounts to database
     const savedAccounts = [];
     for (const account of accounts) {
       const savedAccount = await createAccount(
@@ -88,13 +84,7 @@ export default defineEventHandler(async (event): Promise<AccountsSyncResponse> =
       savedAccounts.push(savedAccount);
     }
 
-    // Capture net worth snapshot after accounts are synced
-    try {
-      await captureNetWorthSnapshot(user.id);
-    } catch (snapshotError: any) {
-      console.error('Failed to capture net worth snapshot:', snapshotError);
-      // Don't fail the sync if snapshot fails
-    }
+    await captureNetWorthSnapshot(user.id);
 
     return {
       statusCode: 200,
@@ -109,7 +99,6 @@ export default defineEventHandler(async (event): Promise<AccountsSyncResponse> =
     };
 
   } catch (error: any) {
-    console.error('Error syncing accounts:', error);
     throw createError({
       statusCode: error.statusCode || 500,
       statusMessage: error.statusMessage || 'Failed to sync accounts'

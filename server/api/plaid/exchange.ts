@@ -57,7 +57,7 @@ export default defineEventHandler(async (event): Promise<ExchangeResponse> => {
       });
       institutionName = instResponse.data.institution.name;
     } catch (instError: any) {
-      console.warn('Could not fetch institution name:', instError.message);
+      // Institution name fetch failed, using default
     }
 
     // Step 4: Encrypt the access token before storing
@@ -65,20 +65,13 @@ export default defineEventHandler(async (event): Promise<ExchangeResponse> => {
 
     // Step 5: Save to database with authenticated user ID
     const item = await createItem(
-      user.id, // Use authenticated user ID
+      user.id,
       encryptedAccessToken,
       item_id,
       institutionId,
       'active',
       institutionName
     );
-
-    console.log("Item created successfully:", {
-      userId: user.id,
-      id: item.id,
-      plaidItemId: item.plaid_item_id,
-      institutionId: item.plaid_institution_id,
-    });
 
     // Step 6: Fetch accounts from Plaid for this new item
     let accountsCount = 0;
@@ -88,9 +81,7 @@ export default defineEventHandler(async (event): Promise<ExchangeResponse> => {
       });
       
       const accounts = accountsResponse.data.accounts;
-      console.log(`Fetched ${accounts.length} accounts for new item ${item.plaid_item_id}`);
       
-      // Save accounts to database
       for (const account of accounts) {
         await createAccount(
           item.id,
@@ -108,16 +99,9 @@ export default defineEventHandler(async (event): Promise<ExchangeResponse> => {
         accountsCount++;
       }
       
-      // Step 7: Capture net worth snapshot after accounts are created
-      try {
-        await captureNetWorthSnapshot(user.id);
-        console.log('Net worth snapshot captured after adding new account');
-      } catch (snapshotError: any) {
-        console.error('Failed to capture net worth snapshot:', snapshotError);
-      }
+      await captureNetWorthSnapshot(user.id);
       
     } catch (accountsError: any) {
-      console.error('Error fetching accounts for new item:', accountsError);
       // Don't fail the exchange if accounts fetch fails - they'll be synced later
     }
 
@@ -130,7 +114,6 @@ export default defineEventHandler(async (event): Promise<ExchangeResponse> => {
       accountsCreated: accountsCount,
     };
   } catch (error: any) {
-    console.error("Error during token exchange:", error);
     throw createError({
       statusCode: 500,
       statusMessage: error.message || "Token exchange failed",
