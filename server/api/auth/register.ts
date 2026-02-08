@@ -47,8 +47,6 @@ export default defineEventHandler(async (event): Promise<RegisterResponse> => {
     const { pool } = await import('~/server/db/index.js');
     const userCount = await pool.query('SELECT COUNT(*) FROM users');
     const isFirstUser = parseInt(userCount.rows[0].count) === 0;
-    console.log(`Registration attempt: isFirstUser=${isFirstUser}, userCount=${userCount.rows[0].count}`);
-
     // Check if username already exists
     const existingUser = await getUserByUsername(username);
     if (existingUser) {
@@ -85,7 +83,6 @@ export default defineEventHandler(async (event): Promise<RegisterResponse> => {
         [user.id]
       );
       user.is_admin = true;
-      console.log(`First user ${username} created as admin`);
     }
 
     return {

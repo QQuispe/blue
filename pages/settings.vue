@@ -52,7 +52,7 @@ const fetchAdminStats = async () => {
     
     adminStats.value = await response.json()
   } catch (err) {
-    console.error('Error fetching admin stats:', err)
+    // Silently fail - admin stats are not critical
   } finally {
     isLoadingStats.value = false
   }
@@ -648,21 +648,6 @@ onMounted(() => {
   padding: 32px;
   color: var(--color-text-muted);
   font-size: 0.875rem;
-}
-
-.loading-spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-accent);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 @media (max-width: 768px) {

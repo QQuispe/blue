@@ -1,9 +1,10 @@
 // Router navigation logging plugin
 // Logs all navigation events with detailed information
 
-import { logger } from '~/utils/logger'
+import { getLogger } from '~/utils/logger'
 
 export default defineNuxtPlugin((nuxtApp) => {
+  const logger = getLogger()
   const router = nuxtApp.$router
   
   // Log before navigation starts

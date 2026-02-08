@@ -234,16 +234,6 @@ const handlePageSizeChange = (e: Event) => {
   color: var(--color-text-secondary);
 }
 
-.loading-spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-accent);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-
 .error-state svg, .empty-state svg {
   opacity: 0.5;
 }

@@ -13,6 +13,7 @@ services:
       - ENCRYPTION_KEY=${ENCRYPTION_KEY:-default-key-change-in-production}
       - SESSION_SECRET=${SESSION_SECRET:-default-secret-change-in-production}
       - DEV_MODE=${DEV_MODE:-false}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
     depends_on:
       db:
         condition: service_healthy

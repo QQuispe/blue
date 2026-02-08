@@ -133,9 +133,7 @@ export async function getOrCreateDefaultUser(): Promise<QueryResult<Partial<User
   // Try to create the user (will return null if already exists due to ON CONFLICT)
   let user = await createUser(username, null, null);
   
-  if (user) {
-    console.log('Created default user:', user.id);
-  } else {
+  if (!user) {
     // User already exists, fetch it
     user = await getUserByUsername(username);
   }

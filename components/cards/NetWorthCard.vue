@@ -404,16 +404,6 @@ watch(selectedTimeframe, () => {
   min-height: 180px;
 }
 
-.loading-spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-success);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-
 .error-state {
   color: var(--color-error);
 }

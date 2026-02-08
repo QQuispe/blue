@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, type Ref } from 'vue'
-import { logger } from '~/utils/logger'
+import { getLogger } from '~/utils/logger'
+const logger = getLogger()
 import BaseButton from '~/components/BaseButton.vue'
 
 interface Bill {
@@ -470,15 +471,6 @@ defineExpose({ refresh })
   color: var(--color-text-secondary);
   font-size: 0.8125rem;
   text-align: center;
-}
-
-.loading-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-success);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
 }
 
 .empty-icon {

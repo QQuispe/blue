@@ -38,5 +38,9 @@ export default defineNuxtConfig({
   // Runtime config for session secrets
   runtimeConfig: {
     sessionSecret: process.env.SESSION_SECRET || 'your-session-secret-minimum-32-characters-long',
+    // Public config available on client-side
+    public: {
+      logLevel: process.env.LOG_LEVEL || 'info'
+    }
   }
 });

@@ -95,14 +95,6 @@ export async function captureNetWorthSnapshot(userId: number): Promise<NetWorthR
       [userId, snapshotDateStr, totalAssets, totalLiabilities, netWorth, accountCount]
     );
     
-    console.log(`Net worth snapshot captured for user ${userId}:`, {
-      date: snapshotDateStr,
-      netWorth: netWorth.toFixed(2),
-      totalAssets: totalAssets.toFixed(2),
-      totalLiabilities: totalLiabilities.toFixed(2),
-      accounts: accountCount
-    });
-    
     return {
       id: result.rows[0].id,
       userId,

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, type Ref } from 'vue'
-import { logger } from '~/utils/logger'
+import { getLogger } from '~/utils/logger'
+const logger = getLogger()
 
 const accounts: Ref<any[]> = ref([])
 const items: Ref<any[]> = ref([])
@@ -711,16 +712,6 @@ onMounted(() => {
   padding: 4rem 0;
   color: var(--color-text-muted);
 }
-
-.loading-spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid var(--color-border);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
 
 .error-state {
   color: var(--color-error);

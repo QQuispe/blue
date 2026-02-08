@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, type Ref } from 'vue'
-import { logger } from '~/utils/logger'
+import { getLogger } from '~/utils/logger'
+const logger = getLogger()
 import { getCategoryColor } from '~/composables/useCategoryColors'
 import BaseButton from '~/components/BaseButton.vue'
 
@@ -205,16 +206,6 @@ h3 {
   font-size: 0.8125rem;
   text-align: center;
 }
-
-.loading-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-success);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
 
 .error-state {
   color: var(--color-error);

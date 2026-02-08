@@ -1,4 +1,5 @@
 import { Pool } from 'pg'
+import { serverLogger } from '~/server/utils/logger'
 
 // Create a PostgreSQL connection pool
 const pool = new Pool({
@@ -8,9 +9,9 @@ const pool = new Pool({
 // Test connection
 pool.connect()
     .then(client => {
-        console.log('Database connection successful');
+        serverLogger.success('Database connection successful');
         client.release();
     })
-    .catch(err => console.error('Database connection error:', err.stack));
+    .catch(err => serverLogger.error(`Database connection error: ${err.stack}`));
 
 export { pool };

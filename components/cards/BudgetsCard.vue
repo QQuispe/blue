@@ -24,9 +24,7 @@ const fetchBudgets = async () => {
     budgets.value = data.budgets
     period.value = data.period
   } catch (err) {
-    console.error('Error fetching budgets:', err)
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    error.value = errorMessage
+    error.value = err instanceof Error ? err.message : 'Unknown error'
   } finally {
     isLoading.value = false
   }
@@ -218,16 +216,6 @@ const formatCurrency = (amount: number): string => {
   font-size: 0.875rem;
   text-align: center;
 }
-
-.loading-spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid var(--color-border);
-  border-top-color: var(--color-success);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
 
 .error-state {
   color: var(--color-error);

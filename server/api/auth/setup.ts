@@ -49,8 +49,6 @@ export default defineEventHandler(async (event): Promise<SetupResponse> => {
 
     // If in dev mode and no users, create a guest user
     if (isDevMode() && !hasUsers) {
-      console.log('DEV_MODE: Creating guest user');
-      
       const guestUser = await createUser('guest', null, 'guest123');
       if (guestUser) {
         // Make guest user an admin

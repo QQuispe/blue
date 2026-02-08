@@ -25,7 +25,6 @@ const handleLogin = async () => {
     }
   } catch (err) {
     error.value = 'Network error. Please try again.';
-    console.error('Login error:', err);
   } finally {
     isLoading.value = false;
   }
