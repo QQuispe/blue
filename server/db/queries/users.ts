@@ -7,19 +7,6 @@ const KEY_LENGTH = 64;
 const ITERATIONS = 100000;
 const DIGEST = 'sha512';
 
-// Invite code type based on database schema
-interface InviteCode {
-  id: number;
-  code: string;
-  is_used: boolean;
-  created_at: Date;
-  created_by?: number;
-  used_by?: number;
-  used_at?: Date;
-  created_by_username?: string;
-  used_by_username?: string;
-}
-
 /**
  * Hash a password using PBKDF2 (Node native)
  */
@@ -154,64 +141,4 @@ export async function getOrCreateDefaultUser(): Promise<QueryResult<Partial<User
   }
   
   return user;
-}
-
-/**
- * Create an invite code
- */
-export async function createInviteCode(
-  code: string, 
-  createdBy: number
-): Promise<InviteCode> {
-  const result = await pool.query(
-    `INSERT INTO invite_codes (code, created_by) 
-     VALUES ($1, $2) 
-     RETURNING id, code, is_used, created_at`,
-    [code, createdBy]
-  );
-  return result.rows[0];
-}
-
-/**
- * Get invite code by code string
- */
-export async function getInviteCode(code: string): Promise<QueryResult<InviteCode>> {
-  const result = await pool.query(
-    `SELECT * FROM invite_codes WHERE code = $1 AND is_used = false`,
-    [code]
-  );
-  return result.rows[0] || null;
-}
-
-/**
- * Mark invite code as used
- */
-export async function useInviteCode(
-  codeId: number, 
-  usedBy: number
-): Promise<QueryResult<Partial<InviteCode>>> {
-  const result = await pool.query(
-    `UPDATE invite_codes 
-     SET is_used = true, used_by = $1, used_at = CURRENT_TIMESTAMP
-     WHERE id = $2
-     RETURNING id, code, is_used, used_at`,
-    [usedBy, codeId]
-  );
-  return result.rows[0] || null;
-}
-
-/**
- * List all invite codes (for admin)
- */
-export async function listInviteCodes(): Promise<QueryResultArray<InviteCode>> {
-  const result = await pool.query(
-    `SELECT ic.*, 
-            creator.username as created_by_username,
-            user.username as used_by_username
-     FROM invite_codes ic
-     LEFT JOIN users creator ON ic.created_by = creator.id
-     LEFT JOIN users user ON ic.used_by = user.id
-     ORDER BY ic.created_at DESC`
-  );
-  return result.rows;
 }
