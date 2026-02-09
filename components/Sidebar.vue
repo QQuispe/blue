@@ -64,6 +64,11 @@ const menuItems: MenuItem[] = [
       </NuxtLink>
     </nav>
 
+    <!-- Theme Toggle -->
+    <div class="theme-section">
+      <ThemeToggle />
+    </div>
+
     <!-- Bottom Actions -->
     <div class="bottom-actions">
       <button v-if="auth.isAuthenticated" @click="auth.logout" class="logout-btn">
@@ -210,6 +215,12 @@ const menuItems: MenuItem[] = [
   overflow: hidden;
   text-overflow: ellipsis;
   flex-shrink: 0;
+}
+
+/* Theme Toggle Section */
+.theme-section {
+  padding: 8px 0;
+  border-top: 1px solid var(--color-border);
 }
 
 /* Bottom Actions */

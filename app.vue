@@ -1,6 +1,7 @@
 <script setup>
 const { isCollapsed } = useSidebar()
 const auth = useAuth()
+const { initializeTheme } = useTheme()
 
 const publicRoutes = ['/login', '/register']
 
@@ -15,6 +16,11 @@ const showSidebar = computed(() => {
   }
   
   return true
+})
+
+// Initialize theme on app mount
+onMounted(() => {
+  initializeTheme()
 })
 </script>
 
@@ -36,7 +42,7 @@ const showSidebar = computed(() => {
 <style>
 .app-wrapper {
   display: flex;
-  background: #0d0d0d;
+  background: var(--color-bg-page);
   min-height: 100vh;
 }
 
