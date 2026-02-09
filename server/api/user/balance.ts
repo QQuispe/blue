@@ -1,7 +1,7 @@
 import { defineEventHandler, createError, getRequestURL, getMethod } from 'h3';
-import { requireAuth } from '~/server/utils/auth.ts';
-import { serverLogger } from '~/server/utils/logger';
-import { getTotalBalanceForUser, getAccountsByUserId } from '~/server/db/queries/accounts.ts';
+import { requireAuth } from '~/server/utils/auth.js';
+import { serverLogger } from '~/server/utils/logger.js';
+import { getTotalBalanceForUser, getAccountsByUserId } from '~/server/db/queries/accounts.js';
 
 interface BalanceResponse {
   statusCode: number;
@@ -15,7 +15,7 @@ interface BalanceResponse {
     id: number;
     name: string;
     mask?: string;
-    type: string;
+    type: 'depository' | 'credit' | 'loan' | 'investment' | 'other';
     item_id: number;
     currentBalance: number;
     availableBalance: number;
@@ -54,7 +54,7 @@ export default defineEventHandler(async (event): Promise<BalanceResponse> => {
       type: acc.type,
       item_id: acc.item_id,
       currentBalance: acc.current_balance,
-      availableBalance: acc.available_balance,
+      availableBalance: acc.available_balance ?? 0,
       currency: acc.iso_currency_code || 'USD'
     }));
     
@@ -65,8 +65,8 @@ export default defineEventHandler(async (event): Promise<BalanceResponse> => {
     return {
       statusCode: 200,
       summary: {
-        totalCurrent: parseFloat(balanceSummary.total_current) || 0,
-        totalAvailable: parseFloat(balanceSummary.total_available) || 0,
+        totalCurrent: typeof balanceSummary.total_current === 'string' ? parseFloat(balanceSummary.total_current) || 0 : balanceSummary.total_current || 0,
+        totalAvailable: typeof balanceSummary.total_available === 'string' ? parseFloat(balanceSummary.total_available) || 0 : balanceSummary.total_available || 0,
         accountCount: formattedAccounts.length,
         currency: formattedAccounts[0]?.currency || 'USD'
       },

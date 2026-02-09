@@ -76,6 +76,7 @@ export interface Budget {
   id: number;
   user_id: number;
   category: string;
+  category_key?: string; // Derived key for matching with Plaid categories
   amount: number;
   month: string; // Format: 'YYYY-MM'
   is_active: boolean;
@@ -89,6 +90,7 @@ export interface BudgetWithSpending {
   id: number;
   user_id: number;
   category: string;
+  category_key?: string;
   budget_amount: number;
   spent_amount: number;
   remaining_amount: number;
@@ -134,3 +136,17 @@ export interface Session {
 // Helper type for database query results
 export type QueryResult<T> = T | null;
 export type QueryResultArray<T> = T[];
+
+// User settings
+export interface UserSettings {
+  id: number;
+  user_id: number;
+  currency: string;
+  locale: string;
+  timezone: string;
+  theme: string;
+  notifications_enabled: boolean;
+  budget_alerts_enabled: boolean;
+  created_at: Date;
+  updated_at: Date;
+}

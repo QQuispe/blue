@@ -92,7 +92,7 @@ const menuItems: MenuItem[] = [
   top: 0;
   z-index: 100;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .sidebar.collapsed {
@@ -102,11 +102,11 @@ const menuItems: MenuItem[] = [
 /* Toggle Button */
 .toggle-btn {
   position: absolute;
-  right: -12px;
+  right: -14px;
   top: 50%;
   transform: translateY(-50%);
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border-hover);
   border-radius: 50%;
@@ -117,6 +117,8 @@ const menuItems: MenuItem[] = [
   justify-content: center;
   transition: all 0.2s;
   z-index: 101;
+  padding: 0;
+  overflow: visible;
 }
 
 .toggle-btn:hover {

@@ -108,6 +108,21 @@ CREATE TABLE IF NOT EXISTS detected_bill_patterns (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- User settings table
+CREATE TABLE IF NOT EXISTS user_settings (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    currency VARCHAR(3) DEFAULT 'USD',
+    locale VARCHAR(10) DEFAULT 'en-US',
+    timezone VARCHAR(50) DEFAULT 'America/New_York',
+    theme VARCHAR(10) DEFAULT 'dark',
+    notifications_enabled BOOLEAN DEFAULT TRUE,
+    budget_alerts_enabled BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id)
+);
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_items_user_id ON items(user_id);
 CREATE INDEX IF NOT EXISTS idx_accounts_item_id ON accounts(item_id);
@@ -124,3 +139,6 @@ CREATE INDEX IF NOT EXISTS idx_detected_patterns_user_id ON detected_bill_patter
 CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_user_category_month 
 ON budgets(user_id, category_key, month) 
 WHERE month IS NOT NULL;
+
+-- Create index for user_settings
+CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings(user_id);
