@@ -1,78 +1,81 @@
 import { pool } from '../index.js';
 import type { Budget, QueryResult, QueryResultArray } from '~/types';
 
-// Budget with spending data type
 interface BudgetWithSpending {
   id: number;
   category: string;
+  category_key: string;
   budget_amount: number;
   spent_amount: number;
   remaining_amount: number;
   percentage_used: number;
+  month: string;
   is_favorited?: boolean;
 }
 
-// Budget update input type
 interface BudgetUpdates {
   amount?: number;
   isActive?: boolean;
   isFavorited?: boolean;
 }
 
-/**
- * Check if budget exists for user
- */
+function deriveCategoryKey(category: string): string {
+  return category
+    .toUpperCase()
+    .replace(/ & /g, '_AND_')
+    .replace(/&/g, '_AND_')
+    .replace(/ /g, '_')
+    .replace(/[^A-Z0-9_]/g, '')
+}
+
 export async function budgetExists(
   userId: number,
-  category: string
+  category: string,
+  month?: string
 ): Promise<QueryResult<Budget>> {
+  const categoryKey = deriveCategoryKey(category)
   const result = await pool.query(
     `SELECT * FROM budgets 
-     WHERE user_id = $1 AND category = $2 AND is_active = true`,
-    [userId, category]
+     WHERE user_id = $1 AND category_key = $2 AND is_active = true
+     AND ($3 IS NULL OR month = $3)`,
+    [userId, categoryKey, month || null]
   );
   return result.rows[0] || null;
 }
 
-/**
- * Create a new budget
- */
 export async function createBudget(
   userId: number, 
   category: string, 
   amount: number, 
-  isFavorited: boolean = false
+  isFavorited: boolean = false,
+  month: string = new Date().toISOString().slice(0, 7)
 ): Promise<Budget> {
+  const categoryKey = deriveCategoryKey(category)
   const result = await pool.query(
-    `INSERT INTO budgets (user_id, category, amount, is_favorited)
-     VALUES ($1, $2, $3, $4)
-     ON CONFLICT (user_id, category) DO UPDATE SET
+    `INSERT INTO budgets (user_id, category, amount, is_favorited, month, category_key)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (user_id, category_key, month) DO UPDATE SET
        amount = EXCLUDED.amount,
        is_active = true,
        is_favorited = EXCLUDED.is_favorited,
        updated_at = CURRENT_TIMESTAMP
      RETURNING *`,
-    [userId, category, amount, isFavorited]
+    [userId, category, amount, isFavorited, month, categoryKey]
   );
   return result.rows[0];
 }
 
-/**
- * Get all budgets for a user
- */
-export async function getBudgetsByUserId(userId: number): Promise<QueryResultArray<Budget>> {
+export async function getBudgetsByUserId(userId: number, month?: string): Promise<QueryResultArray<Budget>> {
   const result = await pool.query(
     `SELECT * FROM budgets 
      WHERE user_id = $1 AND is_active = true
+     AND ($2 IS NULL OR month = $2)
      ORDER BY category`,
-    [userId]
+    [userId, month || null]
   );
   return result.rows;
 }
 
-/**
- * Get budget by ID
- */
 export async function getBudgetById(id: number): Promise<QueryResult<Budget>> {
   const result = await pool.query(
     `SELECT * FROM budgets WHERE id = $1`,
@@ -81,9 +84,6 @@ export async function getBudgetById(id: number): Promise<QueryResult<Budget>> {
   return result.rows[0] || null;
 }
 
-/**
- * Update a budget
- */
 export async function updateBudget(
   id: number, 
   updates: BudgetUpdates
@@ -103,9 +103,6 @@ export async function updateBudget(
   return result.rows[0] || null;
 }
 
-/**
- * Delete (soft delete) a budget
- */
 export async function deleteBudget(id: number): Promise<QueryResult<Budget>> {
   const result = await pool.query(
     `UPDATE budgets 
@@ -117,32 +114,30 @@ export async function deleteBudget(id: number): Promise<QueryResult<Budget>> {
   return result.rows[0] || null;
 }
 
-/**
- * Get favorited budgets count
- */
-export async function getFavoritedCount(userId: number): Promise<number> {
+export async function getFavoritedCount(userId: number, month?: string): Promise<number> {
   const result = await pool.query(
     `SELECT COUNT(*) as count FROM budgets 
-     WHERE user_id = $1 AND is_favorited = true AND is_active = true`,
-    [userId]
+     WHERE user_id = $1 AND is_favorited = true AND is_active = true
+     AND ($2 IS NULL OR month = $2)`,
+    [userId, month || null]
   );
   return parseInt(result.rows[0]?.count || '0');
 }
 
-/**
- * Get budgets with spending data
- */
 export async function getBudgetsWithSpending(
   userId: number, 
   startDate: string, 
-  endDate: string
+  endDate: string,
+  month?: string
 ): Promise<QueryResultArray<BudgetWithSpending>> {
   const result = await pool.query(
     `SELECT 
         b.id,
         b.category,
+        b.category_key,
         b.amount as budget_amount,
         b.is_favorited,
+        b.month,
         COALESCE(SUM(t.amount), 0) as spent_amount,
         b.amount - COALESCE(SUM(t.amount), 0) as remaining_amount,
         CASE 
@@ -154,21 +149,19 @@ export async function getBudgetsWithSpending(
         SELECT id FROM items WHERE user_id = $1
       )
       LEFT JOIN transactions t ON t.account_id = a.id 
-        AND t.category = b.category
+        AND t.plaid_category_id = b.category_key
         AND t.date >= $2
         AND t.date <= $3
         AND t.amount > 0
       WHERE b.user_id = $1 AND b.is_active = true
-      GROUP BY b.id, b.category, b.amount, b.is_favorited
+      AND (b.month = $4 OR $4 IS NULL)
+      GROUP BY b.id, b.category, b.category_key, b.amount, b.is_favorited, b.month
       ORDER BY b.is_favorited DESC, percentage_used DESC`,
-    [userId, startDate, endDate]
+    [userId, startDate, endDate, month || null]
   );
   return result.rows;
 }
 
-/**
- * Toggle favorite status
- */
 export async function toggleFavorite(
   id: number,
   isFavorited: boolean
@@ -181,4 +174,14 @@ export async function toggleFavorite(
     [isFavorited, id]
   );
   return result.rows[0] || null;
+}
+
+export async function getBudgetMonths(userId: number): Promise<string[]> {
+  const result = await pool.query(
+    `SELECT DISTINCT month FROM budgets 
+     WHERE user_id = $1 AND is_active = true
+     ORDER BY month DESC`,
+    [userId]
+  );
+  return result.rows.map(row => row.month as string);
 }

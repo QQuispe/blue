@@ -77,12 +77,36 @@ export interface Budget {
   user_id: number;
   category: string;
   amount: number;
-  period: 'monthly' | 'weekly' | 'yearly';
-  start_date: string;
-  end_date?: string;
+  month: string; // Format: 'YYYY-MM'
   is_active: boolean;
+  is_favorited: boolean;
   created_at: Date;
   updated_at: Date;
+}
+
+// Budget with spending data (for API responses)
+export interface BudgetWithSpending {
+  id: number;
+  user_id: number;
+  category: string;
+  budget_amount: number;
+  spent_amount: number;
+  remaining_amount: number;
+  percentage_used: number;
+  month: string;
+  is_favorited: boolean;
+  created_at: Date;
+}
+
+// Budget history item (for past months)
+export interface BudgetHistoryItem {
+  id: number;
+  category: string;
+  budgetAmount: number;
+  spentAmount: number;
+  remainingAmount: number;
+  percentageUsed: number;
+  month: string;
 }
 
 // Net Worth Snapshot

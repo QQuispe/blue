@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, type Ref, nextTick } from 'vue'
+import { ref, computed, watch, type Ref, nextTick } from 'vue'
 import BaseButton from '~/components/BaseButton.vue'
+import { budgetCategories } from '~/composables/useBudgetCategories'
+import { formatCurrency, formatDate, getProgressColorClass, getRiskColorClass, getCategoryIcon } from '~/utils/formatters'
+import { useBudgetProgress } from '~/composables/useBudgetProgress'
 
 definePageMeta({
   middleware: 'auth'
@@ -14,27 +17,79 @@ interface Budget {
   remainingAmount: number
   percentageUsed: number
   isFavorited?: boolean
+  month?: string
 }
 
-const budgets: Ref<Budget[]> = ref([])
-const isLoading: Ref<boolean> = ref(true)
-const error: Ref<string | null> = ref(null)
+interface Transaction {
+  id: number
+  name: string
+  amount: number
+  date: string
+  account_name?: string
+}
+
+const currentMonth = new Date().toISOString().slice(0, 7)
+const selectedMonth = ref(currentMonth)
+
 const showModal: Ref<boolean> = ref(false)
 const editingBudget: Ref<Budget | null> = ref(null)
 const showDeleteConfirm: Ref<boolean> = ref(false)
 const budgetToDelete: Ref<Budget | null> = ref(null)
+const showTransactionsModal: Ref<boolean> = ref(false)
+const selectedBudgetTransactions: Ref<Transaction[]> = ref([])
+const selectedBudgetCategory: Ref<string> = ref('')
+const loadingTransactions: Ref<boolean> = ref(false)
 const $toast = useNuxtApp().$toast
+
+const { data: monthsData, error: monthsError } = await useFetch<{ months: string[] }>('/api/user/budgets/months', {
+  credentials: 'include',
+  default: () => ({ months: [] })
+})
+
+const availableMonths = computed(() => monthsData.value?.months || [])
+const allMonths = computed(() => {
+  const currentMonthStr = new Date().toISOString().slice(0, 7)
+  
+  // Filter to only show months with budgets, up to current month (no future months)
+  const validMonths = availableMonths.value.filter(m => m <= currentMonthStr)
+  
+  // Sort descending (most recent first)
+  return validMonths.sort().reverse()
+})
+
+watch(selectedMonth, () => {
+  refreshBudgets()
+})
+
+const refreshBudgets = () => {
+  refresh()
+}
+
+const { data: response, pending, error, refresh } = await useFetch('/api/user/budgets', {
+  credentials: 'include',
+  query: computed(() => ({ month: selectedMonth.value }))
+})
+
+const budgets = computed(() => response.value?.budgets || [])
+const isLoading = computed(() => pending.value)
+const fetchError = computed(() => error.value)
+
+function formatMonth(month: string): string {
+  const [year, m] = month.split('-')
+  const date = new Date(parseInt(year), parseInt(m) - 1)
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+}
 
 const categoryInputRef: Ref<HTMLInputElement | null> = ref(null)
 const showCategoryDropdown: Ref<boolean> = ref(false)
 const highlightedIndex: Ref<number> = ref(-1)
 
-const categories = ['Food', 'Transportation', 'Shopping', 'Entertainment', 'Housing', 'Utilities', 'Healthcare', 'Education', 'Travel', 'Groceries', 'Dining', 'Subscriptions', 'Savings', 'Investments', 'Insurance', 'Gifts', 'Personal', 'Other'].sort()
-
 const form = ref({
   category: '',
   amount: ''
 })
+
+const categories = budgetCategories
 
 const filteredCategories = computed(() => {
   if (!form.value.category.trim()) return categories
@@ -86,53 +141,7 @@ const onCategoryKeydown = (e: KeyboardEvent) => {
   }
 }
 
-const fetchBudgets = async () => {
-  try {
-    isLoading.value = true
-    error.value = null
-    
-    const response = await fetch('/api/user/budgets', {
-      credentials: 'include'
-    })
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch budgets')
-    }
-    
-    const data = await response.json()
-    budgets.value = data.budgets || []
-  } catch (err) {
-    error.value = err instanceof Error ? err.message : 'Unknown error'
-  } finally {
-    isLoading.value = false
-  }
-}
-
-onMounted(() => {
-  fetchBudgets()
-})
-
-const getDayOfMonth = () => new Date().getDate()
-const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
-
-const getProjectedSpending = (budget: Budget): number => {
-  const dayOfMonth = getDayOfMonth()
-  if (dayOfMonth === 0 || budget.spentAmount === 0) return budget.spentAmount
-  return (budget.spentAmount / dayOfMonth) * daysInMonth
-}
-
-const getProjectedPercentage = (budget: Budget): number => {
-  const projected = getProjectedSpending(budget)
-  if (budget.budgetAmount === 0) return 0
-  return (projected / budget.budgetAmount) * 100
-}
-
-const getRiskLevel = (budget: Budget): 'high' | 'medium' | 'low' => {
-  const projected = getProjectedPercentage(budget)
-  if (projected >= 100) return 'high'
-  if (projected >= 80) return 'medium'
-  return 'low'
-}
+const { getProjectedPercentage, getRiskLevel } = useBudgetProgress()
 
 const totalBudgeted = computed(() => budgets.value.reduce((sum, b) => sum + b.budgetAmount, 0))
 const totalSpent = computed(() => budgets.value.reduce((sum, b) => sum + b.spentAmount, 0))
@@ -154,51 +163,6 @@ const sortedBudgets = computed(() => {
       return riskOrder[a.riskLevel] - riskOrder[b.riskLevel]
     })
 })
-
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(amount)
-}
-
-const getProgressColor = (percentage: number): string => {
-  if (percentage >= 100) return 'over-budget'
-  if (percentage >= 80) return 'warning'
-  return 'good'
-}
-
-const getRiskColorClass = (riskLevel: string): string => {
-  if (riskLevel === 'high') return 'risk-high'
-  if (riskLevel === 'medium') return 'risk-medium'
-  return 'risk-low'
-}
-
-const getIconName = (category: string): string => {
-  const icons: Record<string, string> = {
-    'Food': 'mdi:food',
-    'Transportation': 'mdi:car',
-    'Shopping': 'mdi:shopping',
-    'Entertainment': 'mdi:movie',
-    'Housing': 'mdi:home',
-    'Utilities': 'mdi:lightning-bolt',
-    'Healthcare': 'mdi:hospital-box',
-    'Education': 'mdi:school',
-    'Travel': 'mdi:airplane',
-    'Groceries': 'mdi:cart',
-    'Dining': 'mdi:food-variant',
-    'Subscriptions': 'mdi:repeat',
-    'Savings': 'mdi:piggy-bank',
-    'Investments': 'mdi:trending-up',
-    'Insurance': 'mdi:shield-check',
-    'Gifts': 'mdi:gift',
-    'Personal': 'mdi:account',
-    'Other': 'mdi:dots-horizontal'
-  }
-  return icons[category] || 'mdi:circle-outline'
-}
 
 const openAddModal = () => {
   editingBudget.value = null
@@ -250,7 +214,7 @@ const saveBudget = async () => {
 
     $toast.success(editingBudget.value ? 'Budget updated' : 'Budget created')
     showModal.value = false
-    fetchBudgets()
+    await refresh()
   } catch (err) {
     $toast.error(err instanceof Error ? err.message : 'Failed to save budget')
   }
@@ -271,7 +235,7 @@ const toggleFavorite = async (budget: Budget) => {
       throw new Error(errorData.statusMessage || 'Failed to update favorite')
     }
 
-    fetchBudgets()
+    await refresh()
   } catch (err) {
     $toast.error(err instanceof Error ? err.message : 'Failed to update favorite')
   }
@@ -300,9 +264,36 @@ const deleteBudget = async () => {
     $toast.success('Budget deleted')
     showDeleteConfirm.value = false
     budgetToDelete.value = null
-    fetchBudgets()
+    await refresh()
   } catch (err) {
     $toast.error(err instanceof Error ? err.message : 'Failed to delete budget')
+  }
+}
+
+const viewBudgetTransactions = async (budget: Budget) => {
+  selectedBudgetCategory.value = budget.category
+  selectedBudgetTransactions.value = []
+  loadingTransactions.value = true
+  showTransactionsModal.value = true
+
+  try {
+    const startDate = new Date(parseInt(budget.month!.split('-')[0]), parseInt(budget.month!.split('-')[1]) - 1, 1).toISOString().split('T')[0]
+    const endDate = new Date(parseInt(budget.month!.split('-')[0]), parseInt(budget.month!.split('-')[1]), 0).toISOString().split('T')[0]
+    
+    const response = await $fetch<{ transactions: Transaction[] }>('/api/user/budget-transactions', {
+      credentials: 'include',
+      query: {
+        category: budget.category,
+        startDate,
+        endDate
+      }
+    })
+    
+    selectedBudgetTransactions.value = response.transactions || []
+  } catch (err) {
+    $toast.error('Failed to load transactions')
+  } finally {
+    loadingTransactions.value = false
   }
 }
 </script>
@@ -311,10 +302,22 @@ const deleteBudget = async () => {
   <div class="page-container">
     <div class="page-header">
       <h1>Budgets</h1>
-      <BaseButton variant="primary" @click="openAddModal">
-        <Icon name="mdi:plus" size="16" />
-        Add Budget
-      </BaseButton>
+      <div class="header-actions">
+        <div class="month-selector">
+          <Icon name="mdi:calendar-month" size="18" class="month-icon" />
+          <span class="month-display">{{ formatMonth(selectedMonth) }}</span>
+          <Icon name="mdi:chevron-down" size="16" class="dropdown-arrow" />
+          <select v-model="selectedMonth" class="month-select">
+            <option v-for="month in allMonths" :key="month" :value="month">
+              {{ formatMonth(month) }}
+            </option>
+          </select>
+        </div>
+        <BaseButton variant="primary" @click="openAddModal">
+          <Icon name="mdi:plus" size="16" />
+          Add Budget
+        </BaseButton>
+      </div>
     </div>
 
     <div class="stats-grid">
@@ -342,7 +345,7 @@ const deleteBudget = async () => {
     </div>
 
     <div v-else-if="error" class="error-container">
-      <span>{{ error }}</span>
+      <span>{{ error.message || 'Failed to load budgets' }}</span>
     </div>
 
     <div v-else-if="budgets.length === 0" class="empty-container">
@@ -355,7 +358,7 @@ const deleteBudget = async () => {
       <BaseButton variant="primary" @click="openAddModal">Create Budget</BaseButton>
     </div>
 
-    <div v-else class="budget-list">
+    <div v-else class="budget-list" :key="selectedMonth">
       <div 
         v-for="budget in sortedBudgets" 
         :key="budget.id"
@@ -364,14 +367,17 @@ const deleteBudget = async () => {
       >
         <div class="budget-header">
           <div class="budget-category">
-            <Icon :name="getIconName(budget.category)" size="18" class="category-icon" />
+            <Icon :name="getCategoryIcon(budget.category)" size="18" class="category-icon" />
             <div class="category-info">
               <span class="category-name">{{ budget.category }}</span>
+              <button class="action-btn favorite" :class="{ active: budget.isFavorited }" @click="toggleFavorite(budget)" title="Favorite">
+                <Icon :name="budget.isFavorited ? 'mdi:star' : 'mdi:star-outline'" size="16" />
+              </button>
             </div>
           </div>
           <div class="budget-actions">
-            <button class="action-btn favorite" :class="{ active: budget.isFavorited }" @click="toggleFavorite(budget)" title="Favorite">
-              <Icon :name="budget.isFavorited ? 'mdi:star' : 'mdi:star-outline'" size="16" />
+            <button class="action-btn" @click="viewBudgetTransactions(budget)" title="View Transactions">
+              <Icon name="mdi:view-list" size="16" />
             </button>
             <button class="action-btn" @click="openEditModal(budget)" title="Edit">
               <Icon name="mdi:pencil" size="16" />
@@ -390,12 +396,12 @@ const deleteBudget = async () => {
           <div class="budget-bar">
             <div 
               class="budget-bar-fill"
-              :class="getProgressColor(budget.percentageUsed)"
+              :class="getProgressColorClass(budget.percentageUsed)"
               :style="{ width: `${Math.min(budget.percentageUsed, 100)}%` }"
             ></div>
           </div>
           <div class="budget-stats">
-            <span class="percentage" :class="getProgressColor(budget.percentageUsed)">
+            <span class="percentage" :class="getProgressColorClass(budget.percentageUsed)">
               {{ budget.percentageUsed.toFixed(0) }}%
             </span>
             <span class="projection">
@@ -489,6 +495,43 @@ const deleteBudget = async () => {
         </div>
       </div>
     </div>
+
+    <div v-if="showTransactionsModal" class="modal-overlay" @click="showTransactionsModal = false">
+      <div class="modal transactions-modal" @click.stop>
+        <div class="modal-header">
+          <h3>{{ selectedBudgetCategory }} Transactions</h3>
+          <button class="close-btn" @click="showTransactionsModal = false">
+            <Icon name="mdi:close" size="20" />
+          </button>
+        </div>
+        <div class="modal-body transactions-body">
+          <div v-if="loadingTransactions" class="loading-state">
+            <div class="loading-spinner"></div>
+            <span>Loading transactions...</span>
+          </div>
+          <div v-else-if="selectedBudgetTransactions.length === 0" class="empty-state">
+            <Icon name="mdi:view-list" size="32" class="empty-icon" />
+            <span>No transactions found for this category</span>
+          </div>
+          <div v-else class="transactions-list">
+            <div 
+              v-for="tx in selectedBudgetTransactions" 
+              :key="tx.id"
+              class="transaction-item"
+            >
+              <div class="transaction-info">
+                <span class="transaction-name">{{ tx.name }}</span>
+                <span class="transaction-date">{{ formatDate(tx.date) }}</span>
+              </div>
+              <span class="transaction-amount">{{ formatCurrency(tx.amount) }}</span>
+            </div>
+          </div>
+        </div>
+        <div v-if="selectedBudgetTransactions.length > 0" class="modal-footer">
+          <span class="total-label">Total: {{ formatCurrency(selectedBudgetTransactions.reduce((sum, t) => sum + t.amount, 0)) }}</span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -510,6 +553,75 @@ const deleteBudget = async () => {
   font-size: 1.5rem;
   font-weight: 600;
   margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.month-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  cursor: pointer;
+  position: relative;
+  min-width: 160px;
+}
+
+.month-selector:hover {
+  border-color: var(--color-border-hover);
+}
+
+.month-icon {
+  color: var(--color-text-muted);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.month-select {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-left: 40px;
+  padding-right: 32px;
+  opacity: 0;
+}
+
+.month-select:focus {
+  outline: none;
+}
+
+.dropdown-arrow {
+  color: var(--color-text-muted);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.month-display {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  flex: 1;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .stats-grid {
@@ -665,14 +777,20 @@ const deleteBudget = async () => {
 
 .category-info {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 8px;
 }
 
 .category-name {
   color: var(--color-text-primary);
   font-weight: 500;
   font-size: 0.9375rem;
+}
+
+.category-info .favorite {
+  width: 20px;
+  height: 20px;
+  padding: 0;
 }
 
 .budget-actions {
@@ -1078,6 +1196,84 @@ const deleteBudget = async () => {
 
 .danger-modal .modal-header h3 {
   color: var(--color-error);
+}
+
+.transactions-modal {
+  max-width: 480px;
+}
+
+.transactions-modal .modal-header {
+  border-bottom-color: var(--color-border);
+}
+
+.transactions-modal .modal-body {
+  padding: 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.transactions-modal .modal-footer {
+  border-top: 1px solid var(--color-border);
+  justify-content: flex-end;
+}
+
+.total-label {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  color: var(--color-text-muted);
+}
+
+.empty-icon {
+  opacity: 0.5;
+}
+
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.transaction-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+.transaction-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.transaction-name {
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.transaction-date {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.transaction-amount {
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
 @media (max-width: 768px) {

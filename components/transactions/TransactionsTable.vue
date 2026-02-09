@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, type Ref } from 'vue'
-import { getCategoryColor } from '~/composables/useCategoryColors'
+import { getCategoryColor, formatCurrency, formatDate, formatAmount } from '~/utils/formatters'
 import BaseButton from '~/components/BaseButton.vue'
 
 interface Transaction {
@@ -48,16 +48,6 @@ const currentSortDirection = computed(() => props.sortBy.split('-')[1] || 'desc'
 
 const handleSort = (field: string) => {
   emit('sort', field)
-}
-
-const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
-const formatAmount = (amount: number): string => {
-  const formatted = Math.abs(amount).toFixed(2)
-  return amount < 0 ? `-$${formatted}` : `+$${formatted}`
 }
 
 const totalPages = computed(() => Math.ceil(props.total / props.pageSize))

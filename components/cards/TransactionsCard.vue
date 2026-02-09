@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, type Ref } from 'vue'
 import { getLogger } from '~/utils/logger'
 const logger = getLogger()
-import { getCategoryColor } from '~/composables/useCategoryColors'
+import { getCategoryColor, formatCurrency, formatDate } from '~/utils/formatters'
 import BaseButton from '~/components/BaseButton.vue'
 
 interface Transaction {
@@ -61,16 +61,6 @@ const refresh = () => {
 
 defineExpose({ refresh })
 
-const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-}
-
-const formatAmount = (amount: number): string => {
-  const formatted = Math.abs(amount).toFixed(2)
-  return amount < 0 ? `-$${formatted}` : `+$${formatted}`
-}
-
 const navigateToTransactions = () => {
   logger.navigation('/transactions', 'from_dashboard_transactions_card')
   router.push('/transactions')
@@ -81,7 +71,7 @@ const navigateToTransactions = () => {
   <div class="transactions-card">
     <div class="card-header">
       <div class="header-left">
-        <Icon name="mdi:swap-horizontal" size="18" />
+        <Icon name="mdi:view-list" size="18" />
         <h3>Recent Transactions</h3>
       </div>
       <BaseButton variant="secondary" size="sm" class="view-all-btn" @click="navigateToTransactions">
@@ -103,7 +93,7 @@ const navigateToTransactions = () => {
     </div>
 
     <div v-else-if="transactions.length === 0" class="empty-state">
-      <Icon name="mdi:swap-horizontal" size="24" />
+      <Icon name="mdi:view-list" size="24" />
       <p>No transactions yet</p>
       <span>Connect accounts to start tracking</span>
     </div>

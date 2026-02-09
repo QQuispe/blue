@@ -1,4 +1,4 @@
-import { defineEventHandler, readBody, createError } from 'h3';
+import { defineEventHandler, readBody, createError, getQuery } from 'h3';
 import { requireAuth } from '~/server/utils/auth.ts';
 import { 
   createBudget, 
@@ -32,27 +32,34 @@ interface BudgetResponse {
     isFavorited?: boolean;
   }>;
   budget?: any;
+  months?: string[];
 }
 
-// Get date range for last 30 days
-function getLast30DaysRange(): { startDate: string; endDate: string } {
-  const now = new Date();
-  const start = new Date(now);
-  start.setDate(start.getDate() - 30);
+function getCurrentMonth(): string {
+  return new Date().toISOString().slice(0, 7)
+}
+
+function getMonthRange(month: string): { startDate: string; endDate: string } {
+  const [year, monthNum] = month.split('-').map(Number)
+  const startDate = new Date(year, monthNum - 1, 1)
+  const endDate = new Date(year, monthNum, 0)
   return {
-    startDate: start.toISOString().split('T')[0],
-    endDate: now.toISOString().split('T')[0]
-  };
+    startDate: startDate.toISOString().split('T')[0],
+    endDate: endDate.toISOString().split('T')[0]
+  }
 }
 
 export default defineEventHandler(async (event): Promise<BudgetResponse> => {
   try {
     const user = await requireAuth(event);
     const method = event.node.req.method;
+    const query = getQuery(event)
+    const monthParam = query.month as string | undefined
+    const targetMonth = monthParam || getCurrentMonth()
     
     if (method === 'GET') {
-      const { startDate, endDate } = getLast30DaysRange();
-      const budgets = await getBudgetsWithSpending(user.id, startDate, endDate);
+      const { startDate, endDate } = getMonthRange(targetMonth)
+      const budgets = await getBudgetsWithSpending(user.id, startDate, endDate, targetMonth)
       
       return {
         statusCode: 200,
@@ -63,7 +70,8 @@ export default defineEventHandler(async (event): Promise<BudgetResponse> => {
           spentAmount: Number(b.spent_amount),
           remainingAmount: Number(b.remaining_amount),
           percentageUsed: Number(b.percentage_used),
-          isFavorited: b.is_favorited || false
+          isFavorited: b.is_favorited || false,
+          month: b.month || targetMonth
         }))
       };
     }
@@ -79,16 +87,16 @@ export default defineEventHandler(async (event): Promise<BudgetResponse> => {
         });
       }
 
-      const existingBudget = await budgetExists(user.id, category);
+      const existingBudget = await budgetExists(user.id, category, targetMonth);
       
       if (existingBudget) {
         throw createError({
           statusCode: 409,
-          statusMessage: `A budget for "${category}" already exists. Please edit the existing budget instead.`
+          statusMessage: `A budget for "${category}" already exists for ${targetMonth}. Please edit the existing budget instead.`
         });
       }
       
-      const budget = await createBudget(user.id, category!, amount!, isFavorited);
+      const budget = await createBudget(user.id, category!, amount!, isFavorited, targetMonth);
       
       return {
         statusCode: 201,
@@ -110,7 +118,7 @@ export default defineEventHandler(async (event): Promise<BudgetResponse> => {
 
       if (isFavorited !== undefined) {
         if (isFavorited) {
-          const currentFavoritedCount = await getFavoritedCount(user.id);
+          const currentFavoritedCount = await getFavoritedCount(user.id, targetMonth);
           if (currentFavoritedCount >= 2) {
             throw createError({
               statusCode: 400,

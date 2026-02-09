@@ -640,3 +640,16 @@ export async function getFilteredCategoryBreakdown(
     count: parseInt(row.count)
   }));
 }
+
+export async function getTransactionMonths(userId: number): Promise<string[]> {
+  const result = await pool.query(
+    `SELECT DISTINCT TO_CHAR(date, 'YYYY-MM') as month
+     FROM transactions t
+     JOIN accounts a ON t.account_id = a.id
+     JOIN items i ON a.item_id = i.id
+     WHERE i.user_id = $1
+     ORDER BY month DESC`,
+    [userId]
+  );
+  return result.rows.map(row => row.month as string);
+}
