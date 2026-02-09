@@ -84,10 +84,11 @@ onMounted(async () => {
 .grid-container {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: auto auto;
+  grid-template-rows: 362px auto;
   gap: 16px;
   width: 100%;
   flex: 1;
+  align-items: stretch;
 }
 
 .card-row {
@@ -127,6 +128,7 @@ onMounted(async () => {
 
 .card-wide {
   grid-column: span 2;
+  height: 100%;
 }
 
 .card {
@@ -137,6 +139,7 @@ onMounted(async () => {
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
+  height: 100%;
 }
 
 .card:hover {

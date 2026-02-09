@@ -41,7 +41,7 @@ const selectedBudgetCategory: Ref<string> = ref('')
 const loadingTransactions: Ref<boolean> = ref(false)
 const $toast = useNuxtApp().$toast
 
-const { data: monthsData, error: monthsError } = await useFetch<{ months: string[] }>('/api/user/budgets/months', {
+const { data: monthsData } = await useFetch<{ months: string[] }>('/api/user/budgets/months', {
   credentials: 'include',
   default: () => ({ months: [] })
 })
@@ -735,9 +735,14 @@ const viewBudgetTransactions = async (budget: Budget) => {
 }
 
 .budget-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 16px;
+}
+
+.budget-list > * {
+  flex: 1 1 300px;
+  max-width: calc(50% - 8px);
 }
 
 .budget-card {
@@ -746,6 +751,8 @@ const viewBudgetTransactions = async (budget: Budget) => {
   border-radius: 10px;
   padding: 16px;
   transition: all 0.2s;
+  min-height: 369px;
+  box-sizing: border-box;
 }
 
 .budget-card:hover {
