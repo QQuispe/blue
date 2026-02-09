@@ -252,7 +252,6 @@ const handlePageSizeChange = (e: Event) => {
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--color-text-muted);
-  text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 1px solid var(--color-border);
 }
@@ -343,7 +342,6 @@ const handlePageSizeChange = (e: Event) => {
   color: var(--color-warning);
   border-radius: 4px;
   margin-left: 6px;
-  text-transform: uppercase;
 }
 
 .name-cell {

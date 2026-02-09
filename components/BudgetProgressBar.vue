@@ -104,7 +104,6 @@ const props = defineProps<{
   padding: 0.125rem 0.375rem;
   border-radius: 10px;
   font-weight: 600;
-  text-transform: uppercase;
   letter-spacing: 0.03em;
 }
 

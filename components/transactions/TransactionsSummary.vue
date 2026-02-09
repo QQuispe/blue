@@ -54,7 +54,6 @@ const formatCurrency = (value: number): string => {
 .summary-label {
   font-size: 0.6875rem;
   color: var(--color-text-muted);
-  text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 

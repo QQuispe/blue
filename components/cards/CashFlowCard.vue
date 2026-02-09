@@ -248,7 +248,6 @@ defineExpose({ refresh })
 .summary-label {
   color: var(--color-text-muted);
   font-size: 0.6875rem;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 

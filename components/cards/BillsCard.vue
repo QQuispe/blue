@@ -624,7 +624,6 @@ defineExpose({ refresh })
 .total-label {
   font-size: 0.75rem;
   color: var(--color-text-muted);
-  text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
@@ -702,7 +701,6 @@ defineExpose({ refresh })
 .form-group label {
   font-size: 0.75rem;
   color: var(--color-text-muted);
-  text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 

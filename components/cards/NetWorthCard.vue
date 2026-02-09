@@ -374,7 +374,6 @@ watch(selectedTimeframe, () => {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s ease;
-  text-transform: uppercase;
   letter-spacing: 0.03em;
   line-height: 1;
 }

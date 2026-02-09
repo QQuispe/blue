@@ -631,7 +631,6 @@ onMounted(() => {
 .summary-label {
   color: var(--color-text-muted);
   font-size: 0.75rem;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
@@ -674,7 +673,6 @@ onMounted(() => {
 .balance-label {
   color: var(--color-text-muted);
   font-size: 0.75rem;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 

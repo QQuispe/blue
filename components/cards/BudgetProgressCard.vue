@@ -199,7 +199,6 @@ h3 {
 .overall-label {
   font-size: 0.75rem;
   color: var(--color-text-muted);
-  text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
