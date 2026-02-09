@@ -10,6 +10,7 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@nuxt/icon": "^1.15.0",
     "bcryptjs": "^3.0.3",
     "chart.js": "^4.5.1",
     "dotenv": "^16.4.7",

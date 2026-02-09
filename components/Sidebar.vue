@@ -12,11 +12,11 @@ const username = computed((): string => auth.user.value?.username || 'User')
 const { isCollapsed, toggle } = useSidebar()
 
 const menuItems: MenuItem[] = [
-  { name: 'Dashboard', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', path: '/' },
-  { name: 'Accounts', icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z', path: '/dashboard/balance' },
-  { name: 'Transactions', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2', path: '/transactions' },
-  { name: 'Budgets', icon: 'M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2zM12 6v6l4 2', path: '/dashboard/budgets' },
-  { name: 'Settings', icon: 'M12 15a3 3 0 100-6 3 3 0 000 6z M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z', path: '/settings' },
+  { name: 'Dashboard', icon: 'mdi:view-dashboard', path: '/' },
+  { name: 'Accounts', icon: 'mdi:bank', path: '/dashboard/balance' },
+  { name: 'Transactions', icon: 'mdi:swap-horizontal', path: '/transactions' },
+  { name: 'Budgets', icon: 'mdi:chart-pie', path: '/dashboard/budgets' },
+  { name: 'Settings', icon: 'mdi:cog', path: '/settings' },
 ]
 </script>
 
@@ -24,10 +24,8 @@ const menuItems: MenuItem[] = [
   <aside class="sidebar" :class="{ 'collapsed': isCollapsed }">
     <!-- Toggle Button -->
     <button class="toggle-btn" @click="toggle" :title="isCollapsed ? 'Expand' : 'Collapse'">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path v-if="!isCollapsed" d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/>
-        <path v-else d="M13 17l5-5-5-5M6 17l5-5-5-5"/>
-      </svg>
+      <Icon v-if="!isCollapsed" name="mdi:chevron-left" size="20" />
+      <Icon v-else name="mdi:chevron-right" size="20" />
     </button>
 
     <!-- User Profile Section - Client Only to prevent hydration mismatch -->
@@ -61,9 +59,7 @@ const menuItems: MenuItem[] = [
         class="nav-item"
         :class="{ 'active': $route.path === item.path }"
       >
-        <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path :d="item.icon"/>
-        </svg>
+        <Icon :name="item.icon" size="20" class="nav-icon" />
         <span class="nav-text" v-show="!isCollapsed">{{ item.name }}</span>
       </NuxtLink>
     </nav>
@@ -71,9 +67,7 @@ const menuItems: MenuItem[] = [
     <!-- Bottom Actions -->
     <div class="bottom-actions">
       <button v-if="auth.isAuthenticated" @click="auth.logout" class="logout-btn">
-        <svg class="logout-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-        </svg>
+        <Icon name="mdi:logout" size="20" class="logout-icon" />
         <span class="logout-text" v-show="!isCollapsed">Logout</span>
       </button>
     </div>

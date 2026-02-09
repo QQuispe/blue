@@ -230,12 +230,7 @@ defineExpose({ refresh })
   <div class="bills-card">
     <div class="card-header-row">
       <div class="header-left">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
+        <Icon name="mdi:calendar-clock" size="18" />
         <h3 class="title">Upcoming Bills</h3>
       </div>
       <div v-if="!isLoading && !error" class="header-right">
@@ -247,15 +242,10 @@ defineExpose({ refresh })
           :loading="isSyncing"
           title="Sync bills from bank"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-          </svg>
+          <Icon name="mdi:refresh" size="16" />
         </BaseButton>
         <BaseButton variant="secondary" size="sm" @click="showAddModal = true">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="12" y1="5" x2="12" y2="19"/>
-            <line x1="5" y1="12" x2="19" y2="12"/>
-          </svg>
+          <Icon name="mdi:plus" size="16" />
         </BaseButton>
       </div>
     </div>
@@ -313,10 +303,7 @@ defineExpose({ refresh })
             </div>
             <div class="bill-amount">{{ formatAmount(bill.amount) }}</div>
             <button class="edit-btn" @click="openEditModal(bill)">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
+              <Icon name="mdi:pencil" size="14" />
             </button>
           </div>
         </div>
@@ -336,7 +323,9 @@ defineExpose({ refresh })
       <div class="modal" @click.stop>
         <div class="modal-header">
           <h4>Add New Bill</h4>
-          <button class="close-btn" @click="showAddModal = false">×</button>
+          <button class="close-btn" @click="showAddModal = false">
+            <Icon name="mdi:close" size="20" />
+          </button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -376,7 +365,9 @@ defineExpose({ refresh })
       <div class="modal" @click.stop>
         <div class="modal-header">
           <h4>Edit Bill</h4>
-          <button class="close-btn" @click="showEditModal = false">×</button>
+          <button class="close-btn" @click="showEditModal = false">
+            <Icon name="mdi:close" size="20" />
+          </button>
         </div>
         <div class="modal-body">
           <div class="form-group">

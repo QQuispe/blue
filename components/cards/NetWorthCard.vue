@@ -211,6 +211,7 @@ watch(selectedTimeframe, () => {
       <!-- Left: Title -->
       <div class="header-left">
         <div class="title-section">
+          <Icon name="mdi:chart-line" size="18" />
           <h3 class="title">Net Worth</h3>
         </div>
       </div>

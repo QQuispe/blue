@@ -4,6 +4,13 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   devtools: { enabled: true },
 
+  modules: ['@nuxt/icon'],
+
+  icon: {
+    size: '24px',
+    mode: 'css',
+  },
+
   // TypeScript configuration - add minimal TS support
   typescript: {
     strict: false,
