@@ -5,16 +5,18 @@ import {
   getBudgetsByUserId, 
   getBudgetsWithSpending,
   updateBudget,
-  deleteBudget 
+  deleteBudget,
+  getBudgetById,
+  getFavoritedCount,
+  toggleFavorite,
+  budgetExists
 } from '~/server/db/queries/budgets.ts';
 
 interface BudgetBody {
   category?: string;
   amount?: number;
-  period?: 'monthly' | 'weekly' | 'yearly';
-  startDate?: string;
-  endDate?: string;
   id?: number;
+  isFavorited?: boolean;
 }
 
 interface BudgetResponse {
@@ -27,13 +29,9 @@ interface BudgetResponse {
     spentAmount: number;
     remainingAmount: number;
     percentageUsed: number;
-    period: string;
+    isFavorited?: boolean;
   }>;
   budget?: any;
-  period?: {
-    startDate: string;
-    endDate: string;
-  };
 }
 
 // Get date range for last 30 days
@@ -53,7 +51,6 @@ export default defineEventHandler(async (event): Promise<BudgetResponse> => {
     const method = event.node.req.method;
     
     if (method === 'GET') {
-      // Get budgets with spending data for last 30 days
       const { startDate, endDate } = getLast30DaysRange();
       const budgets = await getBudgetsWithSpending(user.id, startDate, endDate);
       
@@ -62,28 +59,36 @@ export default defineEventHandler(async (event): Promise<BudgetResponse> => {
         budgets: budgets.map(b => ({
           id: b.id,
           category: b.category,
-          budgetAmount: parseFloat(b.budget_amount),
-          spentAmount: parseFloat(b.spent_amount),
-          remainingAmount: parseFloat(b.remaining_amount),
-          percentageUsed: parseFloat(b.percentage_used),
-          period: b.period
-        })),
-        period: { startDate, endDate }
+          budgetAmount: Number(b.budget_amount),
+          spentAmount: Number(b.spent_amount),
+          remainingAmount: Number(b.remaining_amount),
+          percentageUsed: Number(b.percentage_used),
+          isFavorited: b.is_favorited || false
+        }))
       };
     }
     
     if (method === 'POST') {
       const body: BudgetBody = await readBody(event);
-      const { category, amount, period = 'monthly', startDate, endDate } = body;
+      const { category, amount, isFavorited = false } = body;
       
-      if (!category || !amount || !startDate) {
+      if (!category || !amount) {
         throw createError({
           statusCode: 400,
-          statusMessage: 'Category, amount, and startDate are required'
+          statusMessage: 'Category and amount are required'
+        });
+      }
+
+      const existingBudget = await budgetExists(user.id, category);
+      
+      if (existingBudget) {
+        throw createError({
+          statusCode: 409,
+          statusMessage: `A budget for "${category}" already exists. Please edit the existing budget instead.`
         });
       }
       
-      const budget = await createBudget(user.id, category!, amount!, period, startDate!, endDate);
+      const budget = await createBudget(user.id, category!, amount!, isFavorited);
       
       return {
         statusCode: 201,
@@ -94,7 +99,7 @@ export default defineEventHandler(async (event): Promise<BudgetResponse> => {
     
     if (method === 'PUT') {
       const body: BudgetBody = await readBody(event);
-      const { id, ...updates } = body;
+      const { id, isFavorited } = body;
       
       if (!id) {
         throw createError({
@@ -102,8 +107,34 @@ export default defineEventHandler(async (event): Promise<BudgetResponse> => {
           statusMessage: 'Budget ID is required'
         });
       }
+
+      if (isFavorited !== undefined) {
+        if (isFavorited) {
+          const currentFavoritedCount = await getFavoritedCount(user.id);
+          if (currentFavoritedCount >= 2) {
+            throw createError({
+              statusCode: 400,
+              statusMessage: 'You can only favorite up to 2 budgets. Please unfavorite another budget first.'
+            });
+          }
+        }
+
+        const budget = await toggleFavorite(id, isFavorited);
+        if (!budget) {
+          throw createError({
+            statusCode: 404,
+            statusMessage: 'Budget not found'
+          });
+        }
+        
+        return {
+          statusCode: 200,
+          message: isFavorited ? 'Budget favorited' : 'Budget unfavorited',
+          budget
+        };
+      }
       
-      const budget = await updateBudget(id!, updates);
+      const budget = await updateBudget(id!, body);
       
       if (!budget) {
         throw createError({

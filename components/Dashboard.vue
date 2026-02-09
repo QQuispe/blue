@@ -1,27 +1,24 @@
 <script setup lang="ts">
 import { ref, onMounted, type Ref } from 'vue'
-import BalanceCard from "./cards/BalanceCard.vue";
-import BudgetsCard from "./cards/BudgetsCard.vue";
+import OverviewCard from "./cards/OverviewCard.vue";
+import BudgetProgressCard from "./cards/BudgetProgressCard.vue";
 import TransactionsCard from "./cards/TransactionsCard.vue";
-import TopSpendingCategoriesCard from "./cards/TopSpendingCategoriesCard.vue";
 import NetWorthCard from "./cards/NetWorthCard.vue";
 import BillsCard from "./cards/BillsCard.vue";
 
-const balanceCardRef: Ref<any> = ref(null)
+const overviewCardRef: Ref<any> = ref(null)
 const netWorthCardRef: Ref<any> = ref(null)
 const transactionsCardRef: Ref<any> = ref(null)
-const spendingCardRef: Ref<any> = ref(null)
-const budgetsCardRef: Ref<any> = ref(null)
+const budgetProgressCardRef: Ref<any> = ref(null)
 const billsCardRef: Ref<any> = ref(null)
 
 const { fetchUser } = useAuth()
 
 const refreshAll = (): void => {
-  balanceCardRef.value?.refresh()
+  overviewCardRef.value?.refresh()
   netWorthCardRef.value?.refresh()
   transactionsCardRef.value?.refresh()
-  spendingCardRef.value?.refresh()
-  budgetsCardRef.value?.refresh()
+  budgetProgressCardRef.value?.refresh()
   billsCardRef.value?.refresh()
 }
 
@@ -40,13 +37,13 @@ onMounted(async () => {
             <NetWorthCard ref="netWorthCardRef" />
           </div>
           <div class="card">
-            <BalanceCard ref="balanceCardRef" />
+            <OverviewCard ref="overviewCardRef" />
           </div>
           
           <div class="card-row">
             <div class="carousel-container">
               <div class="carousel-card">
-                <TopSpendingCategoriesCard ref="spendingCardRef" />
+                <BudgetProgressCard ref="budgetProgressCardRef" />
               </div>
               <div class="carousel-card">
                 <TransactionsCard ref="transactionsCardRef" />
