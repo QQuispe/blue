@@ -190,12 +190,13 @@ const saveBudget = async () => {
 
   try {
     const payload = {
+      ...(editingBudget.value && { id: editingBudget.value.id }),
       category: exactMatch,
       amount: parseFloat(form.value.amount)
     }
-
+    
     const url = editingBudget.value 
-      ? `/api/user/budgets?id=${editingBudget.value.id}`
+      ? '/api/user/budgets'
       : '/api/user/budgets'
     
     const method = editingBudget.value ? 'PUT' : 'POST'
@@ -757,7 +758,6 @@ const viewBudgetTransactions = async (budget: Budget) => {
   border-radius: 10px;
   padding: 16px;
   transition: all 0.2s;
-  min-height: 369px;
   box-sizing: border-box;
 }
 

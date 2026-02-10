@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, type Ref } from 'vue'
 import { getLogger } from '~/utils/logger'
-const logger = getLogger()
 import { getCategoryColor, formatCurrency, formatDate } from '~/utils/formatters'
 import BaseButton from '~/components/BaseButton.vue'
+
+const logger = getLogger()
 
 interface Transaction {
   id: number;
@@ -19,8 +20,6 @@ interface Transaction {
 const transactions: Ref<Transaction[]> = ref([])
 const isLoading: Ref<boolean> = ref(true)
 const error: Ref<string | null> = ref(null)
-
-const router = useRouter()
 
 const fetchTransactions = async () => {
   try {
@@ -60,11 +59,6 @@ const refresh = () => {
 }
 
 defineExpose({ refresh })
-
-const navigateToTransactions = () => {
-  logger.navigation('/transactions', 'from_dashboard_transactions_card')
-  router.push('/transactions')
-}
 </script>
 
 <template>
@@ -74,9 +68,9 @@ const navigateToTransactions = () => {
         <Icon name="mdi:view-list" size="18" />
         <h3>Recent Transactions</h3>
       </div>
-      <BaseButton variant="secondary" size="sm" class="view-all-btn" @click="navigateToTransactions">
-        View All
-        <Icon name="mdi:chevron-right" size="16" />
+      <BaseButton variant="secondary" size="sm" class="view-all-btn" to="/transactions">
+        View all
+        <Icon name="mdi:arrow-right" size="14" />
       </BaseButton>
     </div>
 
@@ -299,14 +293,13 @@ h3 {
   font-size: 0.6875rem;
 }
 
+
 .view-all-btn {
-  background: var(--color-bg-elevated) !important;
-  color: var(--color-text-secondary) !important;
-  border: none !important;
+  font-size: 0.75rem;
+  padding: 0.375rem 0.75rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  line-height: 1;
 }
 
-.view-all-btn:hover {
-  background: var(--color-bg-card-hover) !important;
-  color: var(--color-accent) !important;
-}
 </style>

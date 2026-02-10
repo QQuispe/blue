@@ -58,11 +58,21 @@ const overallProgress = computed(() => {
 
 <template>
   <div class="budget-progress-card">
-    <div class="card-header">
+    <div class="card-header-row">
       <div class="header-left">
         <Icon name="mdi:chart-pie" size="20" />
         <h3>Budget Progress</h3>
       </div>
+      <BaseButton 
+        v-if="!isLoading && !error && budgets.length > 0"
+        variant="secondary" 
+        size="sm" 
+        to="/dashboard/budgets"
+        class="view-all-btn"
+      >
+        View all
+        <Icon name="mdi:arrow-right" size="14" />
+      </BaseButton>
     </div>
 
     <div class="separator"></div>
@@ -121,17 +131,6 @@ const overallProgress = computed(() => {
           :class="{ 'at-risk': budget.riskLevel !== 'low' }"
         />
       </div>
-
-      <!-- View All Button -->
-      <BaseButton 
-        variant="secondary" 
-        size="sm" 
-        to="/dashboard/budgets"
-        class="view-all-btn"
-      >
-        View all budgets
-        <Icon name="mdi:arrow-right" size="14" />
-      </BaseButton>
     </div>
   </div>
 </template>
@@ -144,7 +143,7 @@ const overallProgress = computed(() => {
   flex: 1;
 }
 
-.card-header {
+.card-header-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -157,10 +156,8 @@ const overallProgress = computed(() => {
   color: var(--color-text-secondary);
 }
 
-.nav-icon {
-  width: 20px;
-  height: 20px;
-  flex-shrink: 0;
+.header-left svg {
+  opacity: 0.7;
 }
 
 h3 {
@@ -260,12 +257,8 @@ h3 {
 
 /* View All Button */
 .view-all-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.375rem;
-  padding: 0.5rem 1rem;
-  width: auto;
+  font-size: 0.75rem;
+  padding: 0.375rem 0.75rem;
 }
 
 /* Empty State */

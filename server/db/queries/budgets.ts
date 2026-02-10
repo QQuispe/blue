@@ -34,11 +34,12 @@ export async function budgetExists(
   month?: string
 ): Promise<QueryResult<Budget>> {
   const categoryKey = deriveCategoryKey(category)
+  const nullMonth = month || null;
   const result = await pool.query(
     `SELECT * FROM budgets 
      WHERE user_id = $1 AND category_key = $2 AND is_active = true
-     AND ($3 IS NULL OR month = $3)`,
-    [userId, categoryKey, month || null]
+     AND ($3::text IS NULL OR month = $3)`,
+    [userId, categoryKey, nullMonth]
   );
   return result.rows[0] || null;
 }
@@ -54,7 +55,7 @@ export async function createBudget(
   const result = await pool.query(
     `INSERT INTO budgets (user_id, category, amount, is_favorited, month, category_key)
      VALUES ($1, $2, $3, $4, $5, $6)
-     ON CONFLICT (user_id, category_key, month) DO UPDATE SET
+     ON CONFLICT (user_id, category, month) DO UPDATE SET
        amount = EXCLUDED.amount,
        is_active = true,
        is_favorited = EXCLUDED.is_favorited,
@@ -66,12 +67,13 @@ export async function createBudget(
 }
 
 export async function getBudgetsByUserId(userId: number, month?: string): Promise<QueryResultArray<Budget>> {
+  const nullMonth = month || null;
   const result = await pool.query(
     `SELECT * FROM budgets 
      WHERE user_id = $1 AND is_active = true
-     AND ($2 IS NULL OR month = $2)
+     AND ($2::text IS NULL OR month = $2)
      ORDER BY category`,
-    [userId, month || null]
+    [userId, nullMonth]
   );
   return result.rows;
 }
@@ -115,11 +117,12 @@ export async function deleteBudget(id: number): Promise<QueryResult<Budget>> {
 }
 
 export async function getFavoritedCount(userId: number, month?: string): Promise<number> {
+  const nullMonth = month || null;
   const result = await pool.query(
     `SELECT COUNT(*) as count FROM budgets 
      WHERE user_id = $1 AND is_favorited = true AND is_active = true
-     AND ($2 IS NULL OR month = $2)`,
-    [userId, month || null]
+     AND ($2::text IS NULL OR month = $2)`,
+    [userId, nullMonth]
   );
   return parseInt(result.rows[0]?.count || '0');
 }
@@ -130,6 +133,7 @@ export async function getBudgetsWithSpending(
   endDate: string,
   month?: string
 ): Promise<QueryResultArray<BudgetWithSpending>> {
+  const nullMonth = month || null;
   const result = await pool.query(
     `SELECT 
         b.id,
@@ -154,10 +158,10 @@ export async function getBudgetsWithSpending(
         AND t.date <= $3
         AND t.amount > 0
       WHERE b.user_id = $1 AND b.is_active = true
-      AND (b.month = $4 OR $4 IS NULL)
+      AND ($4::text IS NULL OR b.month = $4)
       GROUP BY b.id, b.category, b.category_key, b.amount, b.is_favorited, b.month
       ORDER BY b.is_favorited DESC, percentage_used DESC`,
-    [userId, startDate, endDate, month || null]
+    [userId, startDate, endDate, nullMonth]
   );
   return result.rows;
 }

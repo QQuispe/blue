@@ -299,11 +299,9 @@ const formatCurrency = (amount: number): string => {
   padding: 0.5rem 0.625rem;
   background: var(--color-bg-elevated);
   border-radius: 6px;
-  border: 1px solid var(--color-border);
 }
 
 .budget-item:hover {
-  border-color: var(--color-border-hover);
   background: var(--color-bg-card-hover);
 }
 

@@ -137,8 +137,11 @@ CREATE INDEX IF NOT EXISTS idx_detected_patterns_user_id ON detected_bill_patter
 
 -- Create unique constraint for budgets (one per category per month)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_user_category_month 
-ON budgets(user_id, category_key, month) 
+ON budgets(user_id, category, month) 
 WHERE month IS NOT NULL;
+
+-- Note: Using a unique constraint instead of partial index for ON CONFLICT support
+-- ALTER TABLE budgets ADD CONSTRAINT budgets_user_category_month_unique UNIQUE (user_id, category, month);
 
 -- Create index for user_settings
 CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings(user_id);

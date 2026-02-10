@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, type Ref } from 'vue'
 import { getLogger } from '~/utils/logger'
+
 const logger = getLogger()
+
 import BaseButton from '~/components/BaseButton.vue'
 
 interface Bill {
