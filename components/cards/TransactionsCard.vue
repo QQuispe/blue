@@ -213,13 +213,9 @@ h3 {
   align-items: center;
   gap: 0.75rem;
   padding: 0.5rem 0.625rem;
-  background: var(--color-bg-card);
+  background: var(--color-bg-elevated);
   border-radius: 8px;
-  transition: background 0.2s;
-}
-
-.transaction-item:hover {
-  background: var(--color-bg-hover);
+  transition: all 0.2s;
 }
 
 .transaction-icon {
@@ -241,7 +237,7 @@ h3 {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg-card);
+  background: var(--color-bg-elevated);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -304,14 +300,13 @@ h3 {
 }
 
 .view-all-btn {
-  background: var(--color-bg-card) !important;
+  background: var(--color-bg-elevated) !important;
   color: var(--color-text-secondary) !important;
-  border-color: var(--color-border) !important;
+  border: none !important;
 }
 
 .view-all-btn:hover {
-  background: var(--color-bg-hover) !important;
+  background: var(--color-bg-card-hover) !important;
   color: var(--color-accent) !important;
-  border-color: var(--color-accent) !important;
 }
 </style>

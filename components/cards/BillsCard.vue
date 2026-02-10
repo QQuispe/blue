@@ -480,7 +480,7 @@ defineExpose({ refresh })
 
 /* Suggestions */
 .suggestions-section {
-  background: rgba(59, 130, 246, 0.1);
+  background: rgba(59, 130, 246, 0.08);
   border: 1px solid rgba(59, 130, 246, 0.2);
   border-radius: 8px;
   padding: 0.75rem;
@@ -507,8 +507,20 @@ defineExpose({ refresh })
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem;
-  background: var(--color-bg-card);
+  background: var(--color-bg-elevated);
   border-radius: 6px;
+}
+
+.bill-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.625rem;
+  background: var(--color-bg-elevated);
+  border-radius: 8px;
+  transition: all 0.2s;
+  flex-shrink: 0;
 }
 
 .suggestion-info {
@@ -546,7 +558,7 @@ defineExpose({ refresh })
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.625rem;
-  background: var(--color-bg-card);
+  background: var(--color-bg-elevated);
   border-radius: 8px;
   transition: all 0.2s;
   flex-shrink: 0;
@@ -623,7 +635,6 @@ defineExpose({ refresh })
 
 .total-label {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
   letter-spacing: 0.05em;
 }
 

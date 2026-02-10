@@ -231,17 +231,13 @@ h3 {
 }
 
 .metric-item {
-  background: var(--color-bg-hover);
+  background: var(--color-bg-elevated);
   border-radius: 8px;
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;
-  transition: background 0.2s ease;
-}
-
-.metric-item:hover {
-  background: var(--color-bg-subtle);
+  transition: all 0.2s ease;
 }
 
 .metric-header {
@@ -256,8 +252,8 @@ h3 {
 
 .metric-label {
   font-size: 0.75rem;
-  color: var(--color-text-secondary);
-  letter-spacing: 0.05em;
+  color: var(--color-text-primary);
+  font-weight: 500;
 }
 
 .metric-value {
@@ -299,7 +295,7 @@ h3 {
 
 /* Skeleton Loading */
 .metric-skeleton {
-  background: var(--color-bg-hover);
+  background: var(--color-bg-elevated);
   border-radius: 8px;
   padding: 12px;
   display: flex;

@@ -60,18 +60,13 @@ const props = defineProps<{
 
 <style scoped>
 .budget-progress-bar {
-  background: var(--color-bg-secondary);
+  background: var(--color-bg-elevated);
   padding: 0.625rem;
   border-radius: 6px;
-  border-left: 2px solid transparent;
 }
 
 .budget-progress-bar.compact {
   padding: 0.5rem;
-}
-
-.budget-progress-bar.at-risk {
-  border-left-color: var(--color-warning);
 }
 
 .budget-header {

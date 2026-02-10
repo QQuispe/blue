@@ -6,10 +6,10 @@
   --color-bg-primary: #0d0d0d;
   --color-bg-secondary: #111111;
   
-  /* Cards - Lighter than background */
-  --color-bg-card: #151515;
-  --color-bg-card-hover: #1a1a1a;
-  --color-bg-elevated: #1f1f1f;
+  /* Cards - Distinct from page background */
+  --color-bg-card: #0f0f0f;
+  --color-bg-card-hover: #1d1d1d;
+  --color-bg-elevated: #171717;
   
   /* Mint Green Accent */
   --color-accent: #3EB489;
@@ -97,19 +97,21 @@
   --color-bg-hover: rgba(255, 255, 255, 0.08);
   
   /* Page Background */
-  --color-bg-page: #0d0d0d;
+  --color-bg-page: #121212;
 }
 
 /* Light Theme */
 [data-theme="light"] {
-  /* Background - Light shades */
-  --color-bg-primary: #f8f9fa;
-  --color-bg-secondary: #ffffff;
+  /* Background - Clean white hierarchy */
+  --color-bg-primary: #ffffff;
+  --color-bg-secondary: #f3f4f6;
   
-  /* Cards - White with subtle shadows */
+  /* Cards */
   --color-bg-card: #ffffff;
-  --color-bg-card-hover: #f1f3f4;
-  --color-bg-elevated: #ffffff;
+  --color-bg-card-hover: #f5f5f5;
+  
+  /* Inner elements (budget items, etc.) - Distinct from card but not too dark */
+  --color-bg-elevated: #ececec;
   
   /* Mint Green Accent (same as dark) */
   --color-accent: #3EB489;

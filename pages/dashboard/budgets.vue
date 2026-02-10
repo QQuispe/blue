@@ -576,6 +576,7 @@ const viewBudgetTransactions = async (budget: Budget) => {
 
 .month-selector:hover {
   border-color: var(--color-border-hover);
+  background: var(--color-bg-subtle);
 }
 
 .month-icon {
@@ -639,6 +640,12 @@ const viewBudgetTransactions = async (budget: Budget) => {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  transition: all 0.2s;
+}
+
+.stat-card:hover {
+  border-color: var(--color-border-hover);
+  background: var(--color-bg-subtle);
 }
 
 .stat-card.warning {
@@ -756,6 +763,7 @@ const viewBudgetTransactions = async (budget: Budget) => {
 
 .budget-card:hover {
   border-color: var(--color-border-hover);
+  background: var(--color-bg-card-hover);
 }
 
 .budget-card.at-risk {
@@ -819,7 +827,7 @@ const viewBudgetTransactions = async (budget: Budget) => {
 }
 
 .action-btn:hover {
-  background: var(--color-bg-hover);
+  background: var(--color-bg-subtle);
   color: var(--color-text-primary);
 }
 
@@ -1007,7 +1015,7 @@ const viewBudgetTransactions = async (budget: Budget) => {
 
 .combobox-option:hover,
 .combobox-option.active {
-  background: var(--color-bg-hover);
+  background: var(--color-bg-subtle);
 }
 
 .combobox-option:first-child {
@@ -1069,7 +1077,7 @@ const viewBudgetTransactions = async (budget: Budget) => {
 
 .spinner-buttons button {
   flex: 1;
-  background: var(--color-bg-hover);
+  background: var(--color-bg-card);
   border: none;
   color: var(--color-text-muted);
   cursor: pointer;
@@ -1081,7 +1089,17 @@ const viewBudgetTransactions = async (budget: Budget) => {
 }
 
 .spinner-buttons button:hover {
-  background: var(--color-border);
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
+}
+
+.spinner-buttons button:active {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+
+.spinner-buttons button:hover {
+  background: var(--color-bg-subtle);
   color: var(--color-text-primary);
 }
 
@@ -1172,7 +1190,7 @@ const viewBudgetTransactions = async (budget: Budget) => {
 }
 
 .close-btn:hover {
-  background: var(--color-bg-hover);
+  background: var(--color-bg-subtle);
   color: var(--color-text-primary);
 }
 

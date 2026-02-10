@@ -184,7 +184,7 @@ h3 {
 
 /* Overall Progress */
 .overall-progress {
-  background: var(--color-bg-secondary);
+  background: var(--color-bg-elevated);
   padding: 0.75rem;
   border-radius: 8px;
 }
@@ -198,7 +198,6 @@ h3 {
 
 .overall-label {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
   letter-spacing: 0.05em;
 }
 
@@ -309,7 +308,7 @@ h3 {
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem;
-  background: var(--color-bg-secondary);
+  background: var(--color-bg-elevated);
   border-radius: 6px;
   color: var(--color-text-muted);
   font-size: 0.75rem;
