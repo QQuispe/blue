@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255) NOT NULL,
     email VARCHAR(255),
     is_admin BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -88,6 +89,7 @@ CREATE TABLE IF NOT EXISTS user_bills (
     plaid_liability_type VARCHAR(50),
     detected_pattern_id INTEGER,
     user_modified BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -123,6 +125,20 @@ CREATE TABLE IF NOT EXISTS user_settings (
     UNIQUE(user_id)
 );
 
+-- Net worth snapshots table
+CREATE TABLE IF NOT EXISTS net_worth_snapshots (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    snapshot_date DATE NOT NULL,
+    total_assets NUMERIC(28,10) NOT NULL,
+    total_liabilities NUMERIC(28,10) NOT NULL,
+    net_worth NUMERIC(28,10) NOT NULL,
+    account_count INTEGER NOT NULL,
+    is_synthetic BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, snapshot_date)
+);
+
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_items_user_id ON items(user_id);
 CREATE INDEX IF NOT EXISTS idx_accounts_item_id ON accounts(item_id);
@@ -145,3 +161,6 @@ WHERE month IS NOT NULL;
 
 -- Create index for user_settings
 CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings(user_id);
+
+-- Create index for net_worth_snapshots
+CREATE INDEX IF NOT EXISTS idx_net_worth_user_date ON net_worth_snapshots(user_id, snapshot_date);

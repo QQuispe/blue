@@ -43,13 +43,23 @@ export const useAuth = () => {
   const refreshUser = async (): Promise<void> => fetchUser();
 
   const login = async (username: string, password: string): Promise<LoginResponse> => {
-    const response = await $fetch<LoginResponse>('/api/auth/login', {
-      method: 'POST',
-      body: { username, password },
-      credentials: 'include'
-    });
-    if (response.user) user.value = response.user;
-    return response;
+    try {
+      const response = await $fetch<LoginResponse>('/api/auth/login', {
+        method: 'POST',
+        body: { username, password },
+        credentials: 'include'
+      });
+      if (response.user) user.value = response.user;
+      return response;
+    } catch (error: any) {
+      // Extract error message from the response
+      const errorMessage = error.data?.message || error.message || 'Login failed';
+      return {
+        statusCode: error.response?.status || 500,
+        message: errorMessage,
+        user: undefined
+      };
+    }
   };
 
   const logout = async (): Promise<void> => {

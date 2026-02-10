@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, type Ref } from 'vue'
+import { ref, onMounted, nextTick, type Ref } from 'vue'
 import OverviewCard from "./cards/OverviewCard.vue";
 import BudgetProgressCard from "./cards/BudgetProgressCard.vue";
 import TransactionsCard from "./cards/TransactionsCard.vue";
@@ -15,15 +15,16 @@ const billsCardRef: Ref<any> = ref(null)
 const { fetchUser } = useAuth()
 
 const refreshAll = (): void => {
-  overviewCardRef.value?.refresh()
-  netWorthCardRef.value?.refresh()
-  transactionsCardRef.value?.refresh()
-  budgetProgressCardRef.value?.refresh()
-  billsCardRef.value?.refresh()
+  if (typeof overviewCardRef.value?.refresh === 'function') overviewCardRef.value.refresh()
+  if (typeof netWorthCardRef.value?.refresh === 'function') netWorthCardRef.value.refresh()
+  if (typeof transactionsCardRef.value?.refresh === 'function') transactionsCardRef.value.refresh()
+  if (typeof budgetProgressCardRef.value?.refresh === 'function') budgetProgressCardRef.value.refresh()
+  if (typeof billsCardRef.value?.refresh === 'function') billsCardRef.value.refresh()
 }
 
 onMounted(async () => {
   await fetchUser()
+  await nextTick()
   refreshAll()
 })
 </script>

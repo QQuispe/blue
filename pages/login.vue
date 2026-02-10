@@ -21,10 +21,10 @@ const handleLogin = async () => {
     if (response.statusCode === 200) {
       router.push('/');
     } else {
-      error.value = response.message || 'Login failed';
+      error.value = response.message || 'Invalid credentials';
     }
   } catch (err) {
-    error.value = 'Network error. Please try again.';
+    error.value = 'Unable to connect. Please try again.';
   } finally {
     isLoading.value = false;
   }
