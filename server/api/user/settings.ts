@@ -1,7 +1,7 @@
 import { defineEventHandler, createError, getRequestURL, getMethod } from 'h3';
-import { requireAuth } from '~/server/utils/auth.js';
-import { serverLogger } from '~/server/utils/logger.js';
-import { getUserSettings, createUserSettings, updateUserSettings } from '~/server/db/queries/settings.js';
+import { requireAuth } from '~/server/utils/auth';
+import { serverLogger } from '~/server/utils/logger';
+import { getUserSettings, createUserSettings, updateUserSettings } from '~/server/db/queries/settings';
 
 interface SettingsUpdate {
   currency?: string;

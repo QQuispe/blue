@@ -18,10 +18,12 @@ CREATE TABLE IF NOT EXISTS items (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     plaid_item_id VARCHAR(255) NOT NULL,
+    plaid_access_token TEXT NOT NULL,
     plaid_institution_id VARCHAR(255),
     institution_name VARCHAR(255),
     status VARCHAR(50) DEFAULT 'active',
     error TEXT,
+    transactions_cursor TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     last_synced_at TIMESTAMP
@@ -31,13 +33,16 @@ CREATE TABLE IF NOT EXISTS items (
 CREATE TABLE IF NOT EXISTS accounts (
     id SERIAL PRIMARY KEY,
     item_id INTEGER NOT NULL REFERENCES items(id) ON DELETE CASCADE,
-    plaid_account_id VARCHAR(255) NOT NULL,
+    plaid_account_id VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(255),
     mask VARCHAR(10),
+    official_name VARCHAR(255),
     type VARCHAR(50),
     subtype VARCHAR(50),
-    balance DECIMAL(15,2),
-    currency VARCHAR(10),
+    current_balance DECIMAL(15,2),
+    available_balance DECIMAL(15,2),
+    iso_currency_code VARCHAR(10),
+    unofficial_currency_code VARCHAR(10),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -46,7 +51,7 @@ CREATE TABLE IF NOT EXISTS accounts (
 CREATE TABLE IF NOT EXISTS transactions (
     id SERIAL PRIMARY KEY,
     account_id INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    plaid_transaction_id VARCHAR(255),
+    plaid_transaction_id VARCHAR(255) UNIQUE,
     plaid_category_id VARCHAR(255),
     category VARCHAR(255),
     type VARCHAR(50),
@@ -70,10 +75,11 @@ CREATE TABLE IF NOT EXISTS budgets (
     amount DECIMAL(28,10) NOT NULL,
     is_active BOOLEAN DEFAULT TRUE,
     is_favorited BOOLEAN DEFAULT FALSE,
-    month CHAR(7) DEFAULT NULL,
+    month CHAR(7) DEFAULT '' NOT NULL,
     category_key VARCHAR(50),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_user_category_month UNIQUE (user_id, category, month)
 );
 
 -- Bills table

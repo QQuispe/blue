@@ -264,7 +264,7 @@ defineExpose({ refresh })
     </div>
     
     <div v-else-if="activeBills.length === 0 && suggestions.length === 0" class="no-data">
-      <div class="empty-icon">📅</div>
+      <Icon name="mdi:calendar-clock" size="32" class="empty-icon" />
       <p>No upcoming bills</p>
       <span>Add bills manually or wait for pattern detection</span>
     </div>
@@ -467,8 +467,8 @@ defineExpose({ refresh })
 }
 
 .empty-icon {
-  font-size: 1.5rem;
   opacity: 0.5;
+  color: var(--color-text-secondary);
 }
 
 .card-content-scrollable {

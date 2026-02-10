@@ -347,7 +347,7 @@ const totalAccounts = computed(() => accounts.value.length)
 const totalInstitutions = computed(() => Object.keys(groupedAccounts.value).length)
 
 onMounted(() => {
-  logger.navigation('dashboard', '/dashboard/balance', { via: 'router' })
+  logger.navigation('dashboard', '/accounts', { via: 'router' })
   fetchData()
 })
 </script>

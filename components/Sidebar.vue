@@ -13,7 +13,7 @@ const { isCollapsed, toggle } = useSidebar()
 
 const menuItems: MenuItem[] = [
   { name: 'Dashboard', icon: 'mdi:view-dashboard', path: '/' },
-  { name: 'Accounts', icon: 'mdi:bank', path: '/dashboard/balance' },
+  { name: 'Accounts', icon: 'mdi:bank', path: '/accounts' },
   { name: 'Transactions', icon: 'mdi:view-list', path: '/transactions' },
   { name: 'Budgets', icon: 'mdi:chart-pie', path: '/dashboard/budgets' },
   { name: 'Settings', icon: 'mdi:cog', path: '/settings' },

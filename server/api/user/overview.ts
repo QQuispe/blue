@@ -2,7 +2,7 @@ import { defineEventHandler, createError, getQuery } from 'h3';
 import { requireAuth } from '~/server/utils/auth.js';
 import { pool } from '../../db/index.js';
 import { serverLogger } from '~/server/utils/logger.js';
-import { getUserCurrency } from '~/server/db/queries/settings.js';
+import { getUserCurrency } from '~/server/db/queries/settings';
 
 interface OverviewMetric {
   current: number;

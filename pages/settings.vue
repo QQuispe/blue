@@ -202,7 +202,7 @@ onMounted(() => {
               <span class="action-title">Manage Bank Connections</span>
               <span class="action-desc">Link or unlink your bank accounts</span>
             </div>
-            <BaseButton variant="secondary" size="sm" to="/dashboard/balance">
+            <BaseButton variant="secondary" size="sm" to="/accounts">
               Manage
             </BaseButton>
           </div>

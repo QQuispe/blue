@@ -85,9 +85,9 @@ const percentageChangeClass = computed(() => {
 })
 
 const changeIcon = computed(() => {
-  if (percentageChange.value > 0) return '↑'
-  if (percentageChange.value < 0) return '↓'
-  return '→'
+  if (percentageChange.value > 0) return 'mdi:arrow-up'
+  if (percentageChange.value < 0) return 'mdi:arrow-down'
+  return 'mdi:minus'
 })
 
 // Change timeframe
@@ -255,7 +255,7 @@ watch(selectedTimeframe, () => {
     
     <!-- No Data State -->
     <div v-else-if="historyData.length === 0" class="no-data">
-      <div class="empty-icon">📈</div>
+      <Icon name="mdi:chart-line" size="32" class="empty-icon" />
       <p>No historical data available</p>
       <span class="empty-hint">Connect accounts to start tracking your net worth</span>
     </div>
@@ -409,8 +409,8 @@ watch(selectedTimeframe, () => {
 }
 
 .no-data .empty-icon {
-  font-size: 2rem;
   opacity: 0.5;
+  color: var(--color-text-secondary);
 }
 
 .no-data p {

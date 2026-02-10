@@ -68,7 +68,13 @@ defineExpose({ refresh })
         <Icon name="mdi:view-list" size="18" />
         <h3>Recent Transactions</h3>
       </div>
-      <BaseButton variant="secondary" size="sm" class="view-all-btn" to="/transactions">
+      <BaseButton 
+        v-if="!isLoading && !error && transactions.length > 0"
+        variant="secondary" 
+        size="sm" 
+        class="view-all-btn" 
+        to="/transactions"
+      >
         View all
         <Icon name="mdi:arrow-right" size="14" />
       </BaseButton>
@@ -87,9 +93,14 @@ defineExpose({ refresh })
     </div>
 
     <div v-else-if="transactions.length === 0" class="empty-state">
-      <Icon name="mdi:view-list" size="24" />
-      <p>No transactions yet</p>
-      <span>Connect accounts to start tracking</span>
+      <div class="empty-content">
+        <Icon name="mdi:view-list" size="32" class="empty-icon" />
+        <span class="empty-text">No transactions yet</span>
+        <BaseButton variant="secondary" size="sm" to="/accounts" class="setup-btn">
+          Connect accounts
+          <Icon name="mdi:arrow-right" size="14" />
+        </BaseButton>
+      </div>
     </div>
 
     <div v-else class="transactions-list">
@@ -164,7 +175,7 @@ h3 {
   margin: 0;
 }
 
-.loading-state, .error-state, .empty-state {
+.loading-state, .error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -180,20 +191,39 @@ h3 {
   color: var(--color-error);
 }
 
-.empty-state .empty-icon {
-  font-size: 1.5rem;
+.empty-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 2rem 0;
+}
+
+.empty-icon {
+  color: var(--color-text-muted);
   opacity: 0.5;
 }
 
-.empty-state p {
-  color: var(--color-text-primary);
-  font-size: 0.875rem;
-  margin: 0;
+.empty-text {
+  color: var(--color-text-muted);
+  font-size: 0.8125rem;
 }
 
-.empty-state span {
-  font-size: 0.75rem;
-  opacity: 0.7;
+.setup-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  width: auto;
+  margin-top: 0.25rem;
 }
 
 .transactions-list {
