@@ -13,6 +13,23 @@ const showDisconnectConfirm: Ref<string | null> = ref(null)
 const linkToken: Ref<string> = ref('')
 const isLinkLoading: Ref<boolean> = ref(false)
 
+// Collapsible state for institutions
+const collapsedInstitutions: Ref<Set<string>> = ref(new Set())
+
+// Toggle institution collapse state
+const toggleInstitution = (itemId: string) => {
+  if (collapsedInstitutions.value.has(itemId)) {
+    collapsedInstitutions.value.delete(itemId)
+  } else {
+    collapsedInstitutions.value.add(itemId)
+  }
+}
+
+// Check if institution is collapsed
+const isCollapsed = (itemId: string): boolean => {
+  return collapsedInstitutions.value.has(itemId)
+}
+
 const route = useRoute()
 const router = useRouter()
 
@@ -434,20 +451,20 @@ onMounted(() => {
     <div v-else class="content">
       <!-- Institution Groups -->
       <div class="institutions-list">
-        <div 
-          v-for="(group, itemId) in groupedAccounts" 
+        <div
+          v-for="(group, itemId) in groupedAccounts"
           :key="itemId"
           class="institution-card"
         >
           <!-- Institution Header -->
-          <div class="institution-header">
+          <div class="institution-header" @click="toggleInstitution(itemId)">
             <div class="institution-info">
               <h2 class="institution-name">{{ group.institutionName }}</h2>
               <span class="institution-meta">{{ group.accounts.length }} account{{ group.accounts.length === 1 ? '' : 's' }}</span>
             </div>
             <div class="institution-actions">
-              <button 
-                @click="syncItem(group.item?.plaid_item_id)"
+              <button
+                @click.stop="syncItem(group.item?.plaid_item_id)"
                 :disabled="syncingItem === group.item?.plaid_item_id"
                 class="action-btn sync-btn"
                 :class="{ 'is-syncing': syncingItem === group.item?.plaid_item_id }"
@@ -458,10 +475,10 @@ onMounted(() => {
                 <span v-if="syncingItem === group.item?.plaid_item_id">Syncing...</span>
                 <span v-else>Sync</span>
               </button>
-              
-              <button 
+
+              <button
                 v-if="showDisconnectConfirm !== group.item?.id"
-                @click="disconnectItem(group.item?.id)"
+                @click.stop="disconnectItem(group.item?.id)"
                 class="action-btn disconnect-btn"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -472,32 +489,34 @@ onMounted(() => {
               
               <div v-else class="confirm-actions">
                 <span class="confirm-text">Sure?</span>
-                <button 
-                  @click="disconnectItem(group.item?.id)"
+                <button
+                  @click.stop="disconnectItem(group.item?.id)"
                   :disabled="disconnectingItem === group.item?.id"
                   class="action-btn confirm-btn"
                 >
                   {{ disconnectingItem === group.item?.id ? 'Removing...' : 'Yes' }}
                 </button>
-                <button @click="cancelDisconnect" class="action-btn cancel-btn">No</button>
+                <button @click.stop="cancelDisconnect" class="action-btn cancel-btn">No</button>
               </div>
             </div>
           </div>
-          
-          <!-- Sync Status -->
-          <div class="sync-status-bar">
-            <div 
-              class="sync-indicator"
-              :class="getSyncStatus(group.accounts[0]).status"
-            >
-              <span class="sync-dot"></span>
-              <span class="sync-text">{{ getSyncStatus(group.accounts[0]).text }}</span>
+
+          <!-- Collapsible Content -->
+          <div v-show="!isCollapsed(itemId)" class="institution-content">
+            <!-- Sync Status -->
+            <div class="sync-status-bar">
+              <div
+                class="sync-indicator"
+                :class="getSyncStatus(group.accounts[0]).status"
+              >
+                <span class="sync-dot"></span>
+                <span class="sync-text">{{ getSyncStatus(group.accounts[0]).text }}</span>
+              </div>
+              <span v-if="group.item?.error" class="error-badge">⚠️ Sync error</span>
             </div>
-            <span v-if="group.item?.error" class="error-badge">⚠️ Sync error</span>
-          </div>
-          
-          <!-- Accounts List -->
-          <div class="accounts-list">
+
+            <!-- Accounts List -->
+            <div class="accounts-list">
             <div 
               v-for="account in group.accounts" 
               :key="account.id"
@@ -537,7 +556,8 @@ onMounted(() => {
           </div>
         </div>
       </div>
-      
+      </div>
+
       <!-- Tips Section -->
       <div class="tips-section">
         <h3>💡 Tips</h3>
@@ -556,7 +576,6 @@ onMounted(() => {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
-  min-height: 100vh;
 }
 
 /* Header */
@@ -784,6 +803,16 @@ onMounted(() => {
   padding: 1.25rem;
   background: var(--color-bg-primary);
   border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.institution-header:hover {
+  background: var(--color-bg-card-hover);
+}
+
+.institution-content {
+  transition: all 0.3s ease;
 }
 
 .institution-info {
