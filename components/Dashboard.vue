@@ -41,17 +41,15 @@ onMounted(async () => {
             <OverviewCard ref="overviewCardRef" />
           </div>
           
-          <div class="card-row">
-            <div class="carousel-container">
-              <div class="carousel-card">
-                <BudgetProgressCard ref="budgetProgressCardRef" />
-              </div>
-              <div class="carousel-card">
-                <TransactionsCard ref="transactionsCardRef" />
-              </div>
-              <div class="carousel-card">
-                <BillsCard ref="billsCardRef" />
-              </div>
+          <div class="bottom-row">
+            <div class="card">
+              <BudgetProgressCard ref="budgetProgressCardRef" />
+            </div>
+            <div class="card">
+              <TransactionsCard ref="transactionsCardRef" />
+            </div>
+            <div class="card">
+              <BillsCard ref="billsCardRef" />
             </div>
           </div>
         </div>
@@ -92,39 +90,11 @@ onMounted(async () => {
   align-items: stretch;
 }
 
-.card-row {
+.bottom-row {
   grid-column: span 3;
-  display: flex;
-  flex-direction: column;
-}
-
-.carousel-container {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-
-.carousel-container::-webkit-scrollbar {
-  display: none;
-}
-
-.carousel-card {
-  flex: 0 0 calc(33.333% - 11px);
-  min-width: 280px;
-  scroll-snap-align: start;
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 10px;
-  padding: 16px;
-  transition: all 0.3s ease;
-}
-
-.carousel-card:hover {
-  background: var(--color-bg-card-hover);
-  border-color: var(--color-border-hover);
 }
 
 .card-wide {
@@ -151,18 +121,16 @@ onMounted(async () => {
 @media (max-width: 1024px) {
   .grid-container {
     grid-template-columns: 1fr;
+    grid-template-rows: auto;
   }
   
   .card-wide {
     grid-column: span 1;
   }
   
-  .card-row {
+  .bottom-row {
     grid-column: span 1;
-  }
-  
-  .carousel-card {
-    flex: 0 0 100%;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -177,10 +145,6 @@ onMounted(async () => {
   }
   
   .card {
-    padding: 10px;
-  }
-  
-  .carousel-card {
     padding: 10px;
   }
 }

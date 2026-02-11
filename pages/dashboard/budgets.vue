@@ -641,12 +641,11 @@ const viewBudgetTransactions = async (budget: Budget) => {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
 }
 
 .stat-card:hover {
-  border-color: var(--color-border-hover);
-  background: var(--color-bg-subtle);
+  transform: translateY(-2px);
 }
 
 .stat-card.warning {

@@ -184,6 +184,11 @@ h3 {
   background: var(--color-bg-elevated);
   padding: 1rem;
   border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.overall-progress:hover {
+  transform: translateY(-2px);
 }
 
 .overall-header {

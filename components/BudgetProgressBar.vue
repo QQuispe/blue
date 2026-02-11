@@ -63,6 +63,11 @@ const props = defineProps<{
   background: var(--color-bg-elevated);
   padding: 1rem;
   border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.budget-progress-bar:hover {
+  transform: translateY(-2px);
 }
 
 .budget-progress-bar.compact {

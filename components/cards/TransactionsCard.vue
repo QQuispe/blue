@@ -239,7 +239,11 @@ h3 {
   padding: 0.5rem 0.625rem;
   background: var(--color-bg-elevated);
   border-radius: 8px;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+}
+
+.transaction-item:hover {
+  transform: translateY(-2px);
 }
 
 .transaction-icon {

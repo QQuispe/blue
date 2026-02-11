@@ -511,6 +511,11 @@ defineExpose({ refresh })
   padding: 0.5rem;
   background: var(--color-bg-elevated);
   border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.suggestion-item:hover {
+  transform: translateY(-2px);
 }
 
 .bill-item {
@@ -562,8 +567,12 @@ defineExpose({ refresh })
   padding: 0.625rem;
   background: var(--color-bg-elevated);
   border-radius: 8px;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   flex-shrink: 0;
+}
+
+.bill-item:hover {
+  transform: translateY(-2px);
 }
 
 .bill-main {
