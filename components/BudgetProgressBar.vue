@@ -61,7 +61,7 @@ const props = defineProps<{
 <style scoped>
 .budget-progress-bar {
   background: var(--color-bg-elevated);
-  padding: 0.625rem;
+  padding: 1rem;
   border-radius: 6px;
 }
 

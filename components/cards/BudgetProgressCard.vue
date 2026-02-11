@@ -182,7 +182,7 @@ h3 {
 /* Overall Progress */
 .overall-progress {
   background: var(--color-bg-elevated);
-  padding: 0.75rem;
+  padding: 1rem;
   border-radius: 8px;
 }
 
@@ -190,7 +190,7 @@ h3 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 }
 
 .overall-label {
@@ -252,7 +252,7 @@ h3 {
 .budget-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 /* View All Button */
