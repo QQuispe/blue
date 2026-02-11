@@ -34,23 +34,20 @@ onMounted(async () => {
     <div class="dashboard">
       <div class="main-content">
         <div class="grid-container">
-          <div class="card card-wide">
+          <div class="card networth-card">
             <NetWorthCard ref="netWorthCardRef" />
           </div>
-          <div class="card">
+          <div class="card overview-card">
             <OverviewCard ref="overviewCardRef" />
           </div>
-          
-          <div class="bottom-row">
-            <div class="card">
-              <BudgetProgressCard ref="budgetProgressCardRef" />
-            </div>
-            <div class="card">
-              <TransactionsCard ref="transactionsCardRef" />
-            </div>
-            <div class="card">
-              <BillsCard ref="billsCardRef" />
-            </div>
+          <div class="card budget-card">
+            <BudgetProgressCard ref="budgetProgressCardRef" />
+          </div>
+          <div class="card transactions-card">
+            <TransactionsCard ref="transactionsCardRef" />
+          </div>
+          <div class="card bills-card">
+            <BillsCard ref="billsCardRef" />
           </div>
         </div>
       </div>
@@ -84,22 +81,35 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: 362px auto;
+  grid-template-areas:
+    "networth networth overview"
+    "budget transactions bills";
   gap: 16px;
   width: 100%;
   flex: 1;
   align-items: stretch;
 }
 
-.bottom-row {
-  grid-column: span 3;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+.networth-card {
+  grid-area: networth;
+  height: 100%;
 }
 
-.card-wide {
-  grid-column: span 2;
+.overview-card {
+  grid-area: overview;
   height: 100%;
+}
+
+.budget-card {
+  grid-area: budget;
+}
+
+.transactions-card {
+  grid-area: transactions;
+}
+
+.bills-card {
+  grid-area: bills;
 }
 
 .card {
@@ -118,19 +128,43 @@ onMounted(async () => {
   border-color: var(--color-border-hover);
 }
 
-@media (max-width: 1024px) {
+/* Medium screens (901px - 1399px): NetWorth full width, 4 cards in 2x2 */
+@media (min-width: 901px) and (max-width: 1399px) {
+  .grid-container {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 400px repeat(2, 1fr);
+    grid-template-areas:
+      "networth networth"
+      "overview budget"
+      "transactions bills";
+  }
+
+  .networth-card {
+    height: 400px;
+  }
+}
+
+/* Small screens (≤900px): Single column stack */
+@media (max-width: 900px) {
   .grid-container {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
+    grid-template-areas:
+      "networth"
+      "overview"
+      "budget"
+      "transactions"
+      "bills";
   }
-  
-  .card-wide {
-    grid-column: span 1;
+
+  .networth-card {
+    height: auto;
+    min-height: 300px;
   }
-  
-  .bottom-row {
-    grid-column: span 1;
-    grid-template-columns: 1fr;
+
+  .overview-card {
+    height: auto;
+    min-height: 250px;
   }
 }
 
@@ -139,11 +173,11 @@ onMounted(async () => {
     padding: 8px;
     min-height: calc(100vh - 50px);
   }
-  
+
   .grid-container {
     gap: 10px;
   }
-  
+
   .card {
     padding: 10px;
   }
