@@ -2,10 +2,6 @@
 import { ref, onMounted, computed, type Ref } from 'vue'
 import BaseButton from '~/components/BaseButton.vue'
 
-definePageMeta({
-  middleware: 'auth'
-})
-
 const auth = useAuth()
 const { $toast } = useNuxtApp()
 

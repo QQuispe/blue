@@ -5,10 +5,6 @@ import { budgetCategories } from '~/composables/useBudgetCategories'
 import { formatCurrency, formatDate, getProgressColorClass, getRiskColorClass, getCategoryIcon } from '~/utils/formatters'
 import { useBudgetProgress } from '~/composables/useBudgetProgress'
 
-definePageMeta({
-  middleware: 'auth'
-})
-
 interface Budget {
   id: number
   category: string

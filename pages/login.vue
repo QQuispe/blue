@@ -4,7 +4,6 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const { login: authLogin } = useAuth()
-const { isReady } = useAuthPage()
 
 const username = ref('')
 const password = ref('')
@@ -32,7 +31,7 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="auth-page" :class="{ 'is-ready': isReady }">
+  <div class="auth-page">
     <div class="auth-card">
       <h1>Welcome Back</h1>
       <p class="subtitle">Sign in to your account</p>
@@ -93,27 +92,22 @@ const handleLogin = async () => {
   </div>
 </template>
 
-<style scoped>
-/* Layout - Full screen centered */
+<style>
+/* Layout - Full screen centered (global for SSR compatibility) */
 .auth-page {
   position: fixed;
   inset: 0;
   display: grid;
   place-items: center;
-  background: var(--color-bg-primary);
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  background: var(--color-bg-primary, #0d0d0d);
 }
 
-.auth-page.is-ready {
-  opacity: 1;
-}
-
-/* Card - Modern intrinsic sizing */
+/* Card - Fixed sizing to prevent layout shift during load */
 .auth-card {
-  /* Intrinsic width: never wider than 400px, never narrower than 320px */
-  width: min(100% - 2rem, 400px);
-  min-width: min(320px, 100% - 2rem);
+  /* Fixed constraints that work before CSS loads */
+  width: 100%;
+  max-width: 400px;
+  min-width: 320px;
   
   /* Visual styling */
   background: var(--color-bg-card);

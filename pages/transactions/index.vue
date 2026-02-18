@@ -6,10 +6,6 @@ import TransactionsSummary from '~/components/transactions/TransactionsSummary.v
 import TransactionDetail from '~/components/transactions/TransactionDetail.vue'
 import BaseButton from '~/components/BaseButton.vue'
 
-definePageMeta({
-  middleware: 'auth'
-})
-
 interface Transaction {
   id: number
   date: string
