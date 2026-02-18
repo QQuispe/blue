@@ -215,7 +215,7 @@ const formatAmount = (amount: number): string => {
 }
 
 onMounted(() => {
-  fetchBills()
+  // Don't auto-fetch; parent Dashboard will call refresh()
 })
 
 const activeBills = computed(() => bills.value.filter(b => b.isActive))

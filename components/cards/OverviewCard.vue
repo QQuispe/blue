@@ -113,7 +113,7 @@ const refresh = () => {
 defineExpose({ refresh })
 
 onMounted(() => {
-  fetchOverview()
+  // Don't auto-fetch; parent Dashboard will call refresh()
 })
 </script>
 

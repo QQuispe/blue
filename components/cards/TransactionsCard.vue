@@ -50,7 +50,7 @@ const fetchTransactions = async () => {
 }
 
 onMounted(() => {
-  fetchTransactions()
+  // Don't auto-fetch; parent Dashboard will call refresh()
 })
 
 // Expose refresh method for parent component

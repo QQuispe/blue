@@ -18,8 +18,9 @@ interface Budget {
 
 const { getProjectedPercentage, getRiskLevel } = useBudgetProgress()
 
-const { data: response, pending, error, refresh } = await useFetch('/api/user/budgets', {
-  credentials: 'include'
+const { data: response, pending, error, refresh } = useFetch('/api/user/budgets', {
+  credentials: 'include',
+  immediate: false
 })
 
 const budgets = computed(() => response.value?.budgets || [])

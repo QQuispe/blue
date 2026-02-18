@@ -14,7 +14,7 @@ interface LoginBody {
 interface LoginResponse {
   statusCode: number;
   message: string;
-  user: {
+  user?: {
     id: number;
     username: string;
     email?: string;
@@ -40,6 +40,14 @@ const SESSION_CONFIG = {
   sameSite: 'strict'
 };
 
+// Expected errors that don't need stack traces
+class AuthError extends Error {
+  constructor(public statusCode: number, message: string) {
+    super(message);
+    this.name = 'AuthError';
+  }
+}
+
 export default defineEventHandler(async (event): Promise<LoginResponse> => {
   const body: LoginBody = await readBody(event);
   const { username, email, password } = body;
@@ -63,27 +71,18 @@ export default defineEventHandler(async (event): Promise<LoginResponse> => {
     }
 
     if (!user) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Invalid credentials'
-      });
+      throw new AuthError(401, 'Invalid credentials');
     }
 
     // Check if user is active
     if (!user.is_active) {
-      throw createError({
-        statusCode: 403,
-        statusMessage: 'Account is deactivated'
-      });
+      throw new AuthError(403, 'Account is deactivated');
     }
 
     // Verify password
     const isValidPassword = await comparePassword(password, user.password_hash!);
     if (!isValidPassword) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Invalid credentials'
-      });
+      throw new AuthError(401, 'Invalid credentials');
     }
 
     // Create session
@@ -112,10 +111,19 @@ export default defineEventHandler(async (event): Promise<LoginResponse> => {
     };
 
   } catch (error: any) {
+    // Handle expected auth errors gracefully - no stack trace
+    if (error instanceof AuthError) {
+      throw createError({
+        statusCode: error.statusCode,
+        statusMessage: error.message
+      });
+    }
+    
+    // Only log unexpected errors
     console.error('Login error:', error);
     throw createError({
-      statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || 'Login failed'
+      statusCode: 500,
+      statusMessage: 'Login failed'
     });
   }
 });

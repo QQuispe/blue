@@ -7,46 +7,35 @@ export default defineNuxtPlugin((nuxtApp) => {
   const logger = getLogger()
   const router = nuxtApp.$router
   
+  let navigationStartTime = 0
+  
   // Log before navigation starts
   router.beforeEach((to, from) => {
-    logger.navigation(from.path, to.path, {
-      fromName: from.name ?? undefined,
-      toName: to.name ?? undefined,
-      fromParams: from.params,
-      toParams: to.params,
-      fromQuery: from.query,
-      toQuery: to.query,
-      timestamp: new Date().toISOString()
-    })
+    // Skip redundant navigations
+    if (from.path === to.path) return
+    
+    navigationStartTime = Date.now()
+    logger.navigation(from.path, to.path)
   })
   
   // Log after navigation completes
   router.afterEach((to, from) => {
-    logger.info('Navigation completed', {
-      from: from.path,
-      to: to.path,
-      duration: Date.now(), // We could track this properly with beforeEach
-      timestamp: new Date().toISOString()
-    })
+    // Skip redundant navigations
+    if (from.path === to.path) return
+    
+    const duration = Date.now() - navigationStartTime
+    logger.success(`✓ ${to.path} (${duration}ms)`)
   })
   
   // Log navigation errors
   router.onError((error, to, from) => {
-    logger.error('Navigation error', {
-      error: error.message,
-      stack: error.stack ?? undefined,
-      from: from?.path,
-      to: to?.path,
-      timestamp: new Date().toISOString()
+    logger.error(`Navigation failed: ${from?.path} → ${to?.path}`, {
+      error: error.message
     })
   })
   
   // Log initial page load (client-side only)
   if (process.client) {
-    logger.info('Application initialized', {
-      initialPath: router.currentRoute.value.path,
-      userAgent: navigator?.userAgent || 'unknown',
-      timestamp: new Date().toISOString()
-    })
+    logger.info('App ready', { path: router.currentRoute.value.path })
   }
 })

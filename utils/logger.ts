@@ -47,7 +47,12 @@ class Logger {
   action(action: string, data?: Record<string, unknown>): void { this.log('ACTION', 1, '#8b5cf6', action, data); }
   component(name: string, action: string, data?: Record<string, unknown>): void { this.debug(`[${name}] ${action}`, data); }
   api(method: string, url: string, status: number, duration: number, userId?: number): void { this.info(`API ${method} ${url}`, { status, duration, userId }); }
-  navigation(from: string, to: string, duration?: number): void { this.info('NAVIGATION', { from, to, duration }); }
+  navigation(from: string, to: string): void { 
+    // Skip redundant navigations (e.g., login -> login)
+    if (from === to) return;
+    
+    this.info(`→ ${to}`); 
+  }
 
   getRecentLogs(count: number = 50): LogEntry[] { return this.logs.slice(-count); }
   clearLogs(): void { this.logs = []; }

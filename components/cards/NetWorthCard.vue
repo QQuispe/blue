@@ -46,7 +46,7 @@ const fetchNetWorth = async () => {
 }
 
 onMounted(() => {
-  fetchNetWorth()
+  // Don't auto-fetch; parent Dashboard will call refresh()
 })
 
 // Cleanup chart on unmount
