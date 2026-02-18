@@ -30,6 +30,15 @@ export default defineNuxtConfig({
           src: 'https://cdn.plaid.com/link/v2/stable/link-initialize.js', // Add Plaid script
           type: 'text/javascript',
           async: true, // Ensure it loads asynchronously
+        },
+        {
+          innerHTML: `(function() {
+            var s = localStorage.getItem('blue-theme-mode');
+            var t = s || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', t);
+            document.documentElement.style.colorScheme = t;
+          })();`,
+          type: 'text/javascript',
         }
       ]
     }

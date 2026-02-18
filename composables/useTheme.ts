@@ -16,20 +16,25 @@ export const useTheme = () => {
   const preset = useState<ThemePreset>('themePreset', () => 'default')
   const isInitialized = useState<boolean>('themeInitialized', () => false)
 
-  // Initialize theme from localStorage or system preference
   const initializeTheme = () => {
     if (process.server || isInitialized.value) return
 
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored) {
-      mode.value = stored as ColorMode
+    const html = document.documentElement
+    const currentTheme = html.getAttribute('data-theme') as ColorMode | null
+    
+    if (currentTheme) {
+      mode.value = currentTheme
     } else {
-      // Check system preference, default to dark
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      mode.value = prefersDark ? 'dark' : 'light'
+      const stored = localStorage.getItem(STORAGE_KEY)
+      if (stored) {
+        mode.value = stored as ColorMode
+      } else {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        mode.value = prefersDark ? 'dark' : 'light'
+      }
+      applyTheme()
     }
 
-    applyTheme()
     isInitialized.value = true
 
     // Listen for system theme changes

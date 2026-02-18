@@ -4,6 +4,24 @@ const auth = useAuth()
 const { initializeTheme } = useTheme()
 const route = useRoute()
 
+useHead({
+  script: [
+    {
+      children: `
+        (function() {
+          var theme = localStorage.getItem('blue-theme-mode');
+          if (!theme) {
+            theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          document.documentElement.setAttribute('data-theme', theme);
+        })();
+      `,
+      type: 'text/javascript',
+      tagPosition: 'head'
+    }
+  ]
+})
+
 const isAuthPage = computed(() => 
   ['/login', '/register'].includes(route.path)
 )
