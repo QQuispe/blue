@@ -2,23 +2,18 @@
 const { isCollapsed } = useSidebar()
 const auth = useAuth()
 const { initializeTheme } = useTheme()
+const route = useRoute()
 
-const publicRoutes = ['/login', '/register']
+const isAuthPage = computed(() => 
+  ['/login', '/register'].includes(route.path)
+)
 
 const showSidebar = computed(() => {
-  const route = useRoute()
-  if (publicRoutes.includes(route.path)) {
-    return false
-  }
-  
-  if (auth.isAuthenticated) {
-    return true
-  }
-  
+  if (isAuthPage.value) return false
+  if (auth.isAuthenticated) return true
   return true
 })
 
-// Initialize theme on app mount
 onMounted(() => {
   initializeTheme()
 })
@@ -27,11 +22,15 @@ onMounted(() => {
 <template>
   <div class="app-wrapper">
     <Sidebar v-if="showSidebar" />
-    <div class="main-layout" :class="{ 
-      'sidebar-collapsed': showSidebar && isCollapsed,
-      'sidebar-visible': showSidebar 
-    }">
-      <HeaderNav />
+    <div 
+      class="main-layout" 
+      :class="{ 
+        'sidebar-collapsed': showSidebar && isCollapsed,
+        'sidebar-visible': showSidebar,
+        'auth-layout': isAuthPage
+      }"
+    >
+      <HeaderNav v-if="!isAuthPage" />
       <main class="main-content">
         <NuxtPage />
       </main>
@@ -61,6 +60,10 @@ onMounted(() => {
 
 .main-layout.sidebar-collapsed {
   margin-left: 75px;
+}
+
+.main-layout.auth-layout {
+  margin-left: 0 !important;
 }
 
 .main-content {

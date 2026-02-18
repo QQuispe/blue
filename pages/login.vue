@@ -1,43 +1,43 @@
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-const router = useRouter();
-const { login: authLogin } = useAuth();
+const router = useRouter()
+const { login: authLogin } = useAuth()
+const { isReady } = useAuthPage()
 
-const username = ref('');
-const password = ref('');
-const error = ref('');
-const isLoading = ref(false);
-const showPassword = ref(false);
+const username = ref('')
+const password = ref('')
+const error = ref('')
+const isLoading = ref(false)
+const showPassword = ref(false)
 
 const handleLogin = async () => {
-  error.value = '';
-  isLoading.value = true;
+  error.value = ''
+  isLoading.value = true
 
   try {
-    const response = await authLogin(username.value, password.value);
-
+    const response = await authLogin(username.value, password.value)
     if (response.statusCode === 200) {
-      router.push('/');
+      router.push('/')
     } else {
-      error.value = response.message || 'Invalid credentials';
+      error.value = response.message || 'Invalid credentials'
     }
   } catch (err) {
-    error.value = 'Unable to connect. Please try again.';
+    error.value = 'Unable to connect. Please try again.'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 </script>
 
 <template>
-  <div class="login-container">
-    <div class="login-box">
+  <div class="auth-page" :class="{ 'is-ready': isReady }">
+    <div class="auth-card">
       <h1>Welcome Back</h1>
       <p class="subtitle">Sign in to your account</p>
 
-      <form @submit.prevent="handleLogin" class="login-form">
+      <form @submit.prevent="handleLogin" class="auth-form">
         <div class="form-group">
           <label for="username">Username</label>
           <input
@@ -67,14 +67,7 @@ const handleLogin = async () => {
               @click="showPassword = !showPassword"
               :title="showPassword ? 'Hide password' : 'Show password'"
             >
-              <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                <line x1="1" y1="1" x2="23" y2="23"/>
-              </svg>
+              <Icon :name="showPassword ? 'mdi:eye-off' : 'mdi:eye'" size="20" />
             </button>
           </div>
         </div>
@@ -85,14 +78,14 @@ const handleLogin = async () => {
 
         <button
           type="submit"
-          class="login-btn"
+          class="auth-btn"
           :disabled="isLoading || !username || !password"
         >
           {{ isLoading ? 'Signing in...' : 'Sign In' }}
         </button>
       </form>
 
-      <div class="register-link">
+      <div class="auth-footer">
         Don't have an account?
         <NuxtLink to="/register">Create one</NuxtLink>
       </div>
@@ -101,40 +94,52 @@ const handleLogin = async () => {
 </template>
 
 <style scoped>
-.login-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+/* Layout - Full screen centered */
+.auth-page {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
   background: var(--color-bg-primary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
-.login-box {
+.auth-page.is-ready {
+  opacity: 1;
+}
+
+/* Card - Modern intrinsic sizing */
+.auth-card {
+  /* Intrinsic width: never wider than 400px, never narrower than 320px */
+  width: min(100% - 2rem, 400px);
+  min-width: min(320px, 100% - 2rem);
+  
+  /* Visual styling */
   background: var(--color-bg-card);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 40px;
-  width: 100%;
-  max-width: 400px;
   border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: clamp(24px, 5vw, 40px);
+  box-sizing: border-box;
 }
 
+/* Header */
 h1 {
-  color: var(--color-text-primary);
   margin: 0 0 8px 0;
   font-size: 1.75rem;
   text-align: center;
+  color: var(--color-text-primary);
 }
 
 .subtitle {
-  color: var(--color-text-secondary);
-  text-align: center;
   margin: 0 0 32px 0;
+  text-align: center;
+  color: var(--color-text-secondary);
   font-size: 0.875rem;
 }
 
-.login-form {
+/* Form */
+.auth-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -147,26 +152,21 @@ h1 {
 }
 
 label {
-  color: var(--color-text-primary);
   font-size: 0.875rem;
   font-weight: 500;
-}
-
-.password-input {
-  position: relative;
-  display: flex;
+  color: var(--color-text-primary);
 }
 
 input {
-  flex: 1;
   padding: 12px 16px;
-  padding-right: 48px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
   color: var(--color-text-primary);
   font-size: 1rem;
   transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 input:focus {
@@ -181,6 +181,15 @@ input::placeholder {
 input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Password toggle */
+.password-input {
+  position: relative;
+}
+
+.password-input input {
+  padding-right: 48px;
 }
 
 .password-toggle {
@@ -203,8 +212,9 @@ input:disabled {
   color: var(--color-text-primary);
 }
 
+/* Error message */
 .error-message {
-  background: var(--color-error-bg);
+  background: rgba(239, 68, 68, 0.1);
   color: var(--color-error);
   padding: 12px;
   border-radius: 8px;
@@ -212,7 +222,8 @@ input:disabled {
   text-align: center;
 }
 
-.login-btn {
+/* Submit button */
+.auth-btn {
   background: var(--color-accent);
   color: var(--color-bg-primary);
   border: none;
@@ -224,30 +235,31 @@ input:disabled {
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.login-btn:hover:not(:disabled) {
+.auth-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
+  box-shadow: 0 4px 12px rgba(62, 180, 137, 0.3);
 }
 
-.login-btn:disabled {
+.auth-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.register-link {
+/* Footer */
+.auth-footer {
   text-align: center;
   margin-top: 24px;
   color: var(--color-text-secondary);
   font-size: 0.875rem;
 }
 
-.register-link a {
+.auth-footer a {
   color: var(--color-accent);
   text-decoration: none;
   margin-left: 4px;
 }
 
-.register-link a:hover {
+.auth-footer a:hover {
   text-decoration: underline;
 }
 </style>

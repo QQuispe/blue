@@ -1,81 +1,74 @@
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-const router = useRouter();
+const router = useRouter()
+const { isReady } = useAuthPage()
 
-const username = ref('');
-const email = ref('');
-const password = ref('');
-const confirmPassword = ref('');
-const error = ref('');
-const success = ref('');
-const isLoading = ref(false);
-const showPassword = ref(false);
-const showConfirmPassword = ref(false);
+const username = ref('')
+const email = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+const error = ref('')
+const success = ref('')
+const isLoading = ref(false)
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 
 const handleRegister = async () => {
-  error.value = '';
-  success.value = '';
+  error.value = ''
+  success.value = ''
 
-  // Validation
   if (password.value !== confirmPassword.value) {
-    error.value = 'Passwords do not match';
-    return;
+    error.value = 'Passwords do not match'
+    return
   }
 
   if (password.value.length < 8) {
-    error.value = 'Password must be at least 8 characters';
-    return;
+    error.value = 'Password must be at least 8 characters'
+    return
   }
 
-  isLoading.value = true;
+  isLoading.value = true
 
   try {
     const response = await fetch('/api/auth/register', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         username: username.value,
         email: email.value || null,
         password: password.value
       })
-    });
+    })
 
-    const data = await response.json();
+    const data = await response.json()
 
     if (response.ok) {
-      success.value = 'Account created successfully! Redirecting to login...';
-      // Wait a moment then redirect
-      setTimeout(() => {
-        router.push('/login');
-      }, 2000);
+      success.value = 'Account created successfully! Redirecting...'
+      setTimeout(() => router.push('/login'), 2000)
     } else {
-      error.value = data.statusMessage || 'Registration failed';
+      error.value = data.statusMessage || 'Registration failed'
     }
   } catch (err) {
-    error.value = 'Network error. Please try again.';
+    error.value = 'Network error. Please try again.'
   } finally {
-    isLoading.value = false;
+    isLoading.value = false
   }
-};
+}
 </script>
 
 <template>
-  <div class="register-container">
-    <div class="register-box">
+  <div class="auth-page" :class="{ 'is-ready': isReady }">
+    <div class="auth-card">
       <NuxtLink to="/login" class="back-link" title="Back to login">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
+        <Icon name="mdi:arrow-left" size="20" />
       </NuxtLink>
       
       <h1>Create Account</h1>
       <p class="subtitle">Join Blue Finance</p>
 
-      <form @submit.prevent="handleRegister" class="register-form">
+      <form @submit.prevent="handleRegister" class="auth-form">
         <div class="form-group">
           <label for="username">Username *</label>
           <input
@@ -116,14 +109,7 @@ const handleRegister = async () => {
               @click="showPassword = !showPassword"
               :title="showPassword ? 'Hide password' : 'Show password'"
             >
-              <svg v-if="!showPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                <line x1="1" y1="1" x2="23" y2="23"/>
-              </svg>
+              <Icon :name="showPassword ? 'mdi:eye-off' : 'mdi:eye'" size="20" />
             </button>
           </div>
         </div>
@@ -145,14 +131,7 @@ const handleRegister = async () => {
               @click="showConfirmPassword = !showConfirmPassword"
               :title="showConfirmPassword ? 'Hide password' : 'Show password'"
             >
-              <svg v-if="!showConfirmPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-              <svg v-else xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                <line x1="1" y1="1" x2="23" y2="23"/>
-              </svg>
+              <Icon :name="showConfirmPassword ? 'mdi:eye-off' : 'mdi:eye'" size="20" />
             </button>
           </div>
         </div>
@@ -167,14 +146,14 @@ const handleRegister = async () => {
 
         <button
           type="submit"
-          class="register-btn"
+          class="auth-btn"
           :disabled="isLoading || !username || !password || !confirmPassword"
         >
           {{ isLoading ? 'Creating Account...' : 'Create Account' }}
         </button>
       </form>
 
-      <div class="login-link">
+      <div class="auth-footer">
         Already have an account?
         <NuxtLink to="/login">Sign in</NuxtLink>
       </div>
@@ -183,35 +162,45 @@ const handleRegister = async () => {
 </template>
 
 <style scoped>
-.register-container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
+/* Layout - Full screen centered */
+.auth-page {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
   background: var(--color-bg-primary);
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
-.register-box {
+.auth-page.is-ready {
+  opacity: 1;
+}
+
+/* Card - Modern intrinsic sizing */
+.auth-card {
+  /* Intrinsic width: never wider than 400px, never narrower than 320px */
+  width: min(100% - 2rem, 400px);
+  min-width: min(320px, 100% - 2rem);
+  
+  /* Visual styling */
   background: var(--color-bg-card);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 40px;
-  width: 100%;
-  max-width: 400px;
   border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: clamp(24px, 5vw, 40px);
+  box-sizing: border-box;
   position: relative;
 }
 
+/* Back link */
 .back-link {
   position: absolute;
   top: 16px;
   left: 16px;
   color: var(--color-text-muted);
-  cursor: pointer;
   padding: 8px;
   border-radius: 8px;
-  transition: color 0.2s, background 0.2s;
+  transition: all 0.2s;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -219,25 +208,26 @@ const handleRegister = async () => {
 
 .back-link:hover {
   color: var(--color-text-primary);
-  background: var(--color-bg-hover);
+  background: var(--color-bg-secondary);
 }
 
+/* Header */
 h1 {
-  color: var(--color-text-primary);
-  margin: 0 0 8px 0;
+  margin: 8px 0 8px 0;
   font-size: 1.75rem;
   text-align: center;
-  padding-top: 8px;
+  color: var(--color-text-primary);
 }
 
 .subtitle {
-  color: var(--color-text-secondary);
-  text-align: center;
   margin: 0 0 32px 0;
+  text-align: center;
+  color: var(--color-text-secondary);
   font-size: 0.875rem;
 }
 
-.register-form {
+/* Form */
+.auth-form {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -250,26 +240,21 @@ h1 {
 }
 
 label {
-  color: var(--color-text-primary);
   font-size: 0.875rem;
   font-weight: 500;
-}
-
-.password-input {
-  position: relative;
-  display: flex;
+  color: var(--color-text-primary);
 }
 
 input {
-  flex: 1;
   padding: 12px 16px;
-  padding-right: 48px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-border);
   background: var(--color-bg-secondary);
   color: var(--color-text-primary);
   font-size: 1rem;
   transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 input:focus {
@@ -284,6 +269,15 @@ input::placeholder {
 input:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Password toggle */
+.password-input {
+  position: relative;
+}
+
+.password-input input {
+  padding-right: 48px;
 }
 
 .password-toggle {
@@ -306,13 +300,9 @@ input:disabled {
   color: var(--color-text-primary);
 }
 
-.help-text {
-  color: var(--color-text-secondary);
-  font-size: 0.75rem;
-}
-
+/* Messages */
 .error-message {
-  background: var(--color-error-bg);
+  background: rgba(239, 68, 68, 0.1);
   color: var(--color-error);
   padding: 12px;
   border-radius: 8px;
@@ -321,15 +311,16 @@ input:disabled {
 }
 
 .success-message {
-  background: var(--color-success-bg);
-  color: var(--color-success);
+  background: rgba(62, 180, 137, 0.1);
+  color: var(--color-accent);
   padding: 12px;
   border-radius: 8px;
   font-size: 0.875rem;
   text-align: center;
 }
 
-.register-btn {
+/* Submit button */
+.auth-btn {
   background: var(--color-accent);
   color: var(--color-bg-primary);
   border: none;
@@ -341,30 +332,31 @@ input:disabled {
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.register-btn:hover:not(:disabled) {
+.auth-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
+  box-shadow: 0 4px 12px rgba(62, 180, 137, 0.3);
 }
 
-.register-btn:disabled {
+.auth-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.login-link {
+/* Footer */
+.auth-footer {
   text-align: center;
   margin-top: 24px;
   color: var(--color-text-secondary);
   font-size: 0.875rem;
 }
 
-.login-link a {
+.auth-footer a {
   color: var(--color-accent);
   text-decoration: none;
   margin-left: 4px;
 }
 
-.login-link a:hover {
+.auth-footer a:hover {
   text-decoration: underline;
 }
 </style>
