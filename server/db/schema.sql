@@ -170,3 +170,36 @@ CREATE INDEX IF NOT EXISTS idx_user_settings_user_id ON user_settings(user_id);
 
 -- Create index for net_worth_snapshots
 CREATE INDEX IF NOT EXISTS idx_net_worth_user_date ON net_worth_snapshots(user_id, snapshot_date);
+
+-- ============================================================================
+-- PERFORMANCE INDEXES (Phase 1 Optimization)
+-- These indexes improve query performance for common operations
+-- ============================================================================
+
+-- For transaction search performance (ILIKE queries on transaction names)
+CREATE INDEX IF NOT EXISTS idx_transactions_name ON transactions(name);
+
+-- For bill sorting by due date
+CREATE INDEX IF NOT EXISTS idx_user_bills_next_due_date ON user_bills(user_id, next_due_date);
+
+-- For account balance calculations with date filtering
+CREATE INDEX IF NOT EXISTS idx_accounts_updated_at ON accounts(item_id, updated_at);
+
+-- For Plaid ID lookups (webhook handling, transaction sync)
+CREATE INDEX IF NOT EXISTS idx_items_plaid_item_id ON items(plaid_item_id);
+CREATE INDEX IF NOT EXISTS idx_items_plaid_access_token ON items(plaid_access_token);
+
+-- For email-based authentication lookups
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+
+-- For composite transaction queries (account + date sorting)
+CREATE INDEX IF NOT EXISTS idx_transactions_account_date ON transactions(account_id, date DESC, created_at DESC);
+
+-- For user + status filtering on items
+CREATE INDEX IF NOT EXISTS idx_items_user_status ON items(user_id, status);
+
+-- For active bills query with sorting
+CREATE INDEX IF NOT EXISTS idx_user_bills_user_active_date ON user_bills(user_id, is_active, next_due_date);
+
+-- For pending transaction filtering (partial index for boolean with low cardinality)
+CREATE INDEX IF NOT EXISTS idx_transactions_pending ON transactions(pending) WHERE pending = true;
