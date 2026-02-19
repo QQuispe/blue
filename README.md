@@ -45,6 +45,27 @@ docker-compose exec db psql -U postgres -d mydatabase
 # User: postgres, Password: mypassword, Database: mydatabase
 ```
 
+### Code Quality (Linting & Formatting)
+
+Since the app runs in Docker, run these commands inside the container:
+
+```bash
+# Check code for errors
+docker-compose exec app npm run lint
+
+# Fix auto-fixable errors
+docker-compose exec app npm run lint:fix
+
+# Format code with Prettier
+docker-compose exec app npm run format
+
+# Check formatting
+docker-compose exec app npm run format:check
+
+# Run all checks (lint + format)
+docker-compose exec app npm run check
+```
+
 ## Development (Without Docker)
 
 If you prefer to run locally without Docker:
