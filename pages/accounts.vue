@@ -370,19 +370,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="account-management-page">
-    <!-- Header -->
-    <div class="page-header">
-      <NuxtLink to="/" class="back-link">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-        <span>Back to Dashboard</span>
-      </NuxtLink>
-      <h1 class="page-title">Connected Accounts</h1>
-      <p class="page-subtitle">Manage your bank connections and account health</p>
-    </div>
-    
+  <BasePageLayout title="Connected Accounts">
     <!-- Summary Bar -->
     <div class="summary-bar">
       <div class="summary-section">
@@ -568,59 +556,20 @@ onMounted(() => {
         </ul>
       </div>
     </div>
-  </div>
+  </BasePageLayout>
 </template>
 
 <style scoped>
-.account-management-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-/* Header */
-.page-header {
-  margin-bottom: 2rem;
-}
-
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: var(--color-text-secondary);
-  font-size: 0.875rem;
-  text-decoration: none;
-  margin-bottom: 0.75rem;
-  transition: color 0.2s ease;
-}
-
-.back-link:hover {
-  color: var(--color-primary);
-}
-
-.page-title {
-  color: var(--color-text-primary);
-  font-size: 1.75rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem 0;
-}
-
-.page-subtitle {
-  color: var(--color-text-muted);
-  font-size: 0.875rem;
-  margin: 0;
-}
-
 /* Summary Bar */
 .summary-bar {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
-  padding: 1.25rem 1.5rem;
+  gap: 16px;
+  padding: 16px;
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
-  margin-bottom: 2rem;
+  border-radius: 10px;
+  margin-bottom: 16px;
 }
 
 .summary-section {
@@ -785,13 +734,13 @@ onMounted(() => {
 .institutions-list {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 16px;
 }
 
 .institution-card {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
 }
 
@@ -1081,11 +1030,11 @@ onMounted(() => {
 
 /* Tips Section */
 .tips-section {
-  margin-top: 2rem;
-  padding: 1.25rem;
+  margin-top: 16px;
+  padding: 16px;
   background: color-mix(in srgb, var(--color-primary) 5%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-primary) 10%, transparent);
-  border-radius: 12px;
+  border-radius: 10px;
 }
 
 .tips-section h3 {

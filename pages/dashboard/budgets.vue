@@ -296,26 +296,23 @@ const viewBudgetTransactions = async (budget: Budget) => {
 </script>
 
 <template>
-  <div class="page-container">
-    <div class="page-header">
-      <h1>Budgets</h1>
-      <div class="header-actions">
-        <div class="month-selector">
-          <Icon name="mdi:calendar-month" size="18" class="month-icon" />
-          <span class="month-display">{{ formatMonth(selectedMonth) }}</span>
-          <Icon name="mdi:chevron-down" size="16" class="dropdown-arrow" />
-          <select v-model="selectedMonth" class="month-select">
-            <option v-for="month in allMonths" :key="month" :value="month">
-              {{ formatMonth(month) }}
-            </option>
-          </select>
-        </div>
-        <BaseButton variant="primary" @click="openAddModal">
-          <Icon name="mdi:plus" size="16" />
-          Add Budget
-        </BaseButton>
+  <BasePageLayout title="Budgets">
+    <template #header-actions>
+      <div class="month-selector">
+        <Icon name="mdi:calendar-month" size="18" class="month-icon" />
+        <span class="month-display">{{ formatMonth(selectedMonth) }}</span>
+        <Icon name="mdi:chevron-down" size="16" class="dropdown-arrow" />
+        <select v-model="selectedMonth" class="month-select">
+          <option v-for="month in allMonths" :key="month" :value="month">
+            {{ formatMonth(month) }}
+          </option>
+        </select>
       </div>
-    </div>
+      <BaseButton variant="primary" @click="openAddModal">
+        <Icon name="mdi:plus" size="16" />
+        Add Budget
+      </BaseButton>
+    </template>
 
     <div class="stats-grid">
       <div class="stat-card">
@@ -529,34 +526,10 @@ const viewBudgetTransactions = async (budget: Budget) => {
         </div>
       </div>
     </div>
-  </div>
+  </BasePageLayout>
 </template>
 
 <style scoped>
-.page-container {
-  padding: 16px;
-  min-height: calc(100vh - 60px);
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.page-header h1 {
-  color: var(--color-text-primary);
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
 
 .month-selector {
   display: flex;
@@ -625,8 +598,8 @@ const viewBudgetTransactions = async (budget: Budget) => {
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
 .stat-card {

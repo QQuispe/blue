@@ -155,17 +155,7 @@ const handleDetailClose = () => {
 </script>
 
 <template>
-  <div class="transactions-page">
-    <div class="page-header">
-      <h1>Transactions</h1>
-      <BaseButton variant="secondary" size="sm" to="/">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-        Back
-      </BaseButton>
-    </div>
-
+  <BasePageLayout title="Transactions">
     <div class="summary-filters-row">
       <TransactionFilters
         v-model:search="search"
@@ -201,30 +191,10 @@ const handleDetailClose = () => {
       :transaction="selectedTransaction"
       @close="handleDetailClose"
     />
-  </div>
+  </BasePageLayout>
 </template>
 
 <style scoped>
-.transactions-page {
-  padding: 16px;
-  min-height: 100vh;
-  background: var(--color-bg-primary);
-}
-
-.page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
-.page-header h1 {
-  color: var(--color-text-primary);
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
-}
-
 .summary-filters-row {
   display: flex;
   flex-direction: column;

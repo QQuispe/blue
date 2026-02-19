@@ -125,10 +125,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="page-container">
-    <div class="page-header">
-      <h1>Settings</h1>
-    </div>
+  <BasePageLayout title="Settings" :show-back="false">
+    <div class="settings-content">
     
     <div class="settings-grid">
       <!-- Profile Section -->
@@ -348,24 +346,14 @@ onMounted(() => {
         </div>
       </div>
     </div>
-  </div>
+    </div>
+  </BasePageLayout>
 </template>
 
 <style scoped>
-.page-container {
-  padding: 16px;
-  min-height: calc(100vh - 60px);
-}
-
-.page-header {
-  margin-bottom: 24px;
-}
-
-.page-header h1 {
-  color: var(--color-text-primary);
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0;
+.settings-content {
+  display: flex;
+  flex-direction: column;
 }
 
 .settings-grid {
