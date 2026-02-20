@@ -2,7 +2,13 @@
 import { ref, computed, watch, type Ref, nextTick } from 'vue'
 import BaseButton from '~/components/BaseButton.vue'
 import { budgetCategories } from '~/composables/useBudgetCategories'
-import { formatCurrency, formatDate, getProgressColorClass, getRiskColorClass, getCategoryIcon } from '~/utils/formatters'
+import {
+  formatCurrency,
+  formatDate,
+  getProgressColorClass,
+  getRiskColorClass,
+  getCategoryIcon,
+} from '~/utils/formatters'
 import { useBudgetProgress } from '~/composables/useBudgetProgress'
 
 interface Budget {
@@ -39,16 +45,16 @@ const $toast = useNuxtApp().$toast
 
 const { data: monthsData } = await useFetch<{ months: string[] }>('/api/user/budgets/months', {
   credentials: 'include',
-  default: () => ({ months: [] })
+  default: () => ({ months: [] }),
 })
 
 const availableMonths = computed(() => monthsData.value?.months || [])
 const allMonths = computed(() => {
   const currentMonthStr = new Date().toISOString().slice(0, 7)
-  
+
   // Filter to only show months with budgets, up to current month (no future months)
   const validMonths = availableMonths.value.filter(m => m <= currentMonthStr)
-  
+
   // Sort descending (most recent first)
   return validMonths.sort().reverse()
 })
@@ -61,9 +67,14 @@ const refreshBudgets = () => {
   refresh()
 }
 
-const { data: response, pending, error, refresh } = await useFetch('/api/user/budgets', {
+const {
+  data: response,
+  pending,
+  error,
+  refresh,
+} = await useFetch('/api/user/budgets', {
   credentials: 'include',
-  query: computed(() => ({ month: selectedMonth.value }))
+  query: computed(() => ({ month: selectedMonth.value })),
 })
 
 const budgets = computed(() => response.value?.budgets || [])
@@ -82,7 +93,7 @@ const highlightedIndex: Ref<number> = ref(-1)
 
 const form = ref({
   category: '',
-  amount: ''
+  amount: '',
 })
 
 const categories = budgetCategories
@@ -126,7 +137,10 @@ const onCategoryKeydown = (e: KeyboardEvent) => {
     if (!showCategoryDropdown.value) {
       showCategoryDropdown.value = true
     }
-    highlightedIndex.value = Math.min(highlightedIndex.value + 1, filteredCategories.value.length - 1)
+    highlightedIndex.value = Math.min(
+      highlightedIndex.value + 1,
+      filteredCategories.value.length - 1
+    )
   }
   if (e.key === 'ArrowUp') {
     e.preventDefault()
@@ -142,17 +156,20 @@ const { getProjectedPercentage, getRiskLevel } = useBudgetProgress()
 const totalBudgeted = computed(() => budgets.value.reduce((sum, b) => sum + b.budgetAmount, 0))
 const totalSpent = computed(() => budgets.value.reduce((sum, b) => sum + b.spentAmount, 0))
 const overBudgetCount = computed(() => budgets.value.filter(b => b.percentageUsed >= 100).length)
-const atRiskCount = computed(() => budgets.value.filter(b => {
-  const projected = getProjectedPercentage(b)
-  return projected >= 80 && projected < 100
-}).length)
+const atRiskCount = computed(
+  () =>
+    budgets.value.filter(b => {
+      const projected = getProjectedPercentage(b)
+      return projected >= 80 && projected < 100
+    }).length
+)
 
 const sortedBudgets = computed(() => {
   return [...budgets.value]
     .map(budget => ({
       ...budget,
       projectedPercentage: getProjectedPercentage(budget),
-      riskLevel: getRiskLevel(budget)
+      riskLevel: getRiskLevel(budget),
     }))
     .sort((a, b) => {
       const riskOrder = { high: 0, medium: 1, low: 2 }
@@ -188,25 +205,26 @@ const saveBudget = async () => {
     const payload = {
       ...(editingBudget.value && { id: editingBudget.value.id }),
       category: exactMatch,
-      amount: parseFloat(form.value.amount)
+      amount: parseFloat(form.value.amount),
     }
-    
-    const url = editingBudget.value 
-      ? '/api/user/budgets'
-      : '/api/user/budgets'
-    
+
+    const url = editingBudget.value ? '/api/user/budgets' : '/api/user/budgets'
+
     const method = editingBudget.value ? 'PUT' : 'POST'
 
     const response = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     })
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.statusMessage || (editingBudget.value ? 'Failed to update budget' : 'Failed to create budget'))
+      throw new Error(
+        errorData.statusMessage ||
+          (editingBudget.value ? 'Failed to update budget' : 'Failed to create budget')
+      )
     }
 
     $toast.success(editingBudget.value ? 'Budget updated' : 'Budget created')
@@ -224,7 +242,7 @@ const toggleFavorite = async (budget: Budget) => {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ id: budget.id, isFavorited: newFavoritedState })
+      body: JSON.stringify({ id: budget.id, isFavorited: newFavoritedState }),
     })
 
     if (!response.ok) {
@@ -251,7 +269,7 @@ const deleteBudget = async () => {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ id: budgetToDelete.value.id })
+      body: JSON.stringify({ id: budgetToDelete.value.id }),
     })
 
     if (!response.ok) {
@@ -274,18 +292,33 @@ const viewBudgetTransactions = async (budget: Budget) => {
   showTransactionsModal.value = true
 
   try {
-    const startDate = new Date(parseInt(budget.month!.split('-')[0]), parseInt(budget.month!.split('-')[1]) - 1, 1).toISOString().split('T')[0]
-    const endDate = new Date(parseInt(budget.month!.split('-')[0]), parseInt(budget.month!.split('-')[1]), 0).toISOString().split('T')[0]
-    
-    const response = await $fetch<{ transactions: Transaction[] }>('/api/user/budget-transactions', {
-      credentials: 'include',
-      query: {
-        category: budget.category,
-        startDate,
-        endDate
+    const startDate = new Date(
+      parseInt(budget.month!.split('-')[0]),
+      parseInt(budget.month!.split('-')[1]) - 1,
+      1
+    )
+      .toISOString()
+      .split('T')[0]
+    const endDate = new Date(
+      parseInt(budget.month!.split('-')[0]),
+      parseInt(budget.month!.split('-')[1]),
+      0
+    )
+      .toISOString()
+      .split('T')[0]
+
+    const response = await $fetch<{ transactions: Transaction[] }>(
+      '/api/user/budget-transactions',
+      {
+        credentials: 'include',
+        query: {
+          category: budget.category,
+          startDate,
+          endDate,
+        },
       }
-    })
-    
+    )
+
     selectedBudgetTransactions.value = response.transactions || []
   } catch (err) {
     $toast.error('Failed to load transactions')
@@ -343,68 +376,92 @@ const viewBudgetTransactions = async (budget: Budget) => {
     </div>
 
     <div v-else-if="budgets.length === 0" class="empty-container">
-      <svg class="empty-icon" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <circle cx="12" cy="12" r="10"/>
-        <path d="M12 6v6l4 2"/>
+      <svg
+        class="empty-icon"
+        xmlns="http://www.w3.org/2000/svg"
+        width="48"
+        height="48"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.5"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 6v6l4 2" />
       </svg>
       <h3>No budgets yet</h3>
       <p>Create your first budget to start tracking your spending</p>
       <BaseButton variant="primary" @click="openAddModal">Create Budget</BaseButton>
     </div>
 
-    <div v-else class="budget-list" :key="selectedMonth">
-      <div 
-        v-for="budget in sortedBudgets" 
-        :key="budget.id"
-        class="budget-card"
-        :class="{ 'at-risk': budget.riskLevel !== 'low', favorited: budget.isFavorited }"
-      >
-        <div class="budget-header">
-          <div class="budget-category">
-            <Icon :name="getCategoryIcon(budget.category)" size="18" class="category-icon" />
-            <div class="category-info">
+    <div v-else class="budgets-container" :key="selectedMonth">
+      <div class="budgets-card">
+        <div
+          v-for="budget in sortedBudgets"
+          :key="budget.id"
+          class="budget-item"
+          :class="{ 'at-risk': budget.riskLevel !== 'low', favorited: budget.isFavorited }"
+        >
+          <div class="budget-header">
+            <div class="budget-category">
+              <Icon :name="getCategoryIcon(budget.category)" size="18" class="category-icon" />
               <span class="category-name">{{ budget.category }}</span>
-              <button class="action-btn favorite" :class="{ active: budget.isFavorited }" @click="toggleFavorite(budget)" title="Favorite">
+              <button
+                class="action-btn favorite"
+                :class="{ active: budget.isFavorited }"
+                @click="toggleFavorite(budget)"
+                title="Favorite"
+              >
                 <Icon :name="budget.isFavorited ? 'mdi:star' : 'mdi:star-outline'" size="16" />
               </button>
             </div>
+            <div class="budget-actions">
+              <button
+                class="action-btn"
+                @click="viewBudgetTransactions(budget)"
+                title="View Transactions"
+              >
+                <Icon name="mdi:view-list" size="16" />
+              </button>
+              <button class="action-btn" @click="openEditModal(budget)" title="Edit">
+                <Icon name="mdi:pencil" size="16" />
+              </button>
+              <button class="action-btn danger" @click="confirmDelete(budget)" title="Delete">
+                <Icon name="mdi:delete" size="16" />
+              </button>
+            </div>
           </div>
-          <div class="budget-actions">
-            <button class="action-btn" @click="viewBudgetTransactions(budget)" title="View Transactions">
-              <Icon name="mdi:view-list" size="16" />
-            </button>
-            <button class="action-btn" @click="openEditModal(budget)" title="Edit">
-              <Icon name="mdi:pencil" size="16" />
-            </button>
-            <button class="action-btn danger" @click="confirmDelete(budget)" title="Delete">
-              <Icon name="mdi:delete" size="16" />
-            </button>
+          <div class="budget-body">
+            <div class="budget-amounts">
+              <span class="spent">{{ formatCurrency(budget.spentAmount) }}</span>
+              <span class="divider">/</span>
+              <span class="budget">{{ formatCurrency(budget.budgetAmount) }}</span>
+              <span class="remaining" :class="{ negative: budget.remainingAmount < 0 }">
+                {{ budget.remainingAmount >= 0 ? '+' : ''
+                }}{{ formatCurrency(budget.remainingAmount) }} left
+              </span>
+            </div>
+            <div class="budget-bar-container">
+              <div class="budget-bar">
+                <div
+                  class="budget-bar-fill"
+                  :class="getProgressColorClass(budget.percentageUsed)"
+                  :style="{ width: `${Math.min(budget.percentageUsed, 100)}%` }"
+                ></div>
+              </div>
+              <div class="budget-stats">
+                <span class="percentage" :class="getProgressColorClass(budget.percentageUsed)">
+                  {{ budget.percentageUsed.toFixed(0) }}%
+                </span>
+                <span class="projection">
+                  Pace:
+                  <span :class="getRiskColorClass(budget.riskLevel)"
+                    >{{ budget.projectedPercentage.toFixed(0) }}%</span
+                  >
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="budget-amounts">
-          <span class="spent">{{ formatCurrency(budget.spentAmount) }}</span>
-          <span class="divider">/</span>
-          <span class="budget">{{ formatCurrency(budget.budgetAmount) }}</span>
-        </div>
-        <div class="budget-bar-container">
-          <div class="budget-bar">
-            <div 
-              class="budget-bar-fill"
-              :class="getProgressColorClass(budget.percentageUsed)"
-              :style="{ width: `${Math.min(budget.percentageUsed, 100)}%` }"
-            ></div>
-          </div>
-          <div class="budget-stats">
-            <span class="percentage" :class="getProgressColorClass(budget.percentageUsed)">
-              {{ budget.percentageUsed.toFixed(0) }}%
-            </span>
-            <span class="projection">
-              Pace: <span :class="getRiskColorClass(budget.riskLevel)">{{ budget.projectedPercentage.toFixed(0) }}%</span>
-            </span>
-          </div>
-        </div>
-        <div v-if="budget.riskLevel !== 'low'" class="risk-badge" :class="getRiskColorClass(budget.riskLevel)">
-          {{ budget.riskLevel === 'high' ? 'Over pace' : 'On watch' }}
         </div>
       </div>
     </div>
@@ -421,7 +478,7 @@ const viewBudgetTransactions = async (budget: Budget) => {
           <div class="form-group">
             <label>Category *</label>
             <div class="combobox-wrapper">
-              <input 
+              <input
                 ref="categoryInputRef"
                 v-model="form.category"
                 type="text"
@@ -432,9 +489,12 @@ const viewBudgetTransactions = async (budget: Budget) => {
                 @keydown="onCategoryKeydown"
                 @focus="showCategoryDropdown = true"
               />
-              <div v-if="showCategoryDropdown && filteredCategories.length > 0" class="combobox-dropdown">
-                <button 
-                  v-for="(cat, index) in filteredCategories" 
+              <div
+                v-if="showCategoryDropdown && filteredCategories.length > 0"
+                class="combobox-dropdown"
+              >
+                <button
+                  v-for="(cat, index) in filteredCategories"
                   :key="cat"
                   class="combobox-option"
                   :class="{ active: index === highlightedIndex }"
@@ -451,11 +511,17 @@ const viewBudgetTransactions = async (budget: Budget) => {
             <div class="number-input-wrapper">
               <input v-model="form.amount" type="number" step="0.01" placeholder="0.00" />
               <div class="spinner-buttons">
-                <button type="button" @click="form.amount = (parseFloat(form.amount || '0') + 10).toString()">
+                <button
+                  type="button"
+                  @click="form.amount = (parseFloat(form.amount || '0') + 10).toString()"
+                >
                   <Icon name="mdi:chevron-up" size="14" />
                 </button>
                 <div class="spinner-divider"></div>
-                <button type="button" @click="form.amount = Math.max(0, parseFloat(form.amount || '0') - 10).toString()">
+                <button
+                  type="button"
+                  @click="form.amount = Math.max(0, parseFloat(form.amount || '0') - 10).toString()"
+                >
                   <Icon name="mdi:chevron-down" size="14" />
                 </button>
               </div>
@@ -480,7 +546,10 @@ const viewBudgetTransactions = async (budget: Budget) => {
           </button>
         </div>
         <div class="modal-body">
-          <p>Are you sure you want to delete the <strong>{{ budgetToDelete?.category }}</strong> budget?</p>
+          <p>
+            Are you sure you want to delete the
+            <strong>{{ budgetToDelete?.category }}</strong> budget?
+          </p>
           <p class="warning">This action cannot be undone.</p>
         </div>
         <div class="modal-footer">
@@ -508,11 +577,7 @@ const viewBudgetTransactions = async (budget: Budget) => {
             <span>No transactions found for this category</span>
           </div>
           <div v-else class="transactions-list">
-            <div 
-              v-for="tx in selectedBudgetTransactions" 
-              :key="tx.id"
-              class="transaction-item"
-            >
+            <div v-for="tx in selectedBudgetTransactions" :key="tx.id" class="transaction-item">
               <div class="transaction-info">
                 <span class="transaction-name">{{ tx.name }}</span>
                 <span class="transaction-date">{{ formatDate(tx.date) }}</span>
@@ -522,7 +587,12 @@ const viewBudgetTransactions = async (budget: Budget) => {
           </div>
         </div>
         <div v-if="selectedBudgetTransactions.length > 0" class="modal-footer">
-          <span class="total-label">Total: {{ formatCurrency(selectedBudgetTransactions.reduce((sum, t) => sum + t.amount, 0)) }}</span>
+          <span class="total-label"
+            >Total:
+            {{
+              formatCurrency(selectedBudgetTransactions.reduce((sum, t) => sum + t.amount, 0))
+            }}</span
+          >
         </div>
       </div>
     </div>
@@ -530,7 +600,6 @@ const viewBudgetTransactions = async (budget: Budget) => {
 </template>
 
 <style scoped>
-
 .month-selector {
   display: flex;
   align-items: center;
@@ -709,40 +778,46 @@ const viewBudgetTransactions = async (budget: Budget) => {
   text-decoration: underline;
 }
 
-.budget-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
+.budgets-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
 }
 
-.budget-list > * {
-  flex: 1 1 300px;
-  max-width: calc(50% - 8px);
-}
-
-.budget-card {
+.budgets-card {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: 10px;
-  padding: 16px;
-  transition: all 0.2s;
-  box-sizing: border-box;
+  overflow: hidden;
 }
 
-.budget-card:hover {
-  border-color: var(--color-border-hover);
+.budget-item {
+  padding: 16px;
+  border-bottom: 1px solid var(--color-border);
+  transition: background 0.2s;
+}
+
+.budget-item:last-child {
+  border-bottom: none;
+}
+
+.budget-item:hover {
   background: var(--color-bg-card-hover);
 }
 
-.budget-card.at-risk {
+.budget-item:hover {
+  background: var(--color-bg-card-hover);
+}
+
+.budget-item.at-risk {
   border-left: 3px solid var(--color-warning);
 }
 
 .budget-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 12px;
+  align-items: center;
+  margin-bottom: 8px;
 }
 
 .budget-category {
@@ -757,22 +832,23 @@ const viewBudgetTransactions = async (budget: Budget) => {
   flex-shrink: 0;
 }
 
-.category-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .category-name {
   color: var(--color-text-primary);
   font-weight: 500;
   font-size: 0.9375rem;
 }
 
-.category-info .favorite {
+.category-info .favorite,
+.budget-category .favorite {
   width: 20px;
   height: 20px;
   padding: 0;
+}
+
+.budget-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .budget-actions {
@@ -815,12 +891,12 @@ const viewBudgetTransactions = async (budget: Budget) => {
 .budget-amounts {
   display: flex;
   align-items: baseline;
-  gap: 4px;
-  margin-bottom: 8px;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .budget-amounts .spent {
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 600;
   color: var(--color-text-primary);
 }
@@ -833,6 +909,16 @@ const viewBudgetTransactions = async (budget: Budget) => {
 .budget-amounts .budget {
   font-size: 0.875rem;
   color: var(--color-text-secondary);
+}
+
+.budget-amounts .remaining {
+  font-size: 0.8125rem;
+  color: var(--color-success);
+  margin-left: auto;
+}
+
+.budget-amounts .remaining.negative {
+  color: var(--color-error);
 }
 
 .budget-bar-container {
@@ -1009,7 +1095,7 @@ const viewBudgetTransactions = async (budget: Budget) => {
   border-color: var(--color-accent);
 }
 
-.number-input-wrapper input[type="number"] {
+.number-input-wrapper input[type='number'] {
   flex: 1;
   padding-right: 12px;
   padding-left: 12px;
@@ -1025,13 +1111,13 @@ const viewBudgetTransactions = async (budget: Budget) => {
   outline: none;
 }
 
-.number-input-wrapper input[type="number"]::-webkit-inner-spin-button,
-.number-input-wrapper input[type="number"]::-webkit-outer-spin-button {
+.number-input-wrapper input[type='number']::-webkit-inner-spin-button,
+.number-input-wrapper input[type='number']::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.number-input-wrapper input[type="number"] {
+.number-input-wrapper input[type='number'] {
   -moz-appearance: textfield;
 }
 
@@ -1272,7 +1358,7 @@ const viewBudgetTransactions = async (budget: Budget) => {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .budget-list {
     grid-template-columns: 1fr;
   }
