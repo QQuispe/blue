@@ -11,15 +11,15 @@ const fetchBudgets = async () => {
   try {
     isLoading.value = true
     error.value = null
-    
-    const response = await fetch('/api/user/budgets', {
-      credentials: 'include'
+
+    const response = await fetch('/api/finance/budgets', {
+      credentials: 'include',
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch budgets')
     }
-    
+
     const data = await response.json()
     budgets.value = data.budgets
     period.value = data.period
@@ -58,7 +58,7 @@ const totalRemaining = computed(() => {
 
 const overallPercentage = computed(() => {
   if (totalBudget.value === 0) return 0
-  return parseFloat((totalSpent.value / totalBudget.value * 100).toFixed(1))
+  return parseFloat(((totalSpent.value / totalBudget.value) * 100).toFixed(1))
 })
 
 // Get color based on percentage used
@@ -72,7 +72,7 @@ const getProgressColor = (percentage: number): string => {
 const formatCurrency = (amount: number): string => {
   return amount.toLocaleString(undefined, {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   })
 }
 </script>
@@ -86,72 +86,71 @@ const formatCurrency = (amount: number): string => {
         {{ overallPercentage }}%
       </div>
     </div>
-    
+
     <!-- Minimal separator -->
     <div class="separator"></div>
-    
+
     <!-- Loading State -->
     <div v-if="isLoading" class="loading-state">
       <div class="loading-spinner"></div>
       <span>Loading...</span>
     </div>
-    
+
     <!-- Error State -->
     <div v-else-if="error" class="error-state">
       {{ error }}
     </div>
-    
+
     <!-- No Budgets State -->
     <div v-else-if="!hasBudgets" class="no-budgets">
       <div class="empty-icon">🎯</div>
       <p>No budgets set</p>
     </div>
-    
+
     <!-- Content -->
     <div v-else class="card-content">
       <!-- Overall Progress -->
       <div class="overall-progress">
         <div class="progress-bar-bg">
-          <div 
+          <div
             class="progress-bar-fill"
-            :style="{ 
+            :style="{
               width: `${Math.min(overallPercentage, 100)}%`,
-              backgroundColor: getProgressColor(overallPercentage)
+              backgroundColor: getProgressColor(overallPercentage),
             }"
           ></div>
         </div>
         <div class="progress-stats">
-          <span class="stat">{{ formatCurrency(totalSpent.value) }} / {{ formatCurrency(totalBudget.value) }}</span>
+          <span class="stat"
+            >{{ formatCurrency(totalSpent.value) }} / {{ formatCurrency(totalBudget.value) }}</span
+          >
           <span class="remaining" :class="{ 'over-budget': totalRemaining < 0 }">
-            {{ totalRemaining >= 0 ? '' : '-' }}{{ formatCurrency(Math.abs(totalRemaining)) }} remaining
+            {{ totalRemaining >= 0 ? '' : '-'
+            }}{{ formatCurrency(Math.abs(totalRemaining)) }} remaining
           </span>
         </div>
       </div>
-      
+
       <!-- Individual Budgets -->
       <div class="budgets-list">
-        <div 
-          v-for="budget in budgets.slice(0, 3)" 
-          :key="budget.id"
-          class="budget-item"
-        >
+        <div v-for="budget in budgets.slice(0, 3)" :key="budget.id" class="budget-item">
           <div class="budget-info">
             <span class="budget-category">{{ budget.category }}</span>
             <span class="budget-percentage">{{ budget.percentageUsed }}%</span>
           </div>
           <div class="budget-progress">
             <div class="progress-bar-bg small">
-              <div 
+              <div
                 class="progress-bar-fill"
-                :style="{ 
+                :style="{
                   width: `${Math.min(budget.percentageUsed, 100)}%`,
-                  backgroundColor: getProgressColor(budget.percentageUsed)
+                  backgroundColor: getProgressColor(budget.percentageUsed),
                 }"
               ></div>
             </div>
           </div>
         </div>
-        
+
         <div v-if="budgets.length > 3" class="more-budgets">
           +{{ budgets.length - 3 }} more budgets
         </div>
@@ -205,7 +204,9 @@ const formatCurrency = (amount: number): string => {
 }
 
 /* Loading & Error States */
-.loading-state, .error-state, .no-budgets {
+.loading-state,
+.error-state,
+.no-budgets {
   display: flex;
   flex-direction: column;
   align-items: center;

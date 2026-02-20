@@ -18,9 +18,14 @@ interface Budget {
 
 const { getProjectedPercentage, getRiskLevel } = useBudgetProgress()
 
-const { data: response, pending, error, refresh } = useFetch('/api/user/budgets', {
+const {
+  data: response,
+  pending,
+  error,
+  refresh,
+} = useFetch('/api/finance/budgets', {
   credentials: 'include',
-  immediate: false
+  immediate: false,
 })
 
 const budgets = computed(() => response.value?.budgets || [])
@@ -37,7 +42,7 @@ const topBudgets = computed(() => {
     .map(budget => ({
       ...budget,
       projectedPercentage: getProjectedPercentage(budget),
-      riskLevel: getRiskLevel(budget)
+      riskLevel: getRiskLevel(budget),
     }))
     .sort((a, b) => {
       const riskOrder = { high: 0, medium: 1, low: 2 }
@@ -54,7 +59,6 @@ const overallProgress = computed(() => {
   if (totalBudgeted.value === 0) return 0
   return (totalSpent.value / totalBudgeted.value) * 100
 })
-
 </script>
 
 <template>
@@ -64,10 +68,10 @@ const overallProgress = computed(() => {
         <Icon name="mdi:chart-pie" size="20" />
         <h3>Budget Progress</h3>
       </div>
-      <BaseButton 
+      <BaseButton
         v-if="!isLoading && !error && budgets.length > 0"
-        variant="secondary" 
-        size="sm" 
+        variant="secondary"
+        size="sm"
         to="/dashboard/budgets"
         class="view-all-btn"
       >
@@ -105,8 +109,8 @@ const overallProgress = computed(() => {
           <span class="overall-value">{{ overallProgress.toFixed(0) }}%</span>
         </div>
         <div class="overall-bar">
-          <div 
-            class="overall-bar-fill" 
+          <div
+            class="overall-bar-fill"
             :class="getProgressColorClass(overallProgress)"
             :style="{ width: `${Math.min(overallProgress, 100)}%` }"
           ></div>

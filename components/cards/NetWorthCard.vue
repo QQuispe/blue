@@ -16,7 +16,7 @@ const timeframes = [
   { value: '6m', label: '6M' },
   { value: '12m', label: '12M' },
   { value: 'ytd', label: 'YTD' },
-  { value: 'all', label: 'ALL' }
+  { value: 'all', label: 'ALL' },
 ]
 
 // Fetch net worth data from API
@@ -24,17 +24,17 @@ const fetchNetWorth = async () => {
   try {
     isLoading.value = true
     error.value = null
-    
-    const response = await fetch(`/api/user/net-worth?timeframe=${selectedTimeframe.value}`, {
-      credentials: 'include'
+
+    const response = await fetch(`/api/finance/net-worth?timeframe=${selectedTimeframe.value}`, {
+      credentials: 'include',
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch net worth')
     }
-    
+
     const data = await response.json()
-    
+
     currentData.value = data.current
     historyData.value = data.history || []
   } catch (err) {
@@ -54,9 +54,9 @@ onUnmounted(() => {
   if (chart) {
     chart.destroy()
     chart = null
-    }
-  })
- 
+  }
+})
+
 // Expose refresh method for parent component
 const refresh = () => {
   fetchNetWorth()
@@ -69,7 +69,7 @@ const formattedNetWorth = computed(() => {
   if (!currentData.value) return '0.00'
   return currentData.value.netWorth.toLocaleString(undefined, {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   })
 })
 
@@ -91,56 +91,58 @@ const changeIcon = computed(() => {
 })
 
 // Change timeframe
-const changeTimeframe = (timeframe) => {
+const changeTimeframe = timeframe => {
   selectedTimeframe.value = timeframe
 }
 
 // Initialize Chart.js
 const initChart = () => {
   if (!chartCanvas.value || !historyData.value.length) return
-  
+
   const ctx = chartCanvas.value.getContext('2d')
   if (!ctx) return
-  
+
   // Destroy existing chart
   if (chart) {
     chart.destroy()
   }
-  
+
   const labels = historyData.value.map(d => {
     const date = new Date(d.date)
     return date.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
   })
-  
+
   const values = historyData.value.map(d => d.netWorth)
-  
+
   chart = new Chart(ctx, {
     type: 'line',
     data: {
       labels,
-      datasets: [{
-        label: 'Net Worth',
-        data: values,
-        borderColor: '#10b981',
-        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-        borderWidth: 2,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 0,
-        pointHoverRadius: 4,
-        pointHoverBackgroundColor: '#10b981'
-      }]
+      datasets: [
+        {
+          label: 'Net Worth',
+          data: values,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: '#10b981',
+        },
+      ],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       interaction: {
         intersect: false,
-        mode: 'index'
+        mode: 'index',
       },
       plugins: {
         legend: {
-          display: false
+          display: false,
         },
         tooltip: {
           backgroundColor: '#1f2937',
@@ -151,52 +153,56 @@ const initChart = () => {
           padding: 12,
           displayColors: false,
           callbacks: {
-            label: (context) => `$${context.parsed.y.toLocaleString()}`
-          }
-        }
+            label: context => `$${context.parsed.y.toLocaleString()}`,
+          },
+        },
       },
       scales: {
         x: {
           grid: {
-            display: false
+            display: false,
           },
           ticks: {
             color: '#6b7280',
             maxTicksLimit: 6,
             font: {
-              size: 10
-            }
+              size: 10,
+            },
           },
           border: {
-            display: false
-          }
+            display: false,
+          },
         },
         y: {
           grid: {
-            color: 'rgba(107, 114, 128, 0.1)'
+            color: 'rgba(107, 114, 128, 0.1)',
           },
           ticks: {
             color: '#6b7280',
             font: {
-              size: 10
+              size: 10,
             },
-            callback: (value) => `$${(value as number / 1000).toFixed(0)}k`
+            callback: value => `$${((value as number) / 1000).toFixed(0)}k`,
           },
           border: {
-            display: false
-          }
-        }
-      }
-    }
+            display: false,
+          },
+        },
+      },
+    },
   })
 }
 
 // Watch for data changes and update chart
-watch(historyData, () => {
-  nextTick(() => {
-    initChart()
-  })
-}, { deep: true })
+watch(
+  historyData,
+  () => {
+    nextTick(() => {
+      initChart()
+    })
+  },
+  { deep: true }
+)
 
 // Watch for timeframe changes
 watch(selectedTimeframe, () => {
@@ -215,11 +221,11 @@ watch(selectedTimeframe, () => {
           <h3 class="title">Net Worth</h3>
         </div>
       </div>
-      
+
       <!-- Center: Timeframe Selector -->
       <div class="timeframe-selector">
-        <button 
-          v-for="tf in timeframes" 
+        <button
+          v-for="tf in timeframes"
           :key="tf.value"
           class="timeframe-btn"
           :class="{ active: selectedTimeframe === tf.value }"
@@ -228,38 +234,34 @@ watch(selectedTimeframe, () => {
           {{ tf.label }}
         </button>
       </div>
-      
+
       <!-- Right: Value + Percentage -->
       <div class="header-right">
         <span class="value">${{ formattedNetWorth }}</span>
-        <span 
-          v-if="percentageChange !== 0" 
-          class="percentage" 
-          :class="percentageChangeClass"
-        >
+        <span v-if="percentageChange !== 0" class="percentage" :class="percentageChangeClass">
           {{ changeIcon }} {{ Math.abs(percentageChange) }}%
         </span>
       </div>
     </div>
-    
+
     <!-- Loading State -->
     <div v-if="isLoading" class="loading-state">
       <div class="loading-spinner"></div>
       <span>Loading...</span>
     </div>
-    
+
     <!-- Error State -->
     <div v-else-if="error" class="error-state">
       {{ error }}
     </div>
-    
+
     <!-- No Data State -->
     <div v-else-if="historyData.length === 0" class="no-data">
       <Icon name="mdi:chart-line" size="32" class="empty-icon" />
       <p>No historical data available</p>
       <span class="empty-hint">Connect accounts to start tracking your net worth</span>
     </div>
-    
+
     <!-- Chart -->
     <div v-else class="chart-container">
       <canvas ref="chartCanvas"></canvas>
@@ -390,7 +392,9 @@ watch(selectedTimeframe, () => {
 }
 
 /* Loading & Error States - adjusted for taller chart */
-.loading-state, .error-state, .no-data {
+.loading-state,
+.error-state,
+.no-data {
   display: flex;
   flex-direction: column;
   align-items: center;

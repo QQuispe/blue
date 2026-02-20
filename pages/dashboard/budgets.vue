@@ -43,7 +43,7 @@ const selectedBudgetCategory: Ref<string> = ref('')
 const loadingTransactions: Ref<boolean> = ref(false)
 const $toast = useNuxtApp().$toast
 
-const { data: monthsData } = await useFetch<{ months: string[] }>('/api/user/budgets/months', {
+const { data: monthsData } = await useFetch<{ months: string[] }>('/api/finance/budgets/months', {
   credentials: 'include',
   default: () => ({ months: [] }),
 })
@@ -72,7 +72,7 @@ const {
   pending,
   error,
   refresh,
-} = await useFetch('/api/user/budgets', {
+} = await useFetch('/api/finance/budgets', {
   credentials: 'include',
   query: computed(() => ({ month: selectedMonth.value })),
 })
@@ -208,7 +208,7 @@ const saveBudget = async () => {
       amount: parseFloat(form.value.amount),
     }
 
-    const url = editingBudget.value ? '/api/user/budgets' : '/api/user/budgets'
+    const url = editingBudget.value ? '/api/finance/budgets' : '/api/finance/budgets'
 
     const method = editingBudget.value ? 'PUT' : 'POST'
 
@@ -238,7 +238,7 @@ const saveBudget = async () => {
 const toggleFavorite = async (budget: Budget) => {
   try {
     const newFavoritedState = !budget.isFavorited
-    const response = await fetch('/api/user/budgets', {
+    const response = await fetch('/api/finance/budgets', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -265,7 +265,7 @@ const deleteBudget = async () => {
   if (!budgetToDelete.value) return
 
   try {
-    const response = await fetch('/api/user/budgets', {
+    const response = await fetch('/api/finance/budgets', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -308,7 +308,7 @@ const viewBudgetTransactions = async (budget: Budget) => {
       .split('T')[0]
 
     const response = await $fetch<{ transactions: Transaction[] }>(
-      '/api/user/budget-transactions',
+      '/api/finance/budget-transactions',
       {
         credentials: 'include',
         query: {

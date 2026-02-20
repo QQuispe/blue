@@ -46,14 +46,16 @@ const showDetail: Ref<boolean> = ref(false)
 let fetchTimeout: ReturnType<typeof setTimeout> | null = null
 
 const fetchTransactions = async (params: URLSearchParams) => {
-  const response = await fetch(`/api/user/transactions?${params}`, { credentials: 'include' })
+  const response = await fetch(`/api/finance/transactions?${params}`, { credentials: 'include' })
   if (!response.ok) throw new Error('Failed to fetch transactions')
   const data = await response.json()
   return data
 }
 
 const fetchSummary = async (params: URLSearchParams) => {
-  const response = await fetch(`/api/user/transactions/summary?${params}`, { credentials: 'include' })
+  const response = await fetch(`/api/finance/transactions/summary?${params}`, {
+    credentials: 'include',
+  })
   if (response.ok) {
     const data = await response.json()
     return data.totalSpend || 0
@@ -66,60 +68,69 @@ const fetchData = async (showLoading = true) => {
     clearTimeout(fetchTimeout)
   }
 
-  fetchTimeout = setTimeout(async () => {
-    if (showLoading) {
-      isLoading.value = true
-    }
-    error.value = null
-
-    try {
-      const params = new URLSearchParams({
-        page: currentPage.value.toString(),
-        limit: pageSize.value.toString(),
-        sort: sortBy.value
-      })
-
-      if (search.value) params.append('search', search.value)
-      if (selectedAccount.value) params.append('accountId', selectedAccount.value)
-      params.append('datePreset', datePreset.value)
-
-      const [transactionsData, summaryData] = await Promise.all([
-        fetchTransactions(params),
-        fetchSummary(params)
-      ])
-
-      transactions.value = transactionsData.transactions || []
-      totalCount.value = transactionsData.count || 0
-      if (summaryData !== null) {
-        totalSpend.value = summaryData
-      }
-
-      if (showLoading && accounts.value.length === 0) {
-        const filtersRes = await fetch('/api/user/transactions/filters', { credentials: 'include' })
-        if (filtersRes.ok) {
-          const filtersData = await filtersRes.json()
-          accounts.value = filtersData.accounts || []
-        }
-      }
-    } catch (err) {
+  fetchTimeout = setTimeout(
+    async () => {
       if (showLoading) {
-        error.value = err instanceof Error ? err.message : 'Unknown error'
+        isLoading.value = true
       }
-    } finally {
-      isLoading.value = false
-      fetchTimeout = null
-    }
-  }, showLoading ? 0 : 150)
+      error.value = null
+
+      try {
+        const params = new URLSearchParams({
+          page: currentPage.value.toString(),
+          limit: pageSize.value.toString(),
+          sort: sortBy.value,
+        })
+
+        if (search.value) params.append('search', search.value)
+        if (selectedAccount.value) params.append('accountId', selectedAccount.value)
+        params.append('datePreset', datePreset.value)
+
+        const [transactionsData, summaryData] = await Promise.all([
+          fetchTransactions(params),
+          fetchSummary(params),
+        ])
+
+        transactions.value = transactionsData.transactions || []
+        totalCount.value = transactionsData.count || 0
+        if (summaryData !== null) {
+          totalSpend.value = summaryData
+        }
+
+        if (showLoading && accounts.value.length === 0) {
+          const filtersRes = await fetch('/api/finance/transactions/filters', {
+            credentials: 'include',
+          })
+          if (filtersRes.ok) {
+            const filtersData = await filtersRes.json()
+            accounts.value = filtersData.accounts || []
+          }
+        }
+      } catch (err) {
+        if (showLoading) {
+          error.value = err instanceof Error ? err.message : 'Unknown error'
+        }
+      } finally {
+        isLoading.value = false
+        fetchTimeout = null
+      }
+    },
+    showLoading ? 0 : 150
+  )
 }
 
 onMounted(() => {
   fetchData(true)
 })
 
-watch([search, selectedAccount, datePreset, sortBy], () => {
-  currentPage.value = 1
-  fetchData(false)
-}, { deep: true })
+watch(
+  [search, selectedAccount, datePreset, sortBy],
+  () => {
+    currentPage.value = 1
+    fetchData(false)
+  },
+  { deep: true }
+)
 
 const handlePageChange = (page: number) => {
   currentPage.value = page
@@ -135,7 +146,7 @@ const handlePageSizeChange = (size: number) => {
 const handleSort = (field: string) => {
   const currentField = sortBy.value.split('-')[0]
   const currentDirection = sortBy.value.split('-')[1] || 'desc'
-  
+
   if (currentField === field) {
     sortBy.value = `${field}-${currentDirection === 'asc' ? 'desc' : 'asc'}`
   } else {
@@ -165,10 +176,7 @@ const handleDetailClose = () => {
         :accounts="accounts"
       />
 
-      <TransactionsSummary
-        :total-count="totalCount"
-        :total-spend="totalSpend"
-      />
+      <TransactionsSummary :total-count="totalCount" :total-spend="totalSpend" />
     </div>
 
     <TransactionsTable

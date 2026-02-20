@@ -25,15 +25,15 @@ const fetchData = async () => {
   try {
     isLoading.value = true
     error.value = null
-    
-    const response = await fetch('/api/user/cash-flow', {
-      credentials: 'include'
+
+    const response = await fetch('/api/finance/cash-flow', {
+      credentials: 'include',
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch cash flow data')
     }
-    
+
     data.value = await response.json()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unknown error'
@@ -46,26 +46,26 @@ const { createChartData, createChartOptions } = useCashFlowChart()
 
 const createChart = () => {
   if (!chartCanvas.value || !data.value) return
-  
+
   if (chart) {
     chart.destroy()
   }
-  
+
   const ctx = chartCanvas.value.getContext('2d')
   if (!ctx) return
 
   const chartData = createChartData({
     months: data.value.months,
     income: data.value.income,
-    expenses: data.value.expenses
+    expenses: data.value.expenses,
   })
 
   const chartOptions = createChartOptions(data.value.totals.income)
-  
+
   chart = new Chart(ctx, {
     type: 'bar',
     data: chartData,
-    options: chartOptions
+    options: chartOptions,
   })
 }
 
@@ -86,7 +86,7 @@ const formatCurrency = (value: number) => {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    maximumFractionDigits: 0,
   })
 }
 
@@ -111,23 +111,23 @@ defineExpose({ refresh })
         {{ data.totals.net >= 0 ? '+' : '' }}{{ formatCurrency(data.totals.net) }}
       </div>
     </div>
-    
+
     <div class="separator"></div>
-    
+
     <div v-if="isLoading" class="loading-state">
       <div class="loading-spinner"></div>
       <span>Loading...</span>
     </div>
-    
+
     <div v-else-if="error" class="error-state">
       {{ error }}
     </div>
-    
+
     <div v-else-if="!data || data.months.length === 0" class="no-data">
       <div class="empty-icon">📊</div>
       <p>No cash flow data available</p>
     </div>
-    
+
     <div v-else class="card-content">
       <div class="summary-row">
         <div class="summary-item">
@@ -145,7 +145,7 @@ defineExpose({ refresh })
           </span>
         </div>
       </div>
-      
+
       <div class="chart-container">
         <canvas ref="chartCanvas"></canvas>
       </div>
@@ -206,7 +206,9 @@ defineExpose({ refresh })
   margin: 0;
 }
 
-.loading-state, .error-state, .no-data {
+.loading-state,
+.error-state,
+.no-data {
   display: flex;
   flex-direction: column;
   align-items: center;

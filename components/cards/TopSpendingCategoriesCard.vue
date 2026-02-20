@@ -21,15 +21,15 @@ const fetchSpending = async () => {
   try {
     isLoading.value = true
     error.value = null
-    
-    const response = await fetch('/api/user/spending-by-category', {
-      credentials: 'include'
+
+    const response = await fetch('/api/finance/spending-by-category', {
+      credentials: 'include',
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch spending data')
     }
-    
+
     const data = await response.json()
     categories.value = data.categories
     totalSpending.value = data.totalSpending
@@ -44,24 +44,24 @@ const fetchSpending = async () => {
 // Create or update chart
 const createChart = () => {
   if (!chartCanvas.value || categories.value.length === 0) return
-  
+
   // Destroy existing chart
   if (chart) {
     chart.destroy()
   }
-  
+
   // Prepare data - top 5 categories, rest as "Other"
   const topCategories = categories.value.slice(0, 5)
   const otherAmount = categories.value.slice(5).reduce((sum, cat) => sum + cat.amount, 0)
-  
+
   const labels = topCategories.map(c => c.categoryPrimary)
   const data = topCategories.map(c => c.amount)
-  
+
   if (otherAmount > 0) {
     labels.push('Other')
     data.push(otherAmount)
   }
-  
+
   // Get computed CSS variable values for chart colors
   const computedStyle = getComputedStyle(document.documentElement)
   const colors = [
@@ -70,20 +70,22 @@ const createChart = () => {
     computedStyle.getPropertyValue('--color-chart-3').trim() || '#8b5cf6',
     computedStyle.getPropertyValue('--color-chart-4').trim() || '#f59e0b',
     computedStyle.getPropertyValue('--color-chart-5').trim() || '#ef4444',
-    computedStyle.getPropertyValue('--color-chart-6').trim() || '#6b7280'
+    computedStyle.getPropertyValue('--color-chart-6').trim() || '#6b7280',
   ]
   const textPrimary = computedStyle.getPropertyValue('--color-text-primary').trim() || '#ffffff'
-  
+
   chart = new Chart(chartCanvas.value, {
     type: 'doughnut',
     data: {
       labels,
-      datasets: [{
-        data,
-        backgroundColor: colors.slice(0, labels.length),
-        borderWidth: 0,
-        hoverOffset: 4
-      }]
+      datasets: [
+        {
+          data,
+          backgroundColor: colors.slice(0, labels.length),
+          borderWidth: 0,
+          hoverOffset: 4,
+        },
+      ],
     },
     options: {
       responsive: true,
@@ -95,26 +97,25 @@ const createChart = () => {
           labels: {
             color: textPrimary,
             font: {
-              size: 10
+              size: 10,
             },
             boxWidth: 10,
-            padding: 8
-          }
+            padding: 8,
+          },
         },
         tooltip: {
-            callbacks: {
-              label: (context: any) => {
-                const value = context.raw
-                const percentage = totalSpending.value > 0 
-                  ? ((value / totalSpending.value) * 100).toFixed(1)
-                  : 0
-                return `$${Number(value.toFixed(2))} (${percentage}%)`
-              }
-            }
-        }
+          callbacks: {
+            label: (context: any) => {
+              const value = context.raw
+              const percentage =
+                totalSpending.value > 0 ? ((value / totalSpending.value) * 100).toFixed(1) : 0
+              return `$${Number(value.toFixed(2))} (${percentage}%)`
+            },
+          },
+        },
       },
-      cutout: '65%'
-    }
+      cutout: '65%',
+    },
   })
 
   // Add resize handler
@@ -158,38 +159,40 @@ defineExpose({ refresh })
         ${{ totalSpending.toFixed(2) }}
       </div>
     </div>
-    
+
     <!-- Minimal separator -->
     <div class="separator"></div>
-    
+
     <!-- Loading State -->
     <div v-if="isLoading" class="loading-state">
       <div class="loading-spinner"></div>
       <span>Loading...</span>
     </div>
-    
+
     <!-- Error State -->
     <div v-else-if="error" class="error-state">
       {{ error }}
     </div>
-    
+
     <!-- No Data State -->
     <div v-else-if="!hasData" class="no-data">
       <div class="empty-icon">📈</div>
       <p>No spending data available</p>
     </div>
-    
+
     <!-- Content -->
     <div v-else class="card-content">
       <!-- Chart -->
       <div class="chart-container">
         <canvas ref="chartCanvas"></canvas>
       </div>
-      
+
       <!-- Top Category -->
       <div v-if="topCategory" class="top-category">
         <span class="top-label">Top: {{ topCategory.categoryPrimary }}</span>
-        <span class="top-amount">${{ topCategory.amount.toFixed(2) }} ({{ topCategory.percentage }}%)</span>
+        <span class="top-amount"
+          >${{ topCategory.amount.toFixed(2) }} ({{ topCategory.percentage }}%)</span
+        >
       </div>
     </div>
   </div>
@@ -240,7 +243,9 @@ defineExpose({ refresh })
 }
 
 /* Loading & Error States */
-.loading-state, .error-state, .no-data {
+.loading-state,
+.error-state,
+.no-data {
   display: flex;
   flex-direction: column;
   align-items: center;

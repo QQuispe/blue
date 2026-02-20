@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, type Ref } from 'vue'
+import { ref, computed } from 'vue'
 
 interface MenuItem {
   name: string
@@ -7,29 +7,99 @@ interface MenuItem {
   path: string
 }
 
+interface NavGroup {
+  name: string
+  icon: string
+  items?: MenuItem[]
+  path?: string
+}
+
 const auth = useAuth()
 const username = computed((): string => auth.user.value?.username || 'User')
 const { isCollapsed, toggle } = useSidebar()
 
-const menuItems: MenuItem[] = [
-  { name: 'Dashboard', icon: 'mdi:view-dashboard', path: '/' },
-  { name: 'Health', icon: 'mdi:heart-pulse', path: '/health' },
-  { name: 'Accounts', icon: 'mdi:bank', path: '/accounts' },
-  { name: 'Transactions', icon: 'mdi:view-list', path: '/transactions' },
-  { name: 'Budgets', icon: 'mdi:chart-pie', path: '/dashboard/budgets' },
-  { name: 'Settings', icon: 'mdi:cog', path: '/settings' },
+const financeExpanded = ref(true)
+const financeTempExpanded = ref(false)
+const healthExpanded = ref(true)
+const healthTempExpanded = ref(false)
+
+const showFinanceItems = computed(() => {
+  if (isCollapsed.value) {
+    return financeTempExpanded.value
+  }
+  return financeExpanded.value
+})
+
+const showHealthItems = computed(() => {
+  if (isCollapsed.value) {
+    return healthTempExpanded.value
+  }
+  return healthExpanded.value
+})
+
+const toggleFinance = () => {
+  if (isCollapsed.value) {
+    healthTempExpanded.value = false
+    financeTempExpanded.value = !financeTempExpanded.value
+  } else {
+    financeExpanded.value = !financeExpanded.value
+  }
+}
+
+const toggleHealth = () => {
+  if (isCollapsed.value) {
+    financeTempExpanded.value = false
+    healthTempExpanded.value = !healthTempExpanded.value
+  } else {
+    healthExpanded.value = !healthExpanded.value
+  }
+}
+
+const closeTempExpand = () => {
+  financeTempExpanded.value = false
+  healthTempExpanded.value = false
+}
+
+const navGroups: NavGroup[] = [
+  {
+    name: 'Finance',
+    icon: 'mdi:finance',
+    path: '/finance',
+    items: [
+      { name: 'Accounts', icon: 'mdi:bank', path: '/accounts' },
+      { name: 'Transactions', icon: 'mdi:view-list', path: '/transactions' },
+      { name: 'Budgets', icon: 'mdi:chart-pie', path: '/dashboard/budgets' },
+    ],
+  },
+  {
+    name: 'Health',
+    icon: 'mdi:heart-pulse',
+    path: '/health',
+    items: [
+      { name: 'Meals', icon: 'mdi:food', path: '/health/meals' },
+      { name: 'Plans', icon: 'mdi:dumbbell', path: '/health/plan' },
+      { name: 'Check-ins', icon: 'mdi:scale', path: '/health/checkins' },
+    ],
+  },
 ]
+
+const isActiveGroup = (group: NavGroup) => {
+  const currentPath = window?.location?.pathname || ''
+  if (group.path && currentPath === group.path) return true
+  if (group.items) {
+    return group.items.some(item => currentPath === item.path)
+  }
+  return false
+}
 </script>
 
 <template>
   <aside class="sidebar" :class="{ collapsed: isCollapsed }">
-    <!-- Toggle Button -->
     <button class="toggle-btn" @click="toggle" :title="isCollapsed ? 'Expand' : 'Collapse'">
       <Icon v-if="!isCollapsed" name="mdi:chevron-left" size="20" />
       <Icon v-else name="mdi:chevron-right" size="20" />
     </button>
 
-    <!-- User Profile Section - Client Only to prevent hydration mismatch -->
     <ClientOnly>
       <div class="user-section" v-if="auth.isAuthenticated && auth.user">
         <div class="user-avatar">
@@ -51,26 +121,84 @@ const menuItems: MenuItem[] = [
       </template>
     </ClientOnly>
 
-    <!-- Navigation Menu -->
-    <nav class="nav-menu">
-      <NuxtLink
-        v-for="item in menuItems"
-        :key="item.path"
-        :to="item.path"
-        class="nav-item"
-        :class="{ active: $route.path === item.path }"
-      >
-        <Icon :name="item.icon" size="20" class="nav-icon" />
-        <span class="nav-text" v-show="!isCollapsed">{{ item.name }}</span>
+    <nav class="nav-menu" @click="closeTempExpand">
+      <!-- Finance Group -->
+      <div class="nav-group" @click.stop>
+        <NuxtLink
+          :to="navGroups[0].path"
+          class="nav-group-header"
+          :class="{ active: isActiveGroup(navGroups[0]) }"
+        >
+          <Icon :name="navGroups[0].icon" size="20" class="nav-icon" />
+          <span class="nav-text" v-show="!isCollapsed">{{ navGroups[0].name }}</span>
+          <button v-if="!isCollapsed" class="expand-btn" @click.prevent="toggleFinance">
+            <Icon name="mdi:chevron-down" size="18" :class="{ rotated: financeExpanded }" />
+          </button>
+        </NuxtLink>
+
+        <div
+          class="nav-group-items"
+          :class="{ 'temp-expanded': isCollapsed && financeTempExpanded }"
+          v-show="showFinanceItems"
+        >
+          <NuxtLink
+            v-for="item in navGroups[0].items"
+            :key="item.path"
+            :to="item.path"
+            class="nav-item sub-item"
+            :class="{ active: $route.path === item.path }"
+            @click="isCollapsed && (financeTempExpanded = false)"
+          >
+            <Icon v-if="isCollapsed" :name="item.icon" size="18" class="nav-icon" />
+            <span class="nav-text">{{ item.name }}</span>
+          </NuxtLink>
+        </div>
+      </div>
+
+      <!-- Health Group -->
+      <div class="nav-group" @click.stop>
+        <NuxtLink
+          :to="navGroups[1].path"
+          class="nav-group-header"
+          :class="{ active: isActiveGroup(navGroups[1]) }"
+        >
+          <Icon :name="navGroups[1].icon" size="20" class="nav-icon" />
+          <span class="nav-text" v-show="!isCollapsed">{{ navGroups[1].name }}</span>
+          <button v-if="!isCollapsed" class="expand-btn" @click.prevent="toggleHealth">
+            <Icon name="mdi:chevron-down" size="18" :class="{ rotated: healthExpanded }" />
+          </button>
+        </NuxtLink>
+
+        <div
+          class="nav-group-items"
+          :class="{ 'temp-expanded': isCollapsed && healthTempExpanded }"
+          v-show="showHealthItems"
+        >
+          <NuxtLink
+            v-for="item in navGroups[1].items"
+            :key="item.path"
+            :to="item.path"
+            class="nav-item sub-item"
+            :class="{ active: $route.path === item.path }"
+            @click="isCollapsed && (healthTempExpanded = false)"
+          >
+            <Icon v-if="isCollapsed" :name="item.icon" size="18" class="nav-icon" />
+            <span class="nav-text">{{ item.name }}</span>
+          </NuxtLink>
+        </div>
+      </div>
+
+      <div class="nav-divider" v-show="!isCollapsed"></div>
+      <NuxtLink to="/settings" class="nav-item" :class="{ active: $route.path === '/settings' }">
+        <Icon name="mdi:cog" size="20" class="nav-icon" />
+        <span class="nav-text" v-show="!isCollapsed">Settings</span>
       </NuxtLink>
     </nav>
 
-    <!-- Theme Toggle -->
     <div class="theme-section">
       <ThemeToggle />
     </div>
 
-    <!-- Bottom Actions -->
     <div class="bottom-actions">
       <button v-if="auth.isAuthenticated" @click="auth.logout" class="logout-btn">
         <Icon name="mdi:logout" size="20" class="logout-icon" />
@@ -100,7 +228,6 @@ const menuItems: MenuItem[] = [
   width: 75px;
 }
 
-/* Toggle Button */
 .toggle-btn {
   position: absolute;
   right: -14px;
@@ -128,7 +255,6 @@ const menuItems: MenuItem[] = [
   border-color: var(--color-accent);
 }
 
-/* User Section */
 .user-section {
   padding: 20px 18px;
   display: flex;
@@ -172,7 +298,6 @@ const menuItems: MenuItem[] = [
   font-size: 0.75rem;
 }
 
-/* Navigation Menu */
 .nav-menu {
   flex: 1;
   padding: 16px 0;
@@ -181,6 +306,76 @@ const menuItems: MenuItem[] = [
   gap: 4px;
   overflow-y: auto;
   overflow-x: hidden;
+}
+
+.nav-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.nav-group-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  margin: 0 8px;
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.nav-group-header:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary);
+}
+
+.nav-group-header.active {
+  background: var(--color-success-bg);
+  color: var(--color-accent);
+}
+
+.expand-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.expand-btn .rotated {
+  transform: rotate(180deg);
+}
+
+.nav-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: 20px;
+  margin-top: 4px;
+}
+
+.nav-group-items.temp-expanded {
+  position: absolute;
+  left: 75px;
+  top: 90px;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 200;
+  min-width: 150px;
+}
+
+.nav-group-items.temp-expanded .nav-item {
+  margin: 0;
+  border-radius: 6px;
+  padding: 10px 14px;
+  white-space: nowrap;
 }
 
 .nav-item {
@@ -194,6 +389,11 @@ const menuItems: MenuItem[] = [
   text-decoration: none;
   transition: background 0.2s;
   white-space: nowrap;
+}
+
+.nav-item.sub-item {
+  padding: 10px 18px;
+  font-size: 0.875rem;
 }
 
 .nav-item:hover {
@@ -220,13 +420,17 @@ const menuItems: MenuItem[] = [
   flex-shrink: 0;
 }
 
-/* Theme Toggle Section */
+.nav-divider {
+  height: 1px;
+  background: var(--color-border);
+  margin: 8px 18px;
+}
+
 .theme-section {
   padding: 8px 0;
   border-top: 1px solid var(--color-border);
 }
 
-/* Bottom Actions */
 .bottom-actions {
   padding: 16px 0;
   border-top: 1px solid var(--color-border);
@@ -253,11 +457,6 @@ const menuItems: MenuItem[] = [
   color: var(--color-error);
 }
 
-.sidebar.collapsed .logout-btn {
-  padding: 12px 18px;
-  width: calc(100% - 16px);
-}
-
 .logout-icon {
   width: 20px;
   height: 20px;
@@ -270,7 +469,6 @@ const menuItems: MenuItem[] = [
   flex-shrink: 0;
 }
 
-/* Scrollbar Styling */
 .nav-menu::-webkit-scrollbar {
   width: 4px;
 }

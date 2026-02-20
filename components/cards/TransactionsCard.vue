@@ -7,14 +7,14 @@ import BaseButton from '~/components/BaseButton.vue'
 const logger = getLogger()
 
 interface Transaction {
-  id: number;
-  date: string;
-  name: string;
-  amount: number;
-  category: string | null;
-  categoryPrimary: string | null;
-  logo_url: string | null;
-  account_id: number;
+  id: number
+  date: string
+  name: string
+  amount: number
+  category: string | null
+  categoryPrimary: string | null
+  logo_url: string | null
+  account_id: number
 }
 
 const transactions: Ref<Transaction[]> = ref([])
@@ -25,20 +25,20 @@ const fetchTransactions = async () => {
   try {
     isLoading.value = true
     error.value = null
-    
+
     logger.component('TransactionsCard', 'fetch_start', { timestamp: new Date().toISOString() })
-    
-    const response = await fetch('/api/user/transactions?limit=5', {
-      credentials: 'include'
+
+    const response = await fetch('/api/finance/transactions?limit=5', {
+      credentials: 'include',
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch transactions')
     }
-    
+
     const data = await response.json()
     transactions.value = data.transactions || []
-    
+
     logger.component('TransactionsCard', 'fetch_success', { count: transactions.value.length })
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error'
@@ -68,11 +68,11 @@ defineExpose({ refresh })
         <Icon name="mdi:view-list" size="18" />
         <h3>Recent Transactions</h3>
       </div>
-      <BaseButton 
+      <BaseButton
         v-if="!isLoading && !error && transactions.length > 0"
-        variant="secondary" 
-        size="sm" 
-        class="view-all-btn" 
+        variant="secondary"
+        size="sm"
+        class="view-all-btn"
         to="/transactions"
       >
         View all
@@ -104,23 +104,32 @@ defineExpose({ refresh })
     </div>
 
     <div v-else class="transactions-list">
-      <div 
-        v-for="transaction in transactions" 
-        :key="transaction.id"
-        class="transaction-item"
-      >
+      <div v-for="transaction in transactions" :key="transaction.id" class="transaction-item">
         <div v-if="transaction.logo_url" class="transaction-logo">
           <img :src="transaction.logo_url" :alt="transaction.name" />
         </div>
-        <div v-else class="transaction-icon" :style="{ backgroundColor: getCategoryColor(transaction.categoryPrimary || 'Uncategorized') + '20', color: getCategoryColor(transaction.categoryPrimary || 'Uncategorized') }">
+        <div
+          v-else
+          class="transaction-icon"
+          :style="{
+            backgroundColor:
+              getCategoryColor(transaction.categoryPrimary || 'Uncategorized') + '20',
+            color: getCategoryColor(transaction.categoryPrimary || 'Uncategorized'),
+          }"
+        >
           {{ (transaction.name || 'T').charAt(0).toUpperCase() }}
         </div>
         <div class="transaction-info">
           <span class="transaction-name">{{ transaction.name || 'Transaction' }}</span>
-          <span class="transaction-category">{{ transaction.categoryPrimary || 'Uncategorized' }}</span>
+          <span class="transaction-category">{{
+            transaction.categoryPrimary || 'Uncategorized'
+          }}</span>
         </div>
         <div class="transaction-right">
-          <span class="transaction-amount" :class="{ 'negative': transaction.amount < 0, 'positive': transaction.amount > 0 }">
+          <span
+            class="transaction-amount"
+            :class="{ negative: transaction.amount < 0, positive: transaction.amount > 0 }"
+          >
             {{ formatAmount(transaction.amount) }}
           </span>
           <span class="transaction-date">{{ formatDate(transaction.date) }}</span>
@@ -175,7 +184,8 @@ h3 {
   margin: 0;
 }
 
-.loading-state, .error-state {
+.loading-state,
+.error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -327,7 +337,6 @@ h3 {
   font-size: 0.6875rem;
 }
 
-
 .view-all-btn {
   font-size: 0.75rem;
   padding: 0.375rem 0.75rem;
@@ -335,5 +344,4 @@ h3 {
   letter-spacing: normal;
   line-height: 1;
 }
-
 </style>

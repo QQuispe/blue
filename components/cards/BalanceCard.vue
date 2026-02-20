@@ -5,19 +5,19 @@ const logger = getLogger()
 
 interface BalanceData {
   summary: {
-    totalCurrent: number;
-    totalAvailable: number;
-    accountCount: number;
-    currency: string;
-  };
+    totalCurrent: number
+    totalAvailable: number
+    accountCount: number
+    currency: string
+  }
   accounts: Array<{
-    id: number;
-    name: string;
-    type: string;
-    currentBalance: number;
-    availableBalance: number;
-    currency: string;
-  }>;
+    id: number
+    name: string
+    type: string
+    currentBalance: number
+    availableBalance: number
+    currency: string
+  }>
 }
 
 const balanceData: Ref<BalanceData | null> = ref(null)
@@ -34,28 +34,28 @@ const fetchBalance = async () => {
   try {
     isLoading.value = true
     error.value = null
-    
+
     logger.component('BalanceCard', 'fetch_start', { timestamp: new Date().toISOString() })
-    
-    const response = await fetch('/api/user/balance', {
-      credentials: 'include'
+
+    const response = await fetch('/api/finance/balance', {
+      credentials: 'include',
     })
-    
+
     const duration = Date.now() - startTime
-    
+
     if (!response.ok) {
-      logger.api('GET', '/api/user/balance', response.status, duration)
+      logger.api('GET', '/api/finance/balance', response.status, duration)
       throw new Error('Failed to fetch balance')
     }
-    
+
     const data = await response.json()
     balanceData.value = data.summary
     accounts.value = data.accounts || []
-    
-    logger.api('GET', '/api/user/balance', response.status, duration)
-    logger.component('BalanceCard', 'fetch_success', { 
+
+    logger.api('GET', '/api/finance/balance', response.status, duration)
+    logger.component('BalanceCard', 'fetch_success', {
       accountsFetched: accounts.value.length,
-      balance: balanceData.value?.summary?.totalCurrent
+      balance: balanceData.value?.summary?.totalCurrent,
     })
   } catch (err) {
     const duration = Date.now() - startTime
@@ -63,7 +63,7 @@ const fetchBalance = async () => {
     logger.error('Failed to fetch balance data', {
       error: errorMessage,
       stack: err instanceof Error ? err.stack : 'No stack trace',
-      duration
+      duration,
     })
     error.value = errorMessage
   } finally {
@@ -72,9 +72,9 @@ const fetchBalance = async () => {
 }
 
 onMounted(() => {
-  logger.component('BalanceCard', 'mounted', { 
+  logger.component('BalanceCard', 'mounted', {
     path: route.path,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   })
   fetchBalance()
 })
@@ -99,22 +99,27 @@ const displayBalance = computed(() => {
   if (!balanceData.value) {
     return { amount: 0, currency: 'USD', accountCount: 0 }
   }
-  
+
   // Calculate total assets (depository and investment accounts only)
-  const filteredAccounts = accounts.value.filter(acc => acc.type === 'depository' || acc.type === 'investment')
-  const totalAssets = filteredAccounts.reduce((sum, acc) => sum + (Number(acc.currentBalance) || 0), 0)
-  
+  const filteredAccounts = accounts.value.filter(
+    acc => acc.type === 'depository' || acc.type === 'investment'
+  )
+  const totalAssets = filteredAccounts.reduce(
+    (sum, acc) => sum + (Number(acc.currentBalance) || 0),
+    0
+  )
+
   return {
     amount: totalAssets,
     currency: balanceData.value?.summary?.currency || 'USD',
-    accountCount: filteredAccounts.length
+    accountCount: filteredAccounts.length,
   }
 })
 
 const formattedAmount = computed(() => {
   return displayBalance.value.amount.toLocaleString(undefined, {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   })
 })
 
@@ -132,7 +137,7 @@ const hasMoreAccounts = computed(() => {
 const formatAccountBalance = (balance: number): string => {
   return balance.toLocaleString(undefined, {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   })
 }
 
@@ -143,7 +148,7 @@ const getAccountTypeStyle = (type: string) => {
     credit: { color: 'var(--color-account-credit)', icon: '💳' },
     loan: { color: 'var(--color-account-loan)', icon: '📄' },
     investment: { color: 'var(--color-account-investment)', icon: '📈' },
-    other: { color: 'var(--color-account-other)', icon: '💰' }
+    other: { color: 'var(--color-account-other)', icon: '💰' },
   }
   return styles[type] || styles.other
 }
@@ -158,22 +163,22 @@ const getAccountTypeStyle = (type: string) => {
         ${{ formattedAmount }}
       </div>
     </div>
-    
+
     <!-- Minimal separator -->
     <div class="separator"></div>
-    
+
     <!-- Loading State -->
     <div v-if="isLoading" class="loading-state">
       <div class="loading-spinner"></div>
       <span>Loading...</span>
     </div>
-    
+
     <!-- Error State -->
     <div v-else-if="error" class="error-state">
       <Icon name="mdi:alert-circle" size="20" />
       <span>{{ error }}</span>
     </div>
-    
+
     <!-- Content -->
     <div v-else class="card-content">
       <!-- No Accounts State -->
@@ -182,34 +187,55 @@ const getAccountTypeStyle = (type: string) => {
         <p>No connected accounts</p>
         <span class="empty-hint">Connect a bank to see your balance</span>
       </div>
-      
+
       <!-- Account List -->
       <div v-else class="accounts-section">
         <div class="accounts-list">
-          <div 
-            v-for="account in topAccounts" 
+          <div
+            v-for="account in topAccounts"
             :key="account.id"
             class="account-item"
             @click="navigateToFullPage"
           >
-            <div class="account-icon" :style="{ backgroundColor: getAccountTypeStyle(account.type).color + '20', color: getAccountTypeStyle(account.type).color }">
+            <div
+              class="account-icon"
+              :style="{
+                backgroundColor: getAccountTypeStyle(account.type).color + '20',
+                color: getAccountTypeStyle(account.type).color,
+              }"
+            >
               <span>{{ getAccountTypeStyle(account.type).icon }}</span>
             </div>
             <div class="account-info">
               <span class="account-name">{{ account.name }}</span>
               <span class="account-type">{{ account.type }}</span>
             </div>
-            <div class="account-balance" :class="{ 'negative': account.type === 'credit' ? account.currentBalance > 0 : account.currentBalance < 0 }">
-              <span v-if="account.type === 'credit' ? account.currentBalance > 0 : account.currentBalance < 0">-</span>${{ formatAccountBalance(Math.abs(account.currentBalance)) }}
+            <div
+              class="account-balance"
+              :class="{
+                negative:
+                  account.type === 'credit'
+                    ? account.currentBalance > 0
+                    : account.currentBalance < 0,
+              }"
+            >
+              <span
+                v-if="
+                  account.type === 'credit'
+                    ? account.currentBalance > 0
+                    : account.currentBalance < 0
+                "
+                >-</span
+              >${{ formatAccountBalance(Math.abs(account.currentBalance)) }}
             </div>
           </div>
-          
+
           <!-- Show more indicator -->
           <div v-if="hasMoreAccounts" class="more-accounts-hint">
             +{{ accounts.length - 3 }} more
           </div>
         </div>
-        
+
         <!-- View Full Details Link -->
         <div class="card-footer">
           <button @click="navigateToFullPage" class="view-details-btn">
@@ -267,7 +293,8 @@ const getAccountTypeStyle = (type: string) => {
 }
 
 /* Loading & Error States */
-.loading-state, .error-state {
+.loading-state,
+.error-state {
   display: flex;
   flex-direction: column;
   align-items: center;

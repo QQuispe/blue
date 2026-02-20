@@ -2,20 +2,20 @@
 import { ref, onMounted, computed, type Ref } from 'vue'
 
 interface OverviewMetric {
-  current: number;
-  previous: number;
-  change: number;
-  changePercent: number;
+  current: number
+  previous: number
+  change: number
+  changePercent: number
 }
 
 interface OverviewData {
-  totalBalance: OverviewMetric;
-  monthlyIncome: OverviewMetric;
-  monthlyExpenses: OverviewMetric;
-  totalSavings: OverviewMetric;
-  currency: string;
-  currentMonth: string;
-  previousMonth: string;
+  totalBalance: OverviewMetric
+  monthlyIncome: OverviewMetric
+  monthlyExpenses: OverviewMetric
+  totalSavings: OverviewMetric
+  currency: string
+  currentMonth: string
+  previousMonth: string
 }
 
 const isLoading: Ref<boolean> = ref(false)
@@ -27,7 +27,7 @@ const formatCurrency = (value: number, currency: string = 'USD'): string => {
     style: 'currency',
     currency: currency,
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   }).format(Math.abs(value))
 }
 
@@ -44,7 +44,7 @@ const getChangeClass = (change: number): string => {
 
 const metrics = computed(() => {
   if (!overviewData.value) return []
-  
+
   return [
     {
       id: 'totalBalance',
@@ -53,7 +53,7 @@ const metrics = computed(() => {
       change: overviewData.value.totalBalance.change,
       changePercent: overviewData.value.totalBalance.changePercent,
       icon: 'mdi:wallet',
-      accentColor: 'var(--color-accent)'
+      accentColor: 'var(--color-accent)',
     },
     {
       id: 'monthlyIncome',
@@ -62,7 +62,7 @@ const metrics = computed(() => {
       change: overviewData.value.monthlyIncome.change,
       changePercent: overviewData.value.monthlyIncome.changePercent,
       icon: 'mdi:cash-plus',
-      accentColor: 'var(--color-success)'
+      accentColor: 'var(--color-success)',
     },
     {
       id: 'monthlyExpenses',
@@ -71,7 +71,7 @@ const metrics = computed(() => {
       change: overviewData.value.monthlyExpenses.change,
       changePercent: overviewData.value.monthlyExpenses.changePercent,
       icon: 'mdi:cash-minus',
-      accentColor: 'var(--color-error)'
+      accentColor: 'var(--color-error)',
     },
     {
       id: 'totalSavings',
@@ -80,24 +80,24 @@ const metrics = computed(() => {
       change: overviewData.value.totalSavings.change,
       changePercent: overviewData.value.totalSavings.changePercent,
       icon: 'mdi:piggy-bank',
-      accentColor: 'var(--color-info)'
-    }
+      accentColor: 'var(--color-info)',
+    },
   ]
 })
 
 const fetchOverview = async () => {
   isLoading.value = true
   error.value = null
-  
+
   try {
-    const response = await fetch('/api/user/overview', {
-      credentials: 'include'
+    const response = await fetch('/api/finance/overview', {
+      credentials: 'include',
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch overview data')
     }
-    
+
     overviewData.value = await response.json()
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unknown error'
@@ -156,9 +156,9 @@ onMounted(() => {
 
       <!-- Metrics Grid -->
       <div v-else class="metrics-grid">
-        <div 
-          v-for="metric in metrics" 
-          :key="metric.id" 
+        <div
+          v-for="metric in metrics"
+          :key="metric.id"
           class="metric-item"
           :style="{ '--accent-color': metric.accentColor }"
         >
@@ -174,7 +174,9 @@ onMounted(() => {
             </div>
           </div>
           <div class="metric-change" :class="getChangeClass(metric.change)">
-            <span class="change-value">{{ formatCurrency(metric.change, overviewData?.currency) }}</span>
+            <span class="change-value">{{
+              formatCurrency(metric.change, overviewData?.currency)
+            }}</span>
             <span class="change-percent">{{ formatPercent(metric.changePercent) }}</span>
           </div>
         </div>
@@ -386,8 +388,13 @@ h3 {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* Error State */
@@ -431,7 +438,7 @@ h3 {
     grid-template-rows: repeat(4, auto);
     gap: 12px;
   }
-  
+
   .metric-value {
     font-size: 1.25rem;
   }

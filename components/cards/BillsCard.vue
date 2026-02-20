@@ -40,7 +40,7 @@ const newBill: Ref<Partial<Bill>> = ref({
   name: '',
   amount: 0,
   frequency: 'monthly',
-  nextDueDate: ''
+  nextDueDate: '',
 })
 
 const isSyncing = ref(false)
@@ -49,18 +49,18 @@ const syncLiabilities = async () => {
   try {
     isSyncing.value = true
     error.value = null
-    
-    const response = await fetch('/api/user/liabilities/sync', {
-      credentials: 'include'
+
+    const response = await fetch('/api/finance/liabilities/sync', {
+      credentials: 'include',
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to sync liabilities')
     }
-    
+
     const data = await response.json()
     logger.component('BillsCard', 'liabilities_synced', { count: data.count })
-    
+
     // Refresh bills list
     await fetchBills()
   } catch (err) {
@@ -75,20 +75,20 @@ const fetchBills = async () => {
   try {
     isLoading.value = true
     error.value = null
-    
-    const response = await fetch('/api/user/bills', {
-      credentials: 'include'
+
+    const response = await fetch('/api/finance/bills', {
+      credentials: 'include',
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to fetch bills')
     }
-    
+
     const data = await response.json()
     bills.value = data.bills || []
     suggestions.value = data.suggestions || []
     totalDue.value = data.totalDue || 0
-    
+
     logger.component('BillsCard', 'fetch_success', { count: bills.value.length })
   } catch (err) {
     logger.error('BillsCard', 'fetch_bills_failed', err)
@@ -100,17 +100,17 @@ const fetchBills = async () => {
 
 const addBill = async () => {
   try {
-    const response = await fetch('/api/user/bills', {
+    const response = await fetch('/api/finance/bills', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify(newBill.value)
+      body: JSON.stringify(newBill.value),
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to add bill')
     }
-    
+
     showAddModal.value = false
     newBill.value = { name: '', amount: 0, frequency: 'monthly', nextDueDate: '' }
     await fetchBills()
@@ -122,23 +122,23 @@ const addBill = async () => {
 
 const updateBill = async () => {
   if (!editingBill.value) return
-  
+
   try {
-    const response = await fetch(`/api/user/bills/${editingBill.value.id}`, {
+    const response = await fetch(`/api/finance/bills/${editingBill.value.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
         amount: editingBill.value.amount,
         nextDueDate: editingBill.value.nextDueDate,
-        isActive: editingBill.value.isActive
-      })
+        isActive: editingBill.value.isActive,
+      }),
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to update bill')
     }
-    
+
     showEditModal.value = false
     editingBill.value = null
     await fetchBills()
@@ -156,8 +156,8 @@ const addSuggestedBill = async (suggestion: SuggestedBill) => {
     } else if (suggestion.frequency === 'weekly') {
       nextDue.setDate(nextDue.getDate() + 7)
     }
-    
-    const response = await fetch('/api/user/bills', {
+
+    const response = await fetch('/api/finance/bills', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -166,14 +166,14 @@ const addSuggestedBill = async (suggestion: SuggestedBill) => {
         amount: suggestion.amount,
         frequency: suggestion.frequency,
         nextDueDate: nextDue.toISOString().split('T')[0],
-        source: 'pattern_detected'
-      })
+        source: 'pattern_detected',
+      }),
     })
-    
+
     if (!response.ok) {
       throw new Error('Failed to add suggested bill')
     }
-    
+
     await fetchBills()
     logger.component('BillsCard', 'suggestion_added', { name: suggestion.name })
   } catch (err) {
@@ -183,11 +183,11 @@ const addSuggestedBill = async (suggestion: SuggestedBill) => {
 
 const ignoreSuggestion = async (suggestionId: number) => {
   try {
-    await fetch(`/api/user/bills/suggestions/${suggestionId}/ignore`, {
+    await fetch(`/api/finance/bills/suggestions/${suggestionId}/ignore`, {
       method: 'POST',
-      credentials: 'include'
+      credentials: 'include',
     })
-    
+
     suggestions.value = suggestions.value.filter(s => s.id !== suggestionId)
   } catch (err) {
     logger.error('BillsCard', 'ignore_suggestion_failed', err)
@@ -210,7 +210,7 @@ const formatAmount = (amount: number): string => {
   return amount.toLocaleString('en-US', {
     style: 'currency',
     currency: 'USD',
-    minimumFractionDigits: 2
+    minimumFractionDigits: 2,
   })
 }
 
@@ -237,9 +237,9 @@ defineExpose({ refresh })
       </div>
       <div v-if="!isLoading && !error" class="header-right">
         <span class="bill-count">{{ activeBills.length }}</span>
-        <BaseButton 
-          variant="secondary" 
-          size="sm" 
+        <BaseButton
+          variant="secondary"
+          size="sm"
           @click="syncLiabilities"
           :loading="isSyncing"
           title="Sync bills from bank"
@@ -251,24 +251,24 @@ defineExpose({ refresh })
         </BaseButton>
       </div>
     </div>
-    
+
     <div class="separator"></div>
-    
+
     <div v-if="isLoading" class="loading-state">
       <div class="loading-spinner"></div>
       <span>Loading bills...</span>
     </div>
-    
+
     <div v-else-if="error" class="error-state">
       {{ error }}
     </div>
-    
+
     <div v-else-if="activeBills.length === 0 && suggestions.length === 0" class="no-data">
       <Icon name="mdi:calendar-clock" size="32" class="empty-icon" />
       <p>No upcoming bills</p>
       <span>Add bills manually or wait for pattern detection</span>
     </div>
-    
+
     <template v-else>
       <div class="card-content-scrollable">
         <!-- Suggestions -->
@@ -277,30 +277,38 @@ defineExpose({ refresh })
             <span class="suggestions-label">💡 Detected Bills</span>
           </div>
           <div class="suggestions-list">
-            <div v-for="suggestion in suggestions.slice(0, 2)" :key="suggestion.id" class="suggestion-item">
+            <div
+              v-for="suggestion in suggestions.slice(0, 2)"
+              :key="suggestion.id"
+              class="suggestion-item"
+            >
               <div class="suggestion-info">
                 <span class="suggestion-name">{{ suggestion.name }}</span>
-                <span class="suggestion-details">{{ formatAmount(suggestion.amount) }} • {{ suggestion.frequency }}</span>
+                <span class="suggestion-details"
+                  >{{ formatAmount(suggestion.amount) }} • {{ suggestion.frequency }}</span
+                >
               </div>
               <div class="suggestion-actions">
-                <BaseButton variant="secondary" size="sm" @click="addSuggestedBill(suggestion)">Add</BaseButton>
-                <BaseButton variant="ghost" size="sm" @click="ignoreSuggestion(suggestion.id)">Ignore</BaseButton>
+                <BaseButton variant="secondary" size="sm" @click="addSuggestedBill(suggestion)"
+                  >Add</BaseButton
+                >
+                <BaseButton variant="ghost" size="sm" @click="ignoreSuggestion(suggestion.id)"
+                  >Ignore</BaseButton
+                >
               </div>
             </div>
           </div>
         </div>
-        
+
         <!-- Bills List -->
         <div class="bills-list">
-          <div 
-            v-for="bill in activeBills" 
-            :key="bill.id"
-            class="bill-item"
-          >
+          <div v-for="bill in activeBills" :key="bill.id" class="bill-item">
             <div class="bill-main">
               <div class="bill-info">
                 <span class="bill-name">{{ bill.name }}</span>
-                <span class="bill-due" :class="{ overdue: bill.daysUntil < 0 }">{{ formatDueDate(bill.nextDueDate, bill.daysUntil) }}</span>
+                <span class="bill-due" :class="{ overdue: bill.daysUntil < 0 }">{{
+                  formatDueDate(bill.nextDueDate, bill.daysUntil)
+                }}</span>
               </div>
             </div>
             <div class="bill-amount">{{ formatAmount(bill.amount) }}</div>
@@ -310,7 +318,7 @@ defineExpose({ refresh })
           </div>
         </div>
       </div>
-      
+
       <!-- Total - Fixed at bottom -->
       <div v-if="activeBills.length > 0" class="total-section-fixed">
         <div class="total-row">
@@ -319,7 +327,7 @@ defineExpose({ refresh })
         </div>
       </div>
     </template>
-    
+
     <!-- Add Bill Modal -->
     <div v-if="showAddModal" class="modal-overlay" @click="showAddModal = false">
       <div class="modal" @click.stop>
@@ -361,7 +369,7 @@ defineExpose({ refresh })
         </div>
       </div>
     </div>
-    
+
     <!-- Edit Bill Modal -->
     <div v-if="showEditModal && editingBill" class="modal-overlay" @click="showEditModal = false">
       <div class="modal" @click.stop>
@@ -454,7 +462,9 @@ defineExpose({ refresh })
   margin: 0;
 }
 
-.loading-state, .error-state, .no-data {
+.loading-state,
+.error-state,
+.no-data {
   display: flex;
   flex-direction: column;
   align-items: center;

@@ -34,7 +34,7 @@ const route = useRoute()
 const router = useRouter()
 
 // Sync accounts for an item
-const syncAccounts = async (itemId) => {
+const syncAccounts = async itemId => {
   try {
     const response = await fetch('/api/plaid/accounts', {
       method: 'POST',
@@ -55,7 +55,7 @@ const syncAccounts = async (itemId) => {
 }
 
 // Sync transactions for an item
-const syncTransactions = async (itemId) => {
+const syncTransactions = async itemId => {
   try {
     const response = await fetch('/api/plaid/transactions', {
       method: 'POST',
@@ -83,7 +83,7 @@ const initializePlaidLink = async () => {
 
     const plaidLink = Plaid.create({
       token: linkToken.value,
-      onSuccess: async (public_token) => {
+      onSuccess: async public_token => {
         const accessResponse = await fetch('/api/plaid/exchange', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -106,7 +106,7 @@ const initializePlaidLink = async () => {
         }
         isLinkLoading.value = false
       },
-      onExit: (error) => {
+      onExit: error => {
         if (error) {
           logger.error('Error during Plaid Link:', error)
         }
@@ -124,41 +124,40 @@ const initializePlaidLink = async () => {
 // Fetch accounts and items data
 const fetchData = async () => {
   const startTime = Date.now()
-  
+
   try {
     isLoading.value = true
     error.value = null
-    
+
     // Fetch accounts
-    const accountsResponse = await fetch('/api/user/balance', {
-      credentials: 'include'
+    const accountsResponse = await fetch('/api/finance/balance', {
+      credentials: 'include',
     })
-    
+
     if (!accountsResponse.ok) {
       throw new Error('Failed to fetch accounts')
     }
-    
+
     const accountsData = await accountsResponse.json()
     accounts.value = accountsData.accounts || []
-    
+
     // Fetch items (bank connections) for sync status
-    const itemsResponse = await fetch('/api/user/items', {
-      credentials: 'include'
+    const itemsResponse = await fetch('/api/finance/items', {
+      credentials: 'include',
     })
-    
+
     if (itemsResponse.ok) {
       const itemsData = await itemsResponse.json()
       items.value = itemsData.items || []
     }
-    
-    logger.api('GET', '/api/user/balance', 200, Date.now() - startTime, { 
-      accountCount: accounts.value.length 
+
+    logger.api('GET', '/api/finance/balance', 200, Date.now() - startTime, {
+      accountCount: accounts.value.length,
     })
-    
   } catch (err) {
     logger.error('AccountManagement fetch failed', {
       error: err.message,
-      path: route.path
+      path: route.path,
     })
     error.value = err.message
   } finally {
@@ -167,38 +166,39 @@ const fetchData = async () => {
 }
 
 // Sync specific item
-const syncItem = async (itemId) => {
+const syncItem = async itemId => {
   syncingItem.value = itemId
-  
+
   try {
     logger.action('manual_sync_item', { itemId })
-    
+
     const response = await fetch('/api/plaid/transactions', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ itemId })
+      body: JSON.stringify({ itemId }),
     })
-    
+
     if (!response.ok) {
       throw new Error('Sync failed')
     }
-    
+
     const data = await response.json()
-    
+
     logger.success('Item synced successfully', {
       itemId,
       added: data.stats?.added,
-      modified: data.stats?.modified
+      modified: data.stats?.modified,
     })
-    
+
     // Refresh data
     await fetchData()
-    
+
     // Show success toast
     const { $toast } = useNuxtApp()
-    $toast.success(`Sync completed! Added: ${data.stats?.added || 0}, Modified: ${data.stats?.modified || 0}`)
-    
+    $toast.success(
+      `Sync completed! Added: ${data.stats?.added || 0}, Modified: ${data.stats?.modified || 0}`
+    )
   } catch (err) {
     logger.error('Sync failed', { error: err.message, itemId })
     const { $toast } = useNuxtApp()
@@ -209,35 +209,34 @@ const syncItem = async (itemId) => {
 }
 
 // Disconnect item
-const disconnectItem = async (itemId) => {
+const disconnectItem = async itemId => {
   if (!showDisconnectConfirm.value === itemId) {
     showDisconnectConfirm.value = itemId
     return
   }
-  
+
   disconnectingItem.value = itemId
-  
+
   try {
     logger.action('disconnect_item', { itemId })
-    
-    const response = await fetch(`/api/user/items/${itemId}/disconnect`, {
+
+    const response = await fetch(`/api/finance/items/${itemId}/disconnect`, {
       method: 'POST',
-      credentials: 'include'
+      credentials: 'include',
     })
-    
+
     if (!response.ok) {
       throw new Error('Disconnect failed')
     }
-    
+
     logger.success('Item disconnected successfully', { itemId })
-    
+
     // Refresh data
     await fetchData()
-    
+
     showDisconnectConfirm.value = null
     const { $toast } = useNuxtApp()
     $toast.success('Bank connection removed successfully')
-    
   } catch (err) {
     logger.error('Disconnect failed', { error: err.message, itemId })
     const { $toast } = useNuxtApp()
@@ -253,25 +252,25 @@ const cancelDisconnect = () => {
 }
 
 // Get item for account
-const getItemForAccount = (account) => {
+const getItemForAccount = account => {
   return items.value.find(item => item.id === account.item_id)
 }
 
 // Get last sync status for account
-const getSyncStatus = (account) => {
+const getSyncStatus = account => {
   const item = getItemForAccount(account)
   if (!item) return { status: 'unknown', lastSync: null }
-  
+
   // Calculate time since last sync
   const lastSync = item.last_synced_at ? new Date(item.last_synced_at) : null
   const now = new Date()
-  
+
   if (!lastSync) {
     return { status: 'never', lastSync: null }
   }
-  
+
   const hoursSinceSync = (now - lastSync) / (1000 * 60 * 60)
-  
+
   if (hoursSinceSync < 1) {
     return { status: 'fresh', lastSync, text: 'Just now' }
   } else if (hoursSinceSync < 24) {
@@ -283,35 +282,35 @@ const getSyncStatus = (account) => {
 }
 
 // Get account insights
-const getAccountInsights = (account) => {
+const getAccountInsights = account => {
   // This would come from an API in production
   // For now, return mock data structure
   return {
     transactionCount: Math.floor(Math.random() * 50) + 10,
     lastTransaction: '2 hours ago',
-    health: Math.random() > 0.3 ? 'good' : 'needs_attention'
+    health: Math.random() > 0.3 ? 'good' : 'needs_attention',
   }
 }
 
 // Format currency
-const formatCurrency = (amount) => {
+const formatCurrency = amount => {
   if (amount === null || amount === undefined || isNaN(amount)) {
     return '0.00'
   }
   return Number(amount).toLocaleString(undefined, {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
   })
 }
 
 // Get account type style
-const getAccountTypeStyle = (type) => {
+const getAccountTypeStyle = type => {
   const styles = {
     depository: { color: 'var(--color-account-depository)', icon: '🏦', label: 'Bank Account' },
     credit: { color: 'var(--color-account-credit)', icon: '💳', label: 'Credit Card' },
     loan: { color: 'var(--color-account-loan)', icon: '📄', label: 'Loan' },
     investment: { color: 'var(--color-account-investment)', icon: '📈', label: 'Investment' },
-    other: { color: 'var(--color-account-other)', icon: '🏛️', label: 'Other' }
+    other: { color: 'var(--color-account-other)', icon: '🏛️', label: 'Other' },
   }
   return styles[type] || styles.other
 }
@@ -323,12 +322,13 @@ const groupedAccounts = computed(() => {
     const item = getItemForAccount(account)
     // Use item_id as the key to ensure each bank connection is separate
     const itemId = account.item_id || item?.id || 'unknown'
-    
+
     if (!groups[itemId]) {
       groups[itemId] = {
         item: item,
-        institutionName: item?.institution_name || item?.plaid_institution_id || account.item_id || 'Unknown Bank',
-        accounts: []
+        institutionName:
+          item?.institution_name || item?.plaid_institution_id || account.item_id || 'Unknown Bank',
+        accounts: [],
       }
     }
     groups[itemId].accounts.push(account)
@@ -384,9 +384,9 @@ onMounted(() => {
           <span class="summary-label">Accounts</span>
         </div>
       </div>
-      
+
       <div class="summary-divider vertical"></div>
-      
+
       <div class="summary-section balances">
         <div class="balance-group">
           <span class="balance-value positive">${{ formattedAssets }}</span>
@@ -397,34 +397,55 @@ onMounted(() => {
           <span class="balance-label">Credit & Debt</span>
         </div>
       </div>
-      
+
       <div class="summary-actions">
-        <button class="add-account-btn" @click="initializePlaidLink" :disabled="isLinkLoading" title="Connect Bank">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 5v14M5 12h14"/>
+        <button
+          class="add-account-btn"
+          @click="initializePlaidLink"
+          :disabled="isLinkLoading"
+          title="Connect Bank"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 5v14M5 12h14" />
           </svg>
           <span class="btn-text">{{ isLinkLoading ? 'Processing...' : 'Connect Bank' }}</span>
         </button>
       </div>
     </div>
-    
+
     <!-- Loading State -->
     <div v-if="isLoading" class="loading-state">
       <div class="loading-spinner"></div>
       <span>Loading your accounts...</span>
     </div>
-    
+
     <!-- Error State -->
     <div v-else-if="error" class="error-state">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
       </svg>
       <p>{{ error }}</p>
       <button @click="fetchData" class="retry-btn">Retry</button>
     </div>
-    
+
     <!-- Empty State -->
     <div v-else-if="accounts.length === 0" class="empty-state">
       <div class="empty-icon">🏦</div>
@@ -434,21 +455,21 @@ onMounted(() => {
         {{ isLinkLoading ? 'Processing...' : 'Connect Your First Bank' }}
       </button>
     </div>
-    
+
     <!-- Content -->
     <div v-else class="content">
       <!-- Institution Groups -->
       <div class="institutions-list">
-        <div
-          v-for="(group, itemId) in groupedAccounts"
-          :key="itemId"
-          class="institution-card"
-        >
+        <div v-for="(group, itemId) in groupedAccounts" :key="itemId" class="institution-card">
           <!-- Institution Header -->
           <div class="institution-header" @click="toggleInstitution(itemId)">
             <div class="institution-info">
               <h2 class="institution-name">{{ group.institutionName }}</h2>
-              <span class="institution-meta">{{ group.accounts.length }} account{{ group.accounts.length === 1 ? '' : 's' }}</span>
+              <span class="institution-meta"
+                >{{ group.accounts.length }} account{{
+                  group.accounts.length === 1 ? '' : 's'
+                }}</span
+              >
             </div>
             <div class="institution-actions">
               <button
@@ -457,8 +478,19 @@ onMounted(() => {
                 class="action-btn sync-btn"
                 :class="{ 'is-syncing': syncingItem === group.item?.plaid_item_id }"
               >
-                <svg v-if="syncingItem !== group.item?.plaid_item_id" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                <svg
+                  v-if="syncingItem !== group.item?.plaid_item_id"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path
+                    d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"
+                  />
                 </svg>
                 <span v-if="syncingItem === group.item?.plaid_item_id">Syncing...</span>
                 <span v-else>Sync</span>
@@ -469,12 +501,20 @@ onMounted(() => {
                 @click.stop="disconnectItem(group.item?.id)"
                 class="action-btn disconnect-btn"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"/>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10" />
                 </svg>
                 Disconnect
               </button>
-              
+
               <div v-else class="confirm-actions">
                 <span class="confirm-text">Sure?</span>
                 <button
@@ -493,10 +533,7 @@ onMounted(() => {
           <div v-show="!isCollapsed(itemId)" class="institution-content">
             <!-- Sync Status -->
             <div class="sync-status-bar">
-              <div
-                class="sync-indicator"
-                :class="getSyncStatus(group.accounts[0]).status"
-              >
+              <div class="sync-indicator" :class="getSyncStatus(group.accounts[0]).status">
                 <span class="sync-dot"></span>
                 <span class="sync-text">{{ getSyncStatus(group.accounts[0]).text }}</span>
               </div>
@@ -505,45 +542,50 @@ onMounted(() => {
 
             <!-- Accounts List -->
             <div class="accounts-list">
-            <div 
-              v-for="account in group.accounts" 
-              :key="account.id"
-              class="account-row"
-            >
-              <div class="account-info">
-                <div 
-                  class="account-icon"
-                  :style="{ color: getAccountTypeStyle(account.type).color }"
-                >
-                  {{ getAccountTypeStyle(account.type).icon }}
+              <div v-for="account in group.accounts" :key="account.id" class="account-row">
+                <div class="account-info">
+                  <div
+                    class="account-icon"
+                    :style="{ color: getAccountTypeStyle(account.type).color }"
+                  >
+                    {{ getAccountTypeStyle(account.type).icon }}
+                  </div>
+                  <div class="account-details">
+                    <span class="account-name">{{ account.name }}</span>
+                    <span class="account-type">{{ getAccountTypeStyle(account.type).label }}</span>
+                    <span v-if="account.mask" class="account-mask">•••• {{ account.mask }}</span>
+                  </div>
                 </div>
-                <div class="account-details">
-                  <span class="account-name">{{ account.name }}</span>
-                  <span class="account-type">{{ getAccountTypeStyle(account.type).label }}</span>
-                  <span v-if="account.mask" class="account-mask">•••• {{ account.mask }}</span>
+
+                <div class="account-balance">
+                  <span class="balance-amount" :class="{ negative: account.currentBalance < 0 }">
+                    <span v-if="account.currentBalance < 0">-</span>${{
+                      formatCurrency(Math.abs(account.currentBalance || 0))
+                    }}
+                  </span>
+                  <span
+                    v-if="account.availableBalance !== account.currentBalance"
+                    class="available-balance"
+                  >
+                    ${{ formatCurrency(account.availableBalance || 0) }} available
+                  </span>
                 </div>
-              </div>
-              
-              <div class="account-balance">
-                <span class="balance-amount" :class="{ 'negative': account.currentBalance < 0 }">
-                  <span v-if="account.currentBalance < 0">-</span>${{ formatCurrency(Math.abs(account.currentBalance || 0)) }}
-                </span>
-                <span v-if="account.availableBalance !== account.currentBalance" class="available-balance">
-                  ${{ formatCurrency(account.availableBalance || 0) }} available
-                </span>
-              </div>
-              
-              <div class="account-health">
-                <div class="health-indicator" :class="getAccountInsights(account).health">
-                  <span class="health-dot"></span>
-                  <span class="health-text">{{ getAccountInsights(account).health === 'good' ? 'Healthy' : 'Review' }}</span>
+
+                <div class="account-health">
+                  <div class="health-indicator" :class="getAccountInsights(account).health">
+                    <span class="health-dot"></span>
+                    <span class="health-text">{{
+                      getAccountInsights(account).health === 'good' ? 'Healthy' : 'Review'
+                    }}</span>
+                  </div>
+                  <span class="activity-meta"
+                    >{{ getAccountInsights(account).transactionCount }} txns</span
+                  >
                 </div>
-                <span class="activity-meta">{{ getAccountInsights(account).transactionCount }} txns</span>
               </div>
             </div>
           </div>
         </div>
-      </div>
       </div>
 
       <!-- Tips Section -->
@@ -669,7 +711,8 @@ onMounted(() => {
 }
 
 /* Loading & Error States */
-.loading-state, .error-state {
+.loading-state,
+.error-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1064,21 +1107,21 @@ onMounted(() => {
   .account-management-page {
     padding: 1rem;
   }
-  
+
   .summary-bar {
     flex-wrap: wrap;
     gap: 1rem;
   }
-  
+
   .summary-divider {
     display: none;
   }
-  
+
   .account-row {
     grid-template-columns: 1fr;
     gap: 0.75rem;
   }
-  
+
   .account-balance,
   .account-health {
     align-items: flex-start;
@@ -1091,12 +1134,12 @@ onMounted(() => {
     flex-wrap: wrap;
     gap: 1rem;
   }
-  
+
   .summary-actions {
     margin-left: 0;
     width: 100%;
   }
-  
+
   .add-account-btn {
     width: 100%;
     justify-content: center;
@@ -1107,7 +1150,7 @@ onMounted(() => {
   .btn-text {
     display: none;
   }
-  
+
   .add-account-btn {
     padding: 0.625rem;
   }
