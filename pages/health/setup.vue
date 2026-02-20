@@ -1,0 +1,773 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+
+const { $toast } = useNuxtApp()
+const router = useRouter()
+
+const currentStep = ref(1)
+const totalSteps = 3
+const isLoading = ref(false)
+
+interface ProfileData {
+  weight: number | null
+  height: number | null
+  age: number | null
+  gender: string | null
+  activityLevel: string
+}
+
+interface GoalData {
+  goalType: string
+  startingWeight: number | null
+  targetWeight: number | null
+  targetDate: string | null
+  weeklyRate: number
+}
+
+interface PreferencesData {
+  dietaryRestrictions: string[]
+  allergies: string[]
+  likedFoods: string[]
+  dislikedFoods: string[]
+  mealCount: number
+  equipment: string[]
+  workoutStyle: string | null
+  workoutFrequency: number
+  workoutDuration: number
+}
+
+const profile = ref<ProfileData>({
+  weight: null,
+  height: null,
+  age: null,
+  gender: null,
+  activityLevel: 'moderate',
+})
+
+const goal = ref<GoalData>({
+  goalType: 'lose',
+  startingWeight: null,
+  targetWeight: null,
+  targetDate: null,
+  weeklyRate: 0.5,
+})
+
+const preferences = ref<PreferencesData>({
+  dietaryRestrictions: [],
+  allergies: [],
+  likedFoods: [],
+  dislikedFoods: [],
+  mealCount: 3,
+  equipment: [],
+  workoutStyle: 'strength',
+  workoutFrequency: 4,
+  workoutDuration: 45,
+})
+
+const activityLevels = [
+  { value: 'sedentary', label: 'Sedentary (little or no exercise)' },
+  { value: 'light', label: 'Light (1-3 days/week)' },
+  { value: 'moderate', label: 'Moderate (3-5 days/week)' },
+  { value: 'active', label: 'Active (6-7 days/week)' },
+  { value: 'very_active', label: 'Very Active (intense daily)' },
+]
+
+const goalTypes = [
+  { value: 'lose', label: 'Lose Weight' },
+  { value: 'gain', label: 'Gain Weight' },
+  { value: 'maintain', label: 'Maintain Weight' },
+]
+
+const workoutStyles = [
+  { value: 'strength', label: 'Strength Training' },
+  { value: 'cardio', label: 'Cardio' },
+  { value: 'hiit', label: 'HIIT' },
+  { value: 'hybrid', label: 'Hybrid (Mix)' },
+  { value: 'flexibility', label: 'Flexibility/Yoga' },
+]
+
+const equipmentOptions = [
+  { value: 'bodyweight', label: 'Bodyweight Only' },
+  { value: 'dumbbells', label: 'Dumbbells' },
+  { value: 'barbell', label: 'Barbell' },
+  { value: 'machines', label: 'Gym Machines' },
+  { value: 'kettlebell', label: 'Kettlebells' },
+  { value: 'bands', label: 'Resistance Bands' },
+]
+
+const dietaryOptions = [
+  { value: 'none', label: 'None' },
+  { value: 'vegetarian', label: 'Vegetarian' },
+  { value: 'vegan', label: 'Vegan' },
+  { value: 'pescatarian', label: 'Pescatarian' },
+  { value: 'keto', label: 'Keto' },
+  { value: 'paleo', label: 'Paleo' },
+  { value: 'gluten-free', label: 'Gluten-Free' },
+  { value: 'low-carb', label: 'Low-Carb' },
+]
+
+const step1Valid = computed(() => {
+  return profile.value.weight && profile.value.height && profile.value.age && profile.value.gender
+})
+
+const step2Valid = computed(() => {
+  return goal.value.startingWeight && goal.value.targetWeight
+})
+
+const step3Valid = computed(() => {
+  return true
+})
+
+const canProceed = computed(() => {
+  if (currentStep.value === 1) return step1Valid.value
+  if (currentStep.value === 2) return step2Valid.value
+  return true
+})
+
+const nextStep = () => {
+  if (currentStep.value < totalSteps && canProceed.value) {
+    currentStep.value++
+  }
+}
+
+const prevStep = () => {
+  if (currentStep.value > 1) {
+    currentStep.value--
+  }
+}
+
+const saveProfile = async () => {
+  try {
+    isLoading.value = true
+
+    const response = await fetch('/api/health/profile', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        weight: profile.value.weight,
+        height: profile.value.height,
+        age: profile.value.age,
+        gender: profile.value.gender,
+        activity_level: profile.value.activityLevel,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to save profile')
+    }
+
+    return true
+  } catch (err: any) {
+    $toast.error('Failed to save profile')
+    return false
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const saveGoal = async () => {
+  try {
+    isLoading.value = true
+
+    const response = await fetch('/api/health/goals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        goal_type: goal.value.goalType,
+        starting_weight: goal.value.startingWeight,
+        target_weight: goal.value.targetWeight,
+        target_date: goal.value.targetDate,
+        weekly_rate: goal.value.weeklyRate,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to save goal')
+    }
+
+    return true
+  } catch (err: any) {
+    $toast.error('Failed to save goal')
+    return false
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const savePreferences = async () => {
+  try {
+    isLoading.value = true
+
+    const response = await fetch('/api/health/preferences', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        dietary_restrictions: preferences.value.dietaryRestrictions,
+        allergies: preferences.value.allergies,
+        liked_foods: preferences.value.likedFoods,
+        disliked_foods: preferences.value.dislikedFoods,
+        meal_count: preferences.value.mealCount,
+        equipment: preferences.value.equipment,
+        workout_style: preferences.value.workoutStyle,
+        workout_frequency: preferences.value.workoutFrequency,
+        workout_duration: preferences.value.workoutDuration,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to save preferences')
+    }
+
+    return true
+  } catch (err: any) {
+    $toast.error('Failed to save preferences')
+    return false
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const completeSetup = async () => {
+  const p = await saveProfile()
+  if (!p) return
+
+  const g = await saveGoal()
+  if (!g) return
+
+  const pr = await savePreferences()
+  if (!pr) return
+
+  $toast.success('Setup complete!')
+  router.push('/health')
+}
+</script>
+
+<template>
+  <div class="setup-page">
+    <div class="setup-container">
+      <div class="setup-header">
+        <h1>Health Setup</h1>
+        <p>Let's get you started on your health journey</p>
+      </div>
+
+      <div class="progress-bar">
+        <div
+          v-for="step in totalSteps"
+          :key="step"
+          class="progress-step"
+          :class="{
+            active: currentStep === step,
+            completed: currentStep > step,
+          }"
+        >
+          <div class="step-number">{{ step }}</div>
+          <span class="step-label">
+            {{ step === 1 ? 'Body Stats' : step === 2 ? 'Goals' : 'Preferences' }}
+          </span>
+        </div>
+        <div class="progress-line">
+          <div
+            class="progress-fill"
+            :style="{ width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` }"
+          ></div>
+        </div>
+      </div>
+
+      <div class="step-content">
+        <!-- Step 1: Body Stats -->
+        <div v-if="currentStep === 1" class="step-panel">
+          <h2>Body Metrics</h2>
+          <p class="step-description">Tell us about yourself</p>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Current Weight (lbs)</label>
+              <input
+                v-model.number="profile.weight"
+                type="number"
+                placeholder="170"
+                min="50"
+                max="500"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Height (inches)</label>
+              <input
+                v-model.number="profile.height"
+                type="number"
+                placeholder="70"
+                min="36"
+                max="108"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Age</label>
+              <input
+                v-model.number="profile.age"
+                type="number"
+                placeholder="30"
+                min="13"
+                max="120"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Gender</label>
+              <select v-model="profile.gender">
+                <option :value="null" disabled>Select gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group full-width">
+              <label>Activity Level</label>
+              <select v-model="profile.activityLevel">
+                <option v-for="level in activityLevels" :key="level.value" :value="level.value">
+                  {{ level.label }}
+                </option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Goals -->
+        <div v-if="currentStep === 2" class="step-panel">
+          <h2>Your Goals</h2>
+          <p class="step-description">What do you want to achieve?</p>
+
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>Goal Type</label>
+              <div class="goal-options">
+                <button
+                  v-for="type in goalTypes"
+                  :key="type.value"
+                  class="goal-option"
+                  :class="{ active: goal.goalType === type.value }"
+                  @click="goal.goalType = type.value"
+                >
+                  {{ type.label }}
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Starting Weight (lbs)</label>
+              <input
+                v-model.number="goal.startingWeight"
+                type="number"
+                placeholder="170"
+                min="50"
+                max="500"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Target Weight (lbs)</label>
+              <input
+                v-model.number="goal.targetWeight"
+                type="number"
+                placeholder="160"
+                min="50"
+                max="500"
+              />
+            </div>
+
+            <div class="form-group">
+              <label>Target Date (optional)</label>
+              <input v-model="goal.targetDate" type="date" />
+            </div>
+
+            <div class="form-group">
+              <label>Weekly Rate (lbs/week)</label>
+              <input v-model.number="goal.weeklyRate" type="number" step="0.1" min="0.1" max="3" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Preferences -->
+        <div v-if="currentStep === 3" class="step-panel">
+          <h2>Preferences</h2>
+          <p class="step-description">Customize your meal and workout plans</p>
+
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>Dietary Restrictions</label>
+              <div class="checkbox-group">
+                <label v-for="diet in dietaryOptions" :key="diet.value" class="checkbox-label">
+                  <input
+                    type="checkbox"
+                    :value="diet.value"
+                    v-model="preferences.dietaryRestrictions"
+                  />
+                  {{ diet.label }}
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label>Available Equipment</label>
+              <div class="checkbox-group">
+                <label v-for="equip in equipmentOptions" :key="equip.value" class="checkbox-label">
+                  <input type="checkbox" :value="equip.value" v-model="preferences.equipment" />
+                  {{ equip.label }}
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Workout Style</label>
+              <select v-model="preferences.workoutStyle">
+                <option v-for="style in workoutStyles" :key="style.value" :value="style.value">
+                  {{ style.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Workouts per Week</label>
+              <input v-model.number="preferences.workoutFrequency" type="number" min="1" max="7" />
+            </div>
+
+            <div class="form-group">
+              <label>Meals per Day</label>
+              <input v-model.number="preferences.mealCount" type="number" min="2" max="6" />
+            </div>
+
+            <div class="form-group">
+              <label>Workout Duration (min)</label>
+              <input
+                v-model.number="preferences.workoutDuration"
+                type="number"
+                min="15"
+                max="120"
+                step="5"
+              />
+            </div>
+
+            <div class="form-group full-width">
+              <label>Liked Foods (comma-separated)</label>
+              <input
+                v-model="preferences.likedFoods"
+                type="text"
+                placeholder="chicken, rice, broccoli"
+                @change="
+                  preferences.likedFoods = $event.target.value
+                    .split(',')
+                    .map((s: string) => s.trim())
+                    .filter(Boolean)
+                "
+              />
+            </div>
+
+            <div class="form-group full-width">
+              <label>Disliked Foods (comma-separated)</label>
+              <input
+                v-model="preferences.dislikedFoods"
+                type="text"
+                placeholder="fish, mushrooms"
+                @change="
+                  preferences.dislikedFoods = $event.target.value
+                    .split(',')
+                    .map((s: string) => s.trim())
+                    .filter(Boolean)
+                "
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-actions">
+        <button
+          v-if="currentStep > 1"
+          class="btn btn-secondary"
+          @click="prevStep"
+          :disabled="isLoading"
+        >
+          Back
+        </button>
+
+        <button
+          v-if="currentStep < totalSteps"
+          class="btn btn-primary"
+          @click="nextStep"
+          :disabled="!canProceed"
+        >
+          Continue
+        </button>
+
+        <button
+          v-if="currentStep === totalSteps"
+          class="btn btn-primary"
+          @click="completeSetup"
+          :disabled="isLoading"
+        >
+          {{ isLoading ? 'Saving...' : 'Complete Setup' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+.setup-page {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: calc(100vh - 40px);
+  padding: 40px 20px;
+}
+
+.setup-container {
+  width: 100%;
+  max-width: 700px;
+  background: var(--color-bg-card);
+  border-radius: 16px;
+  padding: 40px;
+  border: 1px solid var(--color-border);
+}
+
+.setup-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.setup-header h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+}
+
+.setup-header p {
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+}
+
+.progress-bar {
+  display: flex;
+  justify-content: space-between;
+  position: relative;
+  margin-bottom: 40px;
+  padding: 0 20px;
+}
+
+.progress-line {
+  position: absolute;
+  top: 16px;
+  left: 60px;
+  right: 60px;
+  height: 2px;
+  background: var(--color-border);
+  z-index: 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--color-accent);
+  transition: width 0.3s ease;
+}
+
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-bg-elevated);
+  border: 2px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
+}
+
+.progress-step.active .step-number {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg-primary);
+}
+
+.progress-step.completed .step-number {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg-primary);
+}
+
+.step-label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.progress-step.active .step-label {
+  color: var(--color-text-primary);
+}
+
+.step-content {
+  margin-bottom: 32px;
+}
+
+.step-panel h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.step-description {
+  color: var(--color-text-secondary);
+  margin-bottom: 24px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.form-group input,
+.form-group select {
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.goal-options {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.goal-option {
+  padding: 12px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.goal-option:hover {
+  border-color: var(--color-accent);
+}
+
+.goal-option.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg-primary);
+}
+
+.checkbox-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.checkbox-label input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-accent);
+}
+
+.checkbox-label:has(input:checked) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.btn {
+  padding: 12px 32px;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  color: var(--color-bg-primary);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-dark);
+}
+
+.btn-secondary {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+</style>

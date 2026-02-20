@@ -2,9 +2,9 @@
 import { computed, type Ref } from 'vue'
 
 interface MenuItem {
-  name: string;
-  icon: string;
-  path: string;
+  name: string
+  icon: string
+  path: string
 }
 
 const auth = useAuth()
@@ -13,6 +13,7 @@ const { isCollapsed, toggle } = useSidebar()
 
 const menuItems: MenuItem[] = [
   { name: 'Dashboard', icon: 'mdi:view-dashboard', path: '/' },
+  { name: 'Health', icon: 'mdi:heart-pulse', path: '/health' },
   { name: 'Accounts', icon: 'mdi:bank', path: '/accounts' },
   { name: 'Transactions', icon: 'mdi:view-list', path: '/transactions' },
   { name: 'Budgets', icon: 'mdi:chart-pie', path: '/dashboard/budgets' },
@@ -21,7 +22,7 @@ const menuItems: MenuItem[] = [
 </script>
 
 <template>
-  <aside class="sidebar" :class="{ 'collapsed': isCollapsed }">
+  <aside class="sidebar" :class="{ collapsed: isCollapsed }">
     <!-- Toggle Button -->
     <button class="toggle-btn" @click="toggle" :title="isCollapsed ? 'Expand' : 'Collapse'">
       <Icon v-if="!isCollapsed" name="mdi:chevron-left" size="20" />
@@ -52,12 +53,12 @@ const menuItems: MenuItem[] = [
 
     <!-- Navigation Menu -->
     <nav class="nav-menu">
-      <NuxtLink 
-        v-for="item in menuItems" 
+      <NuxtLink
+        v-for="item in menuItems"
         :key="item.path"
         :to="item.path"
         class="nav-item"
-        :class="{ 'active': $route.path === item.path }"
+        :class="{ active: $route.path === item.path }"
       >
         <Icon :name="item.icon" size="20" class="nav-icon" />
         <span class="nav-text" v-show="!isCollapsed">{{ item.name }}</span>
