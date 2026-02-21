@@ -72,7 +72,7 @@ const overallProgress = computed(() => {
         v-if="!isLoading && !error && budgets.length > 0"
         variant="secondary"
         size="sm"
-        to="/dashboard/budgets"
+        to="/finance/budgets"
         class="view-all-btn"
       >
         View all

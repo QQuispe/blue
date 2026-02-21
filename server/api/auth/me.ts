@@ -1,67 +1,51 @@
-import { defineEventHandler, createError, getCookie } from 'h3';
-import { getUserById } from '~/server/db/queries/users.ts';
+import { defineEventHandler, createError, getCookie } from 'h3'
+import { getUserById } from '~/server/db/queries/users'
+import { verifySignedSession } from '~/server/utils/session'
 
 interface MeResponse {
-  statusCode: number;
-  message?: string;
+  statusCode: number
+  message?: string
   user: {
-    id: number;
-    username: string;
-    email?: string;
-    isAdmin: boolean;
-  } | null;
-}
-
-interface SessionData {
-  userId: number;
-  username: string;
-  email?: string;
-  isAdmin: boolean;
-  loggedInAt: string;
+    id: number
+    username: string
+    email?: string
+    isAdmin: boolean
+  } | null
 }
 
 export default defineEventHandler(async (event): Promise<MeResponse> => {
   try {
     // Get session from cookie
-    const sessionCookie = getCookie(event, 'blue-session');
-    
+    const sessionCookie = getCookie(event, 'blue-session')
+
     if (!sessionCookie) {
       return {
         statusCode: 401,
         message: 'Not authenticated',
-        user: null
-      };
+        user: null,
+      }
     }
 
-    // Parse session
-    let session: SessionData;
-    try {
-      session = JSON.parse(Buffer.from(sessionCookie, 'base64').toString());
-    } catch {
+    // Verify and parse signed session
+    const session = verifySignedSession(sessionCookie)
+
+    if (!session) {
       return {
         statusCode: 401,
         message: 'Invalid session',
-        user: null
-      };
-    }
-
-    if (!session.userId) {
-      return {
-        statusCode: 401,
-        message: 'Not authenticated',
-        user: null
-      };
+        user: null,
+      }
     }
 
     // Fetch fresh user data from database
-    const user = await getUserById(session.userId);
-    
+    const user = await getUserById(session.userId)
+
     if (!user || !user.is_active) {
       return {
         statusCode: 401,
         message: 'User not found or deactivated',
-        user: null
-      };
+        user: null,
+      }
     }
 
     return {
@@ -70,16 +54,15 @@ export default defineEventHandler(async (event): Promise<MeResponse> => {
         id: user.id,
         username: user.username,
         email: user.email,
-        isAdmin: user.is_admin
-      }
-    };
-
+        isAdmin: user.is_admin,
+      },
+    }
   } catch (error) {
-    console.error('Get current user error:', error);
+    console.error('Get current user error:', error)
     return {
       statusCode: 500,
       message: 'Failed to get current user',
-      user: null
-    };
+      user: null,
+    }
   }
-});
+})

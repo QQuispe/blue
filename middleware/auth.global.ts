@@ -11,7 +11,6 @@ import { defineNuxtRouteMiddleware, navigateTo } from '#app'
 export default defineNuxtRouteMiddleware(async to => {
   // Whitelist of public pages that don't require authentication
   const publicPages = [
-    '/',
     '/login',
     '/register',
     // Add more public pages here as needed
