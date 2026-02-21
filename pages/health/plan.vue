@@ -116,7 +116,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <PageLayout title="Your Plans" subtitle="AI-generated meal and workout plans">
+  <PageLayout title="Your Plans">
     <div v-if="isLoading" class="loading">Loading...</div>
 
     <div v-else class="plans-container">

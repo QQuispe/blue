@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
 import Card from '~/components/Card.vue'
 import MacroCard from '~/components/health/MacroCard.vue'
+import BaseButton from '~/components/BaseButton.vue'
 
 const { $toast } = useNuxtApp()
 
@@ -207,10 +208,10 @@ onMounted(() => {
   <PageLayout title="Meal Tracker">
     <div class="page-actions">
       <input v-model="selectedDate" type="date" class="date-picker" @change="fetchMeals" />
-      <button class="btn btn-primary" @click="showAddMealModal = true">
+      <BaseButton variant="primary" @click="showAddMealModal = true">
         <Icon name="mdi:plus" size="20" />
         Log Meal
-      </button>
+      </BaseButton>
     </div>
 
     <!-- Daily Summary -->
@@ -265,9 +266,9 @@ onMounted(() => {
       <div v-if="meals.length === 0" class="empty-state">
         <Icon name="mdi:food-off" size="48" />
         <p>No meals logged for this day</p>
-        <button class="btn btn-primary" @click="showAddMealModal = true">
+        <BaseButton variant="primary" @click="showAddMealModal = true">
           Log Your First Meal
-        </button>
+        </BaseButton>
       </div>
     </div>
 
@@ -336,14 +337,14 @@ onMounted(() => {
         </div>
 
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="showAddMealModal = false">Cancel</button>
-          <button
-            class="btn btn-primary"
+          <BaseButton variant="secondary" @click="showAddMealModal = false">Cancel</BaseButton>
+          <BaseButton
+            variant="primary"
             @click="saveMeal"
             :disabled="isAddingFood || selectedFoods.length === 0"
           >
             {{ isAddingFood ? 'Saving...' : 'Save Meal' }}
-          </button>
+          </BaseButton>
         </div>
       </div>
     </div>
@@ -355,6 +356,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
@@ -362,41 +364,11 @@ onMounted(() => {
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
   border-radius: 6px;
-  padding: 6px 12px;
+  padding: 8px 12px;
   color: var(--color-text-primary);
   font-size: 0.875rem;
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background: var(--color-accent);
-  color: var(--color-bg-primary);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--color-accent-dark);
-}
-
-.btn-secondary {
-  background: var(--color-bg-elevated);
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-border);
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  height: 40px;
+  width: 150px;
 }
 
 .summary-card {

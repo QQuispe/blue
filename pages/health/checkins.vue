@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
 import Card from '~/components/Card.vue'
+import BaseButton from '~/components/BaseButton.vue'
 
 const { $toast } = useNuxtApp()
 
@@ -124,12 +125,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <PageLayout title="Progress Check-ins" subtitle="Track your weight and measurements over time">
+  <PageLayout title="Progress Check-ins">
     <div class="page-actions">
-      <button class="btn btn-primary" @click="showCheckinModal = true">
+      <BaseButton variant="primary" @click="showCheckinModal = true">
         <Icon name="mdi:plus" size="20" />
         New Check-in
-      </button>
+      </BaseButton>
     </div>
 
     <div v-if="isLoading" class="loading">Loading...</div>
@@ -139,7 +140,9 @@ onMounted(() => {
         <Icon name="mdi:scale" size="48" />
         <p>No check-ins yet</p>
         <span>Start tracking your progress today</span>
-        <button class="btn btn-primary" @click="showCheckinModal = true">Add First Check-in</button>
+        <BaseButton variant="primary" @click="showCheckinModal = true"
+          >Add First Check-in</BaseButton
+        >
       </div>
 
       <div v-else class="checkins-list">
@@ -262,14 +265,14 @@ onMounted(() => {
         </div>
 
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="showCheckinModal = false">Cancel</button>
-          <button
-            class="btn btn-primary"
+          <BaseButton variant="secondary" @click="showCheckinModal = false">Cancel</BaseButton>
+          <BaseButton
+            variant="primary"
             @click="submitCheckin"
             :disabled="isSubmitting || !checkinForm.weight"
           >
             {{ isSubmitting ? 'Saving...' : 'Save Check-in' }}
-          </button>
+          </BaseButton>
         </div>
       </div>
     </div>
@@ -287,38 +290,6 @@ onMounted(() => {
   text-align: center;
   padding: 60px;
   color: var(--color-text-muted);
-}
-
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-  transition: all 0.2s;
-}
-
-.btn-primary {
-  background: var(--color-accent);
-  color: var(--color-bg-primary);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: var(--color-accent-dark);
-}
-
-.btn-secondary {
-  background: var(--color-bg-elevated);
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-border);
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .empty-state {
