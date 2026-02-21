@@ -395,43 +395,42 @@ const viewBudgetTransactions = async (budget: Budget) => {
       <BaseButton variant="primary" @click="openAddModal">Create Budget</BaseButton>
     </div>
 
-    <div v-else class="budgets-container" :key="selectedMonth">
-      <div class="budgets-card">
-        <div
-          v-for="budget in sortedBudgets"
-          :key="budget.id"
-          class="budget-item"
-          :class="{ 'at-risk': budget.riskLevel !== 'low', favorited: budget.isFavorited }"
-        >
-          <div class="budget-header">
-            <div class="budget-category">
-              <Icon :name="getCategoryIcon(budget.category)" size="18" class="category-icon" />
-              <span class="category-name">{{ budget.category }}</span>
-              <button
-                class="action-btn favorite"
-                :class="{ active: budget.isFavorited }"
-                @click="toggleFavorite(budget)"
-                title="Favorite"
-              >
-                <Icon :name="budget.isFavorited ? 'mdi:star' : 'mdi:star-outline'" size="16" />
-              </button>
-            </div>
-            <div class="budget-actions">
-              <button
-                class="action-btn"
-                @click="viewBudgetTransactions(budget)"
-                title="View Transactions"
-              >
-                <Icon name="mdi:view-list" size="16" />
-              </button>
-              <button class="action-btn" @click="openEditModal(budget)" title="Edit">
-                <Icon name="mdi:pencil" size="16" />
-              </button>
-              <button class="action-btn danger" @click="confirmDelete(budget)" title="Delete">
-                <Icon name="mdi:delete" size="16" />
-              </button>
-            </div>
+    <div v-else class="budgets-grid" :key="selectedMonth">
+      <div
+        v-for="budget in sortedBudgets"
+        :key="budget.id"
+        class="budget-card"
+        :class="{ 'at-risk': budget.riskLevel !== 'low', favorited: budget.isFavorited }"
+      >
+        <div class="budget-header">
+          <div class="budget-category">
+            <Icon :name="getCategoryIcon(budget.category)" size="18" class="category-icon" />
+            <span class="category-name">{{ budget.category }}</span>
+            <button
+              class="action-btn favorite"
+              :class="{ active: budget.isFavorited }"
+              @click="toggleFavorite(budget)"
+              title="Favorite"
+            >
+              <Icon :name="budget.isFavorited ? 'mdi:star' : 'mdi:star-outline'" size="16" />
+            </button>
           </div>
+          <div class="budget-actions">
+            <button
+              class="action-btn"
+              @click="viewBudgetTransactions(budget)"
+              title="View Transactions"
+            >
+              <Icon name="mdi:view-list" size="16" />
+            </button>
+            <button class="action-btn" @click="openEditModal(budget)" title="Edit">
+              <Icon name="mdi:pencil" size="16" />
+            </button>
+            <button class="action-btn danger" @click="confirmDelete(budget)" title="Delete">
+              <Icon name="mdi:delete" size="16" />
+            </button>
+          </div>
+        </div>
           <div class="budget-body">
             <div class="budget-amounts">
               <span class="spent">{{ formatCurrency(budget.spentAmount) }}</span>
@@ -465,7 +464,6 @@ const viewBudgetTransactions = async (budget: Budget) => {
           </div>
         </div>
       </div>
-    </div>
 
     <div v-if="showModal" class="modal-overlay" @click="showModal = false">
       <div class="modal" @click.stop>
@@ -779,38 +777,28 @@ const viewBudgetTransactions = async (budget: Budget) => {
   text-decoration: underline;
 }
 
-.budgets-container {
+.budgets-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
   width: 100%;
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
-.budgets-card {
+.budget-card {
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: 10px;
-  overflow: hidden;
-}
-
-.budget-item {
   padding: 16px;
-  border-bottom: 1px solid var(--color-border);
   transition: background 0.2s;
 }
 
-.budget-item:last-child {
-  border-bottom: none;
-}
-
-.budget-item:hover {
+.budget-card:hover {
   background: var(--color-bg-card-hover);
 }
 
-.budget-item:hover {
-  background: var(--color-bg-card-hover);
-}
-
-.budget-item.at-risk {
+.budget-card.at-risk {
   border-left: 3px solid var(--color-warning);
 }
 
