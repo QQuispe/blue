@@ -2,8 +2,28 @@
 import { ref, onMounted, computed } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
 import Card from '~/components/Card.vue'
+import HealthSetupRequired from '~/components/health/HealthSetupRequired.vue'
 
 const { $toast } = useNuxtApp()
+
+const needsSetup = ref(false)
+const isCheckingSetup = ref(true)
+
+const checkSetup = async () => {
+  try {
+    const response = await $fetch('/api/health/setup-status', {
+      credentials: 'include',
+      ignoreResponseError: true,
+    })
+    needsSetup.value = !response?.isComplete
+  } catch {
+    needsSetup.value = true
+  } finally {
+    isCheckingSetup.value = false
+  }
+}
+
+checkSetup()
 
 interface MealPlan {
   id: number
@@ -117,133 +137,139 @@ onMounted(() => {
 
 <template>
   <PageLayout title="Your Plans">
-    <div v-if="isLoading" class="loading">Loading...</div>
+    <HealthSetupRequired v-if="needsSetup && !isCheckingSetup" feature="plans" />
 
-    <div v-else class="plans-container">
-      <!-- Meal Plan Section -->
-      <Card>
-        <div class="section-header">
-          <h2>Meal Plan</h2>
-          <button class="btn btn-primary" @click="generateMealPlan" :disabled="isGenerating">
-            <Icon name="mdi:refresh" size="18" />
-            {{ isGenerating ? 'Generating...' : 'Regenerate' }}
-          </button>
-        </div>
+    <template v-else>
+      <div v-if="isLoading" class="loading">Loading...</div>
 
-        <div v-if="activeMealPlan" class="plan-content">
-          <div class="day-selector">
-            <button
-              v-for="(day, index) in days"
-              :key="day"
-              class="day-btn"
-              :class="{ active: selectedDay === index }"
-              @click="selectedDay = index"
-            >
-              {{ day.slice(0, 3) }}
+      <div v-else class="plans-container">
+        <!-- Meal Plan Section -->
+        <Card>
+          <div class="section-header">
+            <h2>Meal Plan</h2>
+            <button class="btn btn-primary" @click="generateMealPlan" :disabled="isGenerating">
+              <Icon name="mdi:refresh" size="18" />
+              {{ isGenerating ? 'Generating...' : 'Regenerate' }}
             </button>
           </div>
 
-          <div v-if="currentDayMeals" class="day-content">
-            <div class="day-header">
-              <h3>{{ days[selectedDay] }}</h3>
-              <div class="day-macros">
-                <span>{{ currentDayMeals.total_calories }} cal</span>
-                <span>P: {{ currentDayMeals.total_protein }}g</span>
-                <span>C: {{ currentDayMeals.total_carbs }}g</span>
-                <span>F: {{ currentDayMeals.total_fat }}g</span>
-              </div>
+          <div v-if="activeMealPlan" class="plan-content">
+            <div class="day-selector">
+              <button
+                v-for="(day, index) in days"
+                :key="day"
+                class="day-btn"
+                :class="{ active: selectedDay === index }"
+                @click="selectedDay = index"
+              >
+                {{ day.slice(0, 3) }}
+              </button>
             </div>
 
-            <div class="meals-grid">
-              <div v-for="meal in currentDayMeals.meals" :key="meal.meal_type" class="meal-card">
-                <span class="meal-type">{{ meal.meal_type }}</span>
-                <div class="meal-foods">
-                  <div v-for="food in meal.foods" :key="food.name" class="food-item">
-                    <span class="food-name">{{ food.name }}</span>
-                    <span class="food-portion">{{ food.portion }}</span>
+            <div v-if="currentDayMeals" class="day-content">
+              <div class="day-header">
+                <h3>{{ days[selectedDay] }}</h3>
+                <div class="day-macros">
+                  <span>{{ currentDayMeals.total_calories }} cal</span>
+                  <span>P: {{ currentDayMeals.total_protein }}g</span>
+                  <span>C: {{ currentDayMeals.total_carbs }}g</span>
+                  <span>F: {{ currentDayMeals.total_fat }}g</span>
+                </div>
+              </div>
+
+              <div class="meals-grid">
+                <div v-for="meal in currentDayMeals.meals" :key="meal.meal_type" class="meal-card">
+                  <span class="meal-type">{{ meal.meal_type }}</span>
+                  <div class="meal-foods">
+                    <div v-for="food in meal.foods" :key="food.name" class="food-item">
+                      <span class="food-name">{{ food.name }}</span>
+                      <span class="food-portion">{{ food.portion }}</span>
+                    </div>
+                  </div>
+                  <div class="meal-calories">{{ meal.total_calories }} cal</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="empty-plan">
+            <Icon name="mdi:food" size="48" />
+            <p>No meal plan yet</p>
+            <button class="btn btn-primary" @click="generateMealPlan" :disabled="isGenerating">
+              Generate Meal Plan
+            </button>
+          </div>
+        </Card>
+
+        <!-- Workout Plan Section -->
+        <Card>
+          <div class="section-header">
+            <h2>Workout Plan</h2>
+            <button class="btn btn-primary" @click="generateWorkoutPlan" :disabled="isGenerating">
+              <Icon name="mdi:refresh" size="18" />
+              {{ isGenerating ? 'Generating...' : 'Regenerate' }}
+            </button>
+          </div>
+
+          <div v-if="activeWorkoutPlan" class="plan-content">
+            <div class="day-selector">
+              <button
+                v-for="(day, index) in days"
+                :key="day"
+                class="day-btn"
+                :class="{ active: selectedDay === index }"
+                @click="selectedDay = index"
+              >
+                {{ day.slice(0, 3) }}
+              </button>
+            </div>
+
+            <div v-if="currentDayWorkout" class="workout-content">
+              <div class="workout-header">
+                <h3>{{ currentDayWorkout.name || days[selectedDay] }}</h3>
+                <span class="workout-type">{{ currentDayWorkout.type }}</span>
+              </div>
+
+              <div class="workout-duration">
+                <Icon name="mdi:clock-outline" size="18" />
+                {{ currentDayWorkout.duration_minutes }} minutes
+              </div>
+
+              <div class="exercises-list">
+                <div
+                  v-for="exercise in currentDayWorkout.exercises"
+                  :key="exercise.name"
+                  class="exercise-item"
+                >
+                  <div class="exercise-name">{{ exercise.name }}</div>
+                  <div class="exercise-details">
+                    <span>{{ exercise.sets }} sets</span>
+                    <span>{{ exercise.reps }} reps</span>
+                    <span v-if="exercise.weight" class="exercise-weight">{{
+                      exercise.weight
+                    }}</span>
                   </div>
                 </div>
-                <div class="meal-calories">{{ meal.total_calories }} cal</div>
               </div>
             </div>
+
+            <div v-else class="rest-day">
+              <Icon name="mdi:bed" size="48" />
+              <p>Rest Day</p>
+              <span>Light walking or stretching recommended</span>
+            </div>
           </div>
-        </div>
 
-        <div v-else class="empty-plan">
-          <Icon name="mdi:food" size="48" />
-          <p>No meal plan yet</p>
-          <button class="btn btn-primary" @click="generateMealPlan" :disabled="isGenerating">
-            Generate Meal Plan
-          </button>
-        </div>
-      </Card>
-
-      <!-- Workout Plan Section -->
-      <Card>
-        <div class="section-header">
-          <h2>Workout Plan</h2>
-          <button class="btn btn-primary" @click="generateWorkoutPlan" :disabled="isGenerating">
-            <Icon name="mdi:refresh" size="18" />
-            {{ isGenerating ? 'Generating...' : 'Regenerate' }}
-          </button>
-        </div>
-
-        <div v-if="activeWorkoutPlan" class="plan-content">
-          <div class="day-selector">
-            <button
-              v-for="(day, index) in days"
-              :key="day"
-              class="day-btn"
-              :class="{ active: selectedDay === index }"
-              @click="selectedDay = index"
-            >
-              {{ day.slice(0, 3) }}
+          <div v-else class="empty-plan">
+            <Icon name="mdi:dumbbell" size="48" />
+            <p>No workout plan yet</p>
+            <button class="btn btn-primary" @click="generateWorkoutPlan" :disabled="isGenerating">
+              Generate Workout Plan
             </button>
           </div>
-
-          <div v-if="currentDayWorkout" class="workout-content">
-            <div class="workout-header">
-              <h3>{{ currentDayWorkout.name || days[selectedDay] }}</h3>
-              <span class="workout-type">{{ currentDayWorkout.type }}</span>
-            </div>
-
-            <div class="workout-duration">
-              <Icon name="mdi:clock-outline" size="18" />
-              {{ currentDayWorkout.duration_minutes }} minutes
-            </div>
-
-            <div class="exercises-list">
-              <div
-                v-for="exercise in currentDayWorkout.exercises"
-                :key="exercise.name"
-                class="exercise-item"
-              >
-                <div class="exercise-name">{{ exercise.name }}</div>
-                <div class="exercise-details">
-                  <span>{{ exercise.sets }} sets</span>
-                  <span>{{ exercise.reps }} reps</span>
-                  <span v-if="exercise.weight" class="exercise-weight">{{ exercise.weight }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div v-else class="rest-day">
-            <Icon name="mdi:bed" size="48" />
-            <p>Rest Day</p>
-            <span>Light walking or stretching recommended</span>
-          </div>
-        </div>
-
-        <div v-else class="empty-plan">
-          <Icon name="mdi:dumbbell" size="48" />
-          <p>No workout plan yet</p>
-          <button class="btn btn-primary" @click="generateWorkoutPlan" :disabled="isGenerating">
-            Generate Workout Plan
-          </button>
-        </div>
-      </Card>
-    </div>
+        </Card>
+      </div>
+    </template>
   </PageLayout>
 </template>
 

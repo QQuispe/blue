@@ -12,6 +12,8 @@ const isAdmin = computed(() => auth.user.value?.isAdmin || false)
 
 // Password change
 const showPasswordModal = ref(false)
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 const newPassword = ref('')
 const confirmPassword = ref('')
 const isChangingPassword = ref(false)
@@ -20,6 +22,31 @@ const isChangingPassword = ref(false)
 const showDeleteModal = ref(false)
 const deleteConfirmation = ref('')
 const isDeleting = ref(false)
+
+// Health data deletion
+const showHealthDeleteModal = ref(false)
+const healthDeleteConfirmation = ref('')
+const isDeletingHealth = ref(false)
+
+const deleteHealthData = async () => {
+  if (healthDeleteConfirmation.value !== 'DELETE') {
+    $toast.error('Type DELETE to confirm')
+    return
+  }
+
+  try {
+    isDeletingHealth.value = true
+    await $fetch('/api/health/delete-all', { method: 'DELETE', credentials: 'include' })
+    $toast.success('Health data deleted')
+    showHealthDeleteModal.value = false
+    healthDeleteConfirmation.value = ''
+    // Stay on settings page - user can navigate to setup manually if they want
+  } catch (err: any) {
+    $toast.error(err.message || 'Failed to delete health data')
+  } finally {
+    isDeletingHealth.value = false
+  }
+}
 
 // Admin stats
 interface AdminStats {
@@ -301,6 +328,41 @@ onMounted(() => {
           </div>
         </div>
 
+        <!-- Health Section -->
+        <div class="settings-card">
+          <div class="card-header">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+              />
+            </svg>
+            <h2>Health Data</h2>
+          </div>
+          <div class="separator"></div>
+          <div class="card-content">
+            <div class="action-row">
+              <div class="action-info">
+                <span class="action-title">Delete Health Data</span>
+                <span class="action-desc warning"
+                  >Remove all health data including meals, check-ins, and goals. Your account will
+                  remain.</span
+                >
+              </div>
+              <BaseButton variant="danger" size="sm" @click="showHealthDeleteModal = true">
+                Delete
+              </BaseButton>
+            </div>
+          </div>
+        </div>
+
         <!-- Danger Zone -->
         <div class="settings-card danger-card">
           <div class="card-header">
@@ -348,11 +410,33 @@ onMounted(() => {
           <div class="modal-body">
             <div class="form-group">
               <label>New Password</label>
-              <input v-model="newPassword" type="password" placeholder="Enter new password" />
+              <div class="password-input">
+                <input
+                  v-model="newPassword"
+                  :type="showPassword ? 'text' : 'password'"
+                  placeholder="Enter new password"
+                />
+                <button type="button" class="toggle-password" @click="showPassword = !showPassword">
+                  <Icon :name="showPassword ? 'mdi:eye-off' : 'mdi:eye'" size="18" />
+                </button>
+              </div>
             </div>
             <div class="form-group">
               <label>Confirm Password</label>
-              <input v-model="confirmPassword" type="password" placeholder="Confirm new password" />
+              <div class="password-input">
+                <input
+                  v-model="confirmPassword"
+                  :type="showConfirmPassword ? 'text' : 'password'"
+                  placeholder="Confirm new password"
+                />
+                <button
+                  type="button"
+                  class="toggle-password"
+                  @click="showConfirmPassword = !showConfirmPassword"
+                >
+                  <Icon :name="showConfirmPassword ? 'mdi:eye-off' : 'mdi:eye'" size="18" />
+                </button>
+              </div>
             </div>
           </div>
           <div class="modal-footer">
@@ -393,6 +477,49 @@ onMounted(() => {
             <BaseButton variant="secondary" @click="showDeleteModal = false">Cancel</BaseButton>
             <BaseButton variant="danger" @click="deleteAccount" :loading="isDeleting">
               Permanently Delete Account
+            </BaseButton>
+          </div>
+        </div>
+      </div>
+
+      <!-- Delete Health Data Modal -->
+      <div
+        v-if="showHealthDeleteModal"
+        class="modal-overlay"
+        @click="showHealthDeleteModal = false"
+      >
+        <div class="modal danger-modal" @click.stop>
+          <div class="modal-header">
+            <h3>Delete Health Data</h3>
+            <button class="close-btn" @click="showHealthDeleteModal = false">×</button>
+          </div>
+          <div class="modal-body">
+            <p class="warning-text">This will permanently delete all your health data including:</p>
+            <ul class="warning-list">
+              <li>Your profile and body metrics</li>
+              <li>Weight goals</li>
+              <li>All logged meals</li>
+              <li>All check-ins</li>
+              <li>Meal and workout plans</li>
+              <li>Preferences</li>
+            </ul>
+            <p class="warning-text">
+              <strong>Your account and finance data will remain.</strong>
+            </p>
+            <p class="warning-text">
+              <strong>This action cannot be undone.</strong>
+            </p>
+            <div class="form-group">
+              <label>Type "DELETE" to confirm</label>
+              <input v-model="healthDeleteConfirmation" type="text" placeholder="DELETE" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <BaseButton variant="secondary" @click="showHealthDeleteModal = false"
+              >Cancel</BaseButton
+            >
+            <BaseButton variant="danger" @click="deleteHealthData" :loading="isDeletingHealth">
+              Delete Health Data
             </BaseButton>
           </div>
         </div>
@@ -688,5 +815,35 @@ onMounted(() => {
   .settings-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Password toggle */
+.password-input {
+  position: relative;
+}
+
+.password-input input {
+  padding-right: 48px;
+  width: 100%;
+}
+
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.toggle-password:hover {
+  color: var(--color-text-primary);
 }
 </style>

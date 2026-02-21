@@ -3,8 +3,28 @@ import { ref, onMounted } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
 import Card from '~/components/Card.vue'
 import BaseButton from '~/components/BaseButton.vue'
+import HealthSetupRequired from '~/components/health/HealthSetupRequired.vue'
 
 const { $toast } = useNuxtApp()
+
+const needsSetup = ref(false)
+const isCheckingSetup = ref(true)
+
+const checkSetup = async () => {
+  try {
+    const response = await $fetch('/api/health/setup-status', {
+      credentials: 'include',
+      ignoreResponseError: true,
+    })
+    needsSetup.value = !response?.isComplete
+  } catch {
+    needsSetup.value = true
+  } finally {
+    isCheckingSetup.value = false
+  }
+}
+
+checkSetup()
 
 interface Checkin {
   id: number
@@ -126,156 +146,183 @@ onMounted(() => {
 
 <template>
   <PageLayout title="Progress Check-ins">
-    <div class="page-actions">
-      <BaseButton variant="primary" @click="showCheckinModal = true">
-        <Icon name="mdi:plus" size="20" />
-        New Check-in
-      </BaseButton>
-    </div>
+    <HealthSetupRequired v-if="needsSetup && !isCheckingSetup" feature="check-ins" />
 
-    <div v-if="isLoading" class="loading">Loading...</div>
-
-    <div v-else class="checkins-content">
-      <div v-if="checkins.length === 0" class="empty-state">
-        <Icon name="mdi:scale" size="48" />
-        <p>No check-ins yet</p>
-        <span>Start tracking your progress today</span>
-        <BaseButton variant="primary" @click="showCheckinModal = true"
-          >Add First Check-in</BaseButton
-        >
+    <template v-else>
+      <div class="page-actions">
+        <BaseButton variant="primary" @click="showCheckinModal = true">
+          <Icon name="mdi:plus" size="20" />
+          New Check-in
+        </BaseButton>
       </div>
 
-      <div v-else class="checkins-list">
-        <Card v-for="(checkin, index) in checkins" :key="checkin.id" class="checkin-card">
-          <div class="checkin-header">
-            <span class="checkin-date">{{ formatDate(checkin.checkinDate) }}</span>
-            <span
-              v-if="index < checkins.length - 1"
-              class="weight-change"
-              :class="{ negative: Number(checkins[index + 1]?.weight) > checkin.weight }"
-            >
-              {{
-                calculateWeightChange(checkins[index + 1]?.weight || checkin.weight, checkin.weight)
-              }}
-              lbs
-            </span>
-          </div>
+      <div v-if="isLoading" class="loading">Loading...</div>
 
-          <div class="checkin-measurements">
-            <div class="measurement main">
-              <span class="measurement-value">{{ checkin.weight }}</span>
-              <span class="measurement-label">Weight (lbs)</span>
-            </div>
-
-            <div v-if="checkin.waist" class="measurement">
-              <span class="measurement-value">{{ checkin.waist }}</span>
-              <span class="measurement-label">Waist</span>
-            </div>
-
-            <div v-if="checkin.chest" class="measurement">
-              <span class="measurement-value">{{ checkin.chest }}</span>
-              <span class="measurement-label">Chest</span>
-            </div>
-
-            <div v-if="checkin.hips" class="measurement">
-              <span class="measurement-value">{{ checkin.hips }}</span>
-              <span class="measurement-label">Hips</span>
-            </div>
-
-            <div v-if="checkin.biceps" class="measurement">
-              <span class="measurement-value">{{ checkin.biceps }}</span>
-              <span class="measurement-label">Biceps</span>
-            </div>
-
-            <div v-if="checkin.thighs" class="measurement">
-              <span class="measurement-value">{{ checkin.thighs }}</span>
-              <span class="measurement-label">Thighs</span>
-            </div>
-          </div>
-
-          <div v-if="checkin.notes" class="checkin-notes">
-            <Icon name="mdi:note-text-outline" size="16" />
-            {{ checkin.notes }}
-          </div>
-        </Card>
-      </div>
-    </div>
-
-    <!-- Check-in Modal -->
-    <div v-if="showCheckinModal" class="modal-overlay" @click.self="showCheckinModal = false">
-      <div class="modal">
-        <div class="modal-header">
-          <h2>New Check-in</h2>
-          <button class="close-btn" @click="showCheckinModal = false">
-            <Icon name="mdi:close" size="24" />
-          </button>
-        </div>
-
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Weight (lbs) *</label>
-            <input v-model.number="checkinForm.weight" type="number" step="0.1" placeholder="170" />
-          </div>
-
-          <div class="measurements-grid">
-            <div class="form-group">
-              <label>Waist (in)</label>
-              <input v-model.number="checkinForm.waist" type="number" step="0.1" placeholder="32" />
-            </div>
-
-            <div class="form-group">
-              <label>Chest (in)</label>
-              <input v-model.number="checkinForm.chest" type="number" step="0.1" placeholder="40" />
-            </div>
-
-            <div class="form-group">
-              <label>Hips (in)</label>
-              <input v-model.number="checkinForm.hips" type="number" step="0.1" placeholder="38" />
-            </div>
-
-            <div class="form-group">
-              <label>Biceps (in)</label>
-              <input
-                v-model.number="checkinForm.biceps"
-                type="number"
-                step="0.1"
-                placeholder="14"
-              />
-            </div>
-
-            <div class="form-group">
-              <label>Thighs (in)</label>
-              <input
-                v-model.number="checkinForm.thighs"
-                type="number"
-                step="0.1"
-                placeholder="22"
-              />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>Notes</label>
-            <textarea
-              v-model="checkinForm.notes"
-              placeholder="How do you feel? Any observations..."
-              rows="3"
-            ></textarea>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <BaseButton variant="secondary" @click="showCheckinModal = false">Cancel</BaseButton>
-          <BaseButton
-            variant="primary"
-            @click="submitCheckin"
-            :disabled="isSubmitting || !checkinForm.weight"
+      <div v-else class="checkins-content">
+        <div v-if="checkins.length === 0" class="empty-state">
+          <Icon name="mdi:scale" size="48" />
+          <p>No check-ins yet</p>
+          <span>Start tracking your progress today</span>
+          <BaseButton variant="primary" @click="showCheckinModal = true"
+            >Add First Check-in</BaseButton
           >
-            {{ isSubmitting ? 'Saving...' : 'Save Check-in' }}
-          </BaseButton>
+        </div>
+
+        <div v-else class="checkins-list">
+          <Card v-for="(checkin, index) in checkins" :key="checkin.id" class="checkin-card">
+            <div class="checkin-header">
+              <span class="checkin-date">{{ formatDate(checkin.checkinDate) }}</span>
+              <span
+                v-if="index < checkins.length - 1"
+                class="weight-change"
+                :class="{ negative: Number(checkins[index + 1]?.weight) > checkin.weight }"
+              >
+                {{
+                  calculateWeightChange(
+                    checkins[index + 1]?.weight || checkin.weight,
+                    checkin.weight
+                  )
+                }}
+                lbs
+              </span>
+            </div>
+
+            <div class="checkin-measurements">
+              <div class="measurement main">
+                <span class="measurement-value">{{ checkin.weight }}</span>
+                <span class="measurement-label">Weight (lbs)</span>
+              </div>
+
+              <div v-if="checkin.waist" class="measurement">
+                <span class="measurement-value">{{ checkin.waist }}</span>
+                <span class="measurement-label">Waist</span>
+              </div>
+
+              <div v-if="checkin.chest" class="measurement">
+                <span class="measurement-value">{{ checkin.chest }}</span>
+                <span class="measurement-label">Chest</span>
+              </div>
+
+              <div v-if="checkin.hips" class="measurement">
+                <span class="measurement-value">{{ checkin.hips }}</span>
+                <span class="measurement-label">Hips</span>
+              </div>
+
+              <div v-if="checkin.biceps" class="measurement">
+                <span class="measurement-value">{{ checkin.biceps }}</span>
+                <span class="measurement-label">Biceps</span>
+              </div>
+
+              <div v-if="checkin.thighs" class="measurement">
+                <span class="measurement-value">{{ checkin.thighs }}</span>
+                <span class="measurement-label">Thighs</span>
+              </div>
+            </div>
+
+            <div v-if="checkin.notes" class="checkin-notes">
+              <Icon name="mdi:note-text-outline" size="16" />
+              {{ checkin.notes }}
+            </div>
+          </Card>
         </div>
       </div>
-    </div>
+
+      <!-- Check-in Modal -->
+      <div v-if="showCheckinModal" class="modal-overlay" @click.self="showCheckinModal = false">
+        <div class="modal">
+          <div class="modal-header">
+            <h2>New Check-in</h2>
+            <button class="close-btn" @click="showCheckinModal = false">
+              <Icon name="mdi:close" size="24" />
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Weight (lbs) *</label>
+              <input
+                v-model.number="checkinForm.weight"
+                type="number"
+                step="0.1"
+                placeholder="170"
+              />
+            </div>
+
+            <div class="measurements-grid">
+              <div class="form-group">
+                <label>Waist (in)</label>
+                <input
+                  v-model.number="checkinForm.waist"
+                  type="number"
+                  step="0.1"
+                  placeholder="32"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Chest (in)</label>
+                <input
+                  v-model.number="checkinForm.chest"
+                  type="number"
+                  step="0.1"
+                  placeholder="40"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Hips (in)</label>
+                <input
+                  v-model.number="checkinForm.hips"
+                  type="number"
+                  step="0.1"
+                  placeholder="38"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Biceps (in)</label>
+                <input
+                  v-model.number="checkinForm.biceps"
+                  type="number"
+                  step="0.1"
+                  placeholder="14"
+                />
+              </div>
+
+              <div class="form-group">
+                <label>Thighs (in)</label>
+                <input
+                  v-model.number="checkinForm.thighs"
+                  type="number"
+                  step="0.1"
+                  placeholder="22"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Notes</label>
+              <textarea
+                v-model="checkinForm.notes"
+                placeholder="How do you feel? Any observations..."
+                rows="3"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <BaseButton variant="secondary" @click="showCheckinModal = false">Cancel</BaseButton>
+            <BaseButton
+              variant="primary"
+              @click="submitCheckin"
+              :disabled="isSubmitting || !checkinForm.weight"
+            >
+              {{ isSubmitting ? 'Saving...' : 'Save Check-in' }}
+            </BaseButton>
+          </div>
+        </div>
+      </div>
+    </template>
   </PageLayout>
 </template>
 

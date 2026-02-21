@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
+import BaseButton from '~/components/BaseButton.vue'
 
 const { $toast } = useNuxtApp()
 const router = useRouter()
 
-const currentStep = ref(1)
-const totalSteps = 3
+const currentStep = ref(0)
+const totalSteps = 4
 const isLoading = ref(false)
 
 interface ProfileData {
@@ -261,7 +262,15 @@ const completeSetup = async () => {
         >
           <div class="step-number">{{ step }}</div>
           <span class="step-label">
-            {{ step === 1 ? 'Body Stats' : step === 2 ? 'Goals' : 'Preferences' }}
+            {{
+              step === 0
+                ? 'Intro'
+                : step === 1
+                  ? 'Body Stats'
+                  : step === 2
+                    ? 'Goals'
+                    : 'Preferences'
+            }}
           </span>
         </div>
         <div class="progress-line">
@@ -273,6 +282,49 @@ const completeSetup = async () => {
       </div>
 
       <div class="step-content">
+        <!-- Step 0: Intro -->
+        <div v-if="currentStep === 0" class="step-panel intro-panel">
+          <div class="intro-content">
+            <div class="intro-icon">
+              <Icon name="mdi:heart-pulse" size="64" />
+            </div>
+            <h2>Welcome to Health Tracking</h2>
+            <p>
+              Let's set up your personalized health profile. This will help us create tailored meal
+              and workout plans just for you.
+            </p>
+
+            <div class="intro-steps">
+              <div class="intro-step-item">
+                <div class="intro-step-number">1</div>
+                <div class="intro-step-text">
+                  <strong>Body Stats</strong>
+                  <span>Tell us your weight, height, and activity level</span>
+                </div>
+              </div>
+              <div class="intro-step-item">
+                <div class="intro-step-number">2</div>
+                <div class="intro-step-text">
+                  <strong>Goals</strong>
+                  <span>Define your weight goals and timeline</span>
+                </div>
+              </div>
+              <div class="intro-step-item">
+                <div class="intro-step-number">3</div>
+                <div class="intro-step-text">
+                  <strong>Preferences</strong>
+                  <span>Customize your meal and workout preferences</span>
+                </div>
+              </div>
+            </div>
+
+            <BaseButton variant="primary" @click="currentStep = 1" class="start-btn">
+              Get Started
+              <Icon name="mdi:arrow-right" size="20" />
+            </BaseButton>
+          </div>
+        </div>
+
         <!-- Step 1: Body Stats -->
         <div v-if="currentStep === 1" class="step-panel">
           <h2>Body Metrics</h2>
@@ -492,16 +544,16 @@ const completeSetup = async () => {
         </button>
 
         <button
-          v-if="currentStep < totalSteps"
+          v-if="currentStep > 0 && currentStep < 3"
           class="btn btn-primary"
           @click="nextStep"
           :disabled="!canProceed"
         >
-          Continue
+          {{ currentStep === 2 ? 'Continue to Preferences' : 'Continue' }}
         </button>
 
         <button
-          v-if="currentStep === totalSteps"
+          v-if="currentStep === 3"
           class="btn btn-primary"
           @click="completeSetup"
           :disabled="isLoading"
@@ -593,6 +645,78 @@ const completeSetup = async () => {
 
 .step-content {
   margin-bottom: 32px;
+}
+
+.intro-panel {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.intro-content {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.intro-icon {
+  color: var(--color-accent);
+  margin-bottom: 16px;
+}
+
+.intro-content h2 {
+  font-size: 1.75rem;
+  margin-bottom: 12px;
+}
+
+.intro-content p {
+  color: var(--color-text-secondary);
+  margin-bottom: 32px;
+}
+
+.intro-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+.intro-step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.intro-step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.intro-step-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.intro-step-text strong {
+  color: var(--color-text-primary);
+}
+
+.intro-step-text span {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.start-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .step-panel h2 {

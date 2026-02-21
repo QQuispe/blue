@@ -4,8 +4,28 @@ import PageLayout from '~/components/PageLayout.vue'
 import Card from '~/components/Card.vue'
 import MacroCard from '~/components/health/MacroCard.vue'
 import BaseButton from '~/components/BaseButton.vue'
+import HealthSetupRequired from '~/components/health/HealthSetupRequired.vue'
 
 const { $toast } = useNuxtApp()
+
+const needsSetup = ref(false)
+const isCheckingSetup = ref(true)
+
+const checkSetup = async () => {
+  try {
+    const response = await $fetch('/api/health/setup-status', {
+      credentials: 'include',
+      ignoreResponseError: true,
+    })
+    needsSetup.value = !response?.isComplete
+  } catch {
+    needsSetup.value = true
+  } finally {
+    isCheckingSetup.value = false
+  }
+}
+
+checkSetup()
 
 interface MealFood {
   food_name: string
@@ -206,148 +226,152 @@ onMounted(() => {
 
 <template>
   <PageLayout title="Meal Tracker">
-    <div class="page-actions">
-      <input v-model="selectedDate" type="date" class="date-picker" @change="fetchMeals" />
-      <BaseButton variant="primary" @click="showAddMealModal = true">
-        <Icon name="mdi:plus" size="20" />
-        Log Meal
-      </BaseButton>
-    </div>
+    <HealthSetupRequired v-if="needsSetup && !isCheckingSetup" feature="meal tracking" />
 
-    <!-- Daily Summary -->
-    <Card class="summary-card">
-      <h3>Daily Totals</h3>
-      <div class="summary-macros">
-        <MacroCard
-          label="Calories"
-          :current="todaysMacros.calories"
-          :target="2000"
-          unit=""
-          color="accent"
-        />
-        <MacroCard label="Protein" :current="todaysMacros.protein" :target="120" color="info" />
-        <MacroCard label="Carbs" :current="todaysMacros.carbs" :target="200" color="warning" />
-        <MacroCard label="Fat" :current="todaysMacros.fat" :target="65" color="error" />
+    <template v-else>
+      <div class="page-actions">
+        <input v-model="selectedDate" type="date" class="date-picker" @change="fetchMeals" />
+        <BaseButton variant="primary" @click="showAddMealModal = true">
+          <Icon name="mdi:plus" size="20" />
+          Log Meal
+        </BaseButton>
       </div>
-    </Card>
 
-    <!-- Loading -->
-    <div v-if="isLoading" class="loading">Loading...</div>
-
-    <!-- Meals List -->
-    <div v-else class="meals-list">
-      <Card v-for="meal in meals" :key="meal.id" class="meal-card">
-        <div class="meal-header">
-          <div>
-            <span class="meal-type">{{ meal.mealType }}</span>
-            <span class="meal-time">{{ new Date(meal.mealDate).toLocaleDateString() }}</span>
-          </div>
-          <button class="delete-btn" @click="deleteMeal(meal.id)">
-            <Icon name="mdi:delete-outline" size="18" />
-          </button>
-        </div>
-
-        <div class="meal-foods">
-          <div v-for="food in meal.foods" :key="food.id" class="food-item">
-            <span class="food-name">{{ food.food_name }}</span>
-            <span class="food-portion">{{ food.servings }}x</span>
-            <span class="food-calories">{{ formatNumber(food.calories) }} cal</span>
-          </div>
-        </div>
-
-        <div class="meal-footer">
-          <span>P: {{ formatNumber(meal.totalProtein) }}g</span>
-          <span>C: {{ formatNumber(meal.totalCarbs) }}g</span>
-          <span>F: {{ formatNumber(meal.totalFat) }}g</span>
-          <span class="total">{{ formatNumber(meal.totalCalories) }} cal</span>
+      <!-- Daily Summary -->
+      <Card class="summary-card">
+        <h3>Daily Totals</h3>
+        <div class="summary-macros">
+          <MacroCard
+            label="Calories"
+            :current="todaysMacros.calories"
+            :target="2000"
+            unit=""
+            color="accent"
+          />
+          <MacroCard label="Protein" :current="todaysMacros.protein" :target="120" color="info" />
+          <MacroCard label="Carbs" :current="todaysMacros.carbs" :target="200" color="warning" />
+          <MacroCard label="Fat" :current="todaysMacros.fat" :target="65" color="error" />
         </div>
       </Card>
 
-      <div v-if="meals.length === 0" class="empty-state">
-        <Icon name="mdi:food-off" size="48" />
-        <p>No meals logged for this day</p>
-        <BaseButton variant="primary" @click="showAddMealModal = true">
-          Log Your First Meal
-        </BaseButton>
-      </div>
-    </div>
+      <!-- Loading -->
+      <div v-if="isLoading" class="loading">Loading...</div>
 
-    <!-- Add Meal Modal -->
-    <div v-if="showAddMealModal" class="modal-overlay" @click.self="showAddMealModal = false">
-      <div class="modal">
-        <div class="modal-header">
-          <h2>Log Meal</h2>
-          <button class="close-btn" @click="showAddMealModal = false">
-            <Icon name="mdi:close" size="24" />
-          </button>
-        </div>
-
-        <div class="modal-body">
-          <div class="form-group">
-            <label>Meal Type</label>
-            <select v-model="selectedMealType">
-              <option v-for="type in mealTypes" :key="type.value" :value="type.value">
-                {{ type.label }}
-              </option>
-            </select>
+      <!-- Meals List -->
+      <div v-else class="meals-list">
+        <Card v-for="meal in meals" :key="meal.id" class="meal-card">
+          <div class="meal-header">
+            <div>
+              <span class="meal-type">{{ meal.mealType }}</span>
+              <span class="meal-time">{{ new Date(meal.mealDate).toLocaleDateString() }}</span>
+            </div>
+            <button class="delete-btn" @click="deleteMeal(meal.id)">
+              <Icon name="mdi:delete-outline" size="18" />
+            </button>
           </div>
 
-          <div class="form-group">
-            <label>Search Foods</label>
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Search foods..."
-              @input="searchFoods"
-            />
-            <div v-if="searchResults.length" class="search-results">
-              <div
-                v-for="food in searchResults"
-                :key="food.id"
-                class="search-result"
-                @click="addFood(food)"
-              >
-                <span class="result-name">{{ food.name }}</span>
-                <span class="result-info" v-if="food.brand">{{ food.brand }}</span>
-                <span class="result-cal">{{ food.calories }} cal</span>
-              </div>
+          <div class="meal-foods">
+            <div v-for="food in meal.foods" :key="food.id" class="food-item">
+              <span class="food-name">{{ food.food_name }}</span>
+              <span class="food-portion">{{ food.servings }}x</span>
+              <span class="food-calories">{{ formatNumber(food.calories) }} cal</span>
             </div>
           </div>
 
-          <div v-if="selectedFoods.length" class="selected-foods">
-            <h4>Selected Foods</h4>
-            <div v-for="(food, index) in selectedFoods" :key="index" class="selected-item">
-              <span>{{ food.food_name }}</span>
-              <div class="portion-controls">
-                <input
-                  type="number"
-                  v-model.number="food.servings"
-                  min="0.5"
-                  step="0.5"
-                  class="portion-input"
-                  @change="updateFoodPortion(index, food.servings)"
-                />
-                <span>x {{ food.calories }} cal</span>
-              </div>
-              <button class="remove-btn" @click="removeFood(index)">
-                <Icon name="mdi:close" size="16" />
-              </button>
-            </div>
+          <div class="meal-footer">
+            <span>P: {{ formatNumber(meal.totalProtein) }}g</span>
+            <span>C: {{ formatNumber(meal.totalCarbs) }}g</span>
+            <span>F: {{ formatNumber(meal.totalFat) }}g</span>
+            <span class="total">{{ formatNumber(meal.totalCalories) }} cal</span>
           </div>
-        </div>
+        </Card>
 
-        <div class="modal-footer">
-          <BaseButton variant="secondary" @click="showAddMealModal = false">Cancel</BaseButton>
-          <BaseButton
-            variant="primary"
-            @click="saveMeal"
-            :disabled="isAddingFood || selectedFoods.length === 0"
-          >
-            {{ isAddingFood ? 'Saving...' : 'Save Meal' }}
+        <div v-if="meals.length === 0" class="empty-state">
+          <Icon name="mdi:food-off" size="48" />
+          <p>No meals logged for this day</p>
+          <BaseButton variant="primary" @click="showAddMealModal = true">
+            Log Your First Meal
           </BaseButton>
         </div>
       </div>
-    </div>
+
+      <!-- Add Meal Modal -->
+      <div v-if="showAddMealModal" class="modal-overlay" @click.self="showAddMealModal = false">
+        <div class="modal">
+          <div class="modal-header">
+            <h2>Log Meal</h2>
+            <button class="close-btn" @click="showAddMealModal = false">
+              <Icon name="mdi:close" size="24" />
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Meal Type</label>
+              <select v-model="selectedMealType">
+                <option v-for="type in mealTypes" :key="type.value" :value="type.value">
+                  {{ type.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Search Foods</label>
+              <input
+                v-model="searchQuery"
+                type="text"
+                placeholder="Search foods..."
+                @input="searchFoods"
+              />
+              <div v-if="searchResults.length" class="search-results">
+                <div
+                  v-for="food in searchResults"
+                  :key="food.id"
+                  class="search-result"
+                  @click="addFood(food)"
+                >
+                  <span class="result-name">{{ food.name }}</span>
+                  <span class="result-info" v-if="food.brand">{{ food.brand }}</span>
+                  <span class="result-cal">{{ food.calories }} cal</span>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="selectedFoods.length" class="selected-foods">
+              <h4>Selected Foods</h4>
+              <div v-for="(food, index) in selectedFoods" :key="index" class="selected-item">
+                <span>{{ food.food_name }}</span>
+                <div class="portion-controls">
+                  <input
+                    type="number"
+                    v-model.number="food.servings"
+                    min="0.5"
+                    step="0.5"
+                    class="portion-input"
+                    @change="updateFoodPortion(index, food.servings)"
+                  />
+                  <span>x {{ food.calories }} cal</span>
+                </div>
+                <button class="remove-btn" @click="removeFood(index)">
+                  <Icon name="mdi:close" size="16" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <BaseButton variant="secondary" @click="showAddMealModal = false">Cancel</BaseButton>
+            <BaseButton
+              variant="primary"
+              @click="saveMeal"
+              :disabled="isAddingFood || selectedFoods.length === 0"
+            >
+              {{ isAddingFood ? 'Saving...' : 'Save Meal' }}
+            </BaseButton>
+          </div>
+        </div>
+      </div>
+    </template>
   </PageLayout>
 </template>
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 
 interface MenuItem {
   name: string
@@ -15,13 +15,46 @@ interface NavGroup {
 }
 
 const auth = useAuth()
+const route = useRoute()
 const username = computed((): string => auth.user.value?.username || 'User')
 const { isCollapsed, toggle } = useSidebar()
+
+const healthSetupComplete = ref(true)
+const routePath = ref('')
+
+const checkHealthSetup = async () => {
+  const response = await $fetch('/api/health/setup-status', {
+    credentials: 'include',
+    ignoreResponseError: true,
+  })
+  healthSetupComplete.value = response?.isComplete ?? false
+}
+
+onMounted(() => {
+  routePath.value = route.path
+  checkHealthSetup()
+})
+
+watch(
+  () => route.path,
+  newPath => {
+    routePath.value = newPath
+    checkHealthSetup()
+  }
+)
 
 const financeExpanded = ref(true)
 const financeTempExpanded = ref(false)
 const healthExpanded = ref(true)
 const healthTempExpanded = ref(false)
+
+const toggleFinance = () => {
+  financeExpanded.value = !financeExpanded.value
+}
+
+const toggleHealth = () => {
+  healthExpanded.value = !healthExpanded.value
+}
 
 const showFinanceItems = computed(() => {
   if (isCollapsed.value) {
@@ -37,59 +70,60 @@ const showHealthItems = computed(() => {
   return healthExpanded.value
 })
 
-const toggleFinance = () => {
-  if (isCollapsed.value) {
-    healthTempExpanded.value = false
-    financeTempExpanded.value = !financeTempExpanded.value
-  } else {
-    financeExpanded.value = !financeExpanded.value
-  }
-}
-
-const toggleHealth = () => {
-  if (isCollapsed.value) {
-    financeTempExpanded.value = false
-    healthTempExpanded.value = !healthTempExpanded.value
-  } else {
-    healthExpanded.value = !healthExpanded.value
-  }
-}
-
 const closeTempExpand = () => {
   financeTempExpanded.value = false
   healthTempExpanded.value = false
 }
 
-const navGroups: NavGroup[] = [
-  {
-    name: 'Finance',
-    icon: 'mdi:finance',
-    path: '/finance',
-    items: [
-      { name: 'Accounts', icon: 'mdi:bank', path: '/finance/accounts' },
-      { name: 'Transactions', icon: 'mdi:view-list', path: '/finance/transactions' },
-      { name: 'Budgets', icon: 'mdi:chart-pie', path: '/finance/budgets' },
-    ],
-  },
-  {
-    name: 'Health',
-    icon: 'mdi:heart-pulse',
-    path: '/health',
-    items: [
-      { name: 'Meals', icon: 'mdi:food', path: '/health/meals' },
-      { name: 'Plans', icon: 'mdi:dumbbell', path: '/health/plan' },
-      { name: 'Check-ins', icon: 'mdi:scale', path: '/health/checkins' },
-    ],
-  },
-]
+const navGroups = computed<NavGroup[]>(() => {
+  const groups: NavGroup[] = [
+    {
+      name: 'Finance',
+      icon: 'mdi:finance',
+      path: '/finance',
+      items: [
+        { name: 'Accounts', icon: 'mdi:bank', path: '/finance/accounts' },
+        { name: 'Transactions', icon: 'mdi:view-list', path: '/finance/transactions' },
+        { name: 'Budgets', icon: 'mdi:chart-pie', path: '/finance/budgets' },
+      ],
+    },
+    {
+      name: 'Health',
+      icon: 'mdi:heart-pulse',
+      path: healthSetupComplete.value ? '/health' : '/health/setup',
+      items: healthSetupComplete.value
+        ? [
+            { name: 'Meals', icon: 'mdi:food', path: '/health/meals' },
+            { name: 'Plans', icon: 'mdi:dumbbell', path: '/health/plan' },
+            { name: 'Check-ins', icon: 'mdi:scale', path: '/health/checkins' },
+          ]
+        : [{ name: 'Setup', icon: 'mdi:cog', path: '/health/setup' }],
+    },
+  ]
+
+  return groups
+})
 
 const isActiveGroup = (group: NavGroup) => {
-  const currentPath = window?.location?.pathname || ''
+  const route = useRoute()
+  const currentPath = route.path
   if (group.path && currentPath === group.path) return true
   if (group.items) {
     return group.items.some(item => currentPath === item.path)
   }
   return false
+}
+
+const isGroupExpanded = (groupName: string) => {
+  if (groupName === 'Finance') return financeExpanded.value
+  if (groupName === 'Health') return healthExpanded.value
+  return true
+}
+
+const isGroupVisible = (groupName: string) => {
+  if (groupName === 'Finance') return showFinanceItems.value
+  if (groupName === 'Health') return showHealthItems.value
+  return true
 }
 </script>
 
@@ -112,75 +146,53 @@ const isActiveGroup = (group: NavGroup) => {
       </div>
       <template #fallback>
         <div class="user-section">
-          <div class="user-avatar">U</div>
-          <div class="user-info" v-show="!isCollapsed">
-            <span class="user-name">User</span>
-            <span class="user-role">User</span>
-          </div>
+          <div class="user-avatar">?</div>
         </div>
       </template>
     </ClientOnly>
 
     <nav class="nav-menu" @click="closeTempExpand">
-      <!-- Finance Group -->
-      <div class="nav-group" @click.stop>
+      <div v-for="group in navGroups" :key="group.name" class="nav-group" @click.stop>
         <NuxtLink
-          :to="navGroups[0].path"
+          :to="group.path"
           class="nav-group-header"
-          :class="{ active: isActiveGroup(navGroups[0]) }"
+          :class="{ active: isActiveGroup(group) }"
         >
-          <Icon :name="navGroups[0].icon" size="20" class="nav-icon" />
-          <span class="nav-text" v-show="!isCollapsed">{{ navGroups[0].name }}</span>
-          <button v-if="!isCollapsed" class="expand-btn" @click.prevent="toggleFinance">
-            <Icon name="mdi:chevron-down" size="18" :class="{ rotated: financeExpanded }" />
-          </button>
-        </NuxtLink>
-
-        <div
-          class="nav-group-items"
-          :class="{ 'temp-expanded': isCollapsed && financeTempExpanded }"
-          v-show="showFinanceItems"
-        >
-          <NuxtLink
-            v-for="item in navGroups[0].items"
-            :key="item.path"
-            :to="item.path"
-            class="nav-item sub-item"
-            :class="{ active: $route.path === item.path }"
-            @click="isCollapsed && (financeTempExpanded = false)"
+          <Icon :name="group.icon" size="20" class="nav-icon" />
+          <span class="nav-text" v-show="!isCollapsed">{{ group.name }}</span>
+          <button
+            v-if="!isCollapsed && group.items?.length"
+            class="expand-btn"
+            @click.prevent="group.name === 'Finance' ? toggleFinance() : toggleHealth()"
           >
-            <Icon v-if="isCollapsed" :name="item.icon" size="18" class="nav-icon" />
-            <span class="nav-text">{{ item.name }}</span>
-          </NuxtLink>
-        </div>
-      </div>
-
-      <!-- Health Group -->
-      <div class="nav-group" @click.stop>
-        <NuxtLink
-          :to="navGroups[1].path"
-          class="nav-group-header"
-          :class="{ active: isActiveGroup(navGroups[1]) }"
-        >
-          <Icon :name="navGroups[1].icon" size="20" class="nav-icon" />
-          <span class="nav-text" v-show="!isCollapsed">{{ navGroups[1].name }}</span>
-          <button v-if="!isCollapsed" class="expand-btn" @click.prevent="toggleHealth">
-            <Icon name="mdi:chevron-down" size="18" :class="{ rotated: healthExpanded }" />
+            <Icon
+              name="mdi:chevron-down"
+              size="18"
+              :class="{ rotated: isGroupExpanded(group.name) }"
+            />
           </button>
         </NuxtLink>
 
         <div
           class="nav-group-items"
-          :class="{ 'temp-expanded': isCollapsed && healthTempExpanded }"
-          v-show="showHealthItems"
+          :class="{
+            'temp-expanded':
+              isCollapsed && (group.name === 'Finance' ? financeTempExpanded : healthTempExpanded),
+          }"
+          v-show="isGroupVisible(group.name)"
         >
           <NuxtLink
-            v-for="item in navGroups[1].items"
+            v-for="item in group.items"
             :key="item.path"
             :to="item.path"
             class="nav-item sub-item"
             :class="{ active: $route.path === item.path }"
-            @click="isCollapsed && (healthTempExpanded = false)"
+            @click="
+              isCollapsed &&
+              (group.name === 'Finance'
+                ? (financeTempExpanded = false)
+                : (healthTempExpanded = false))
+            "
           >
             <Icon v-if="isCollapsed" :name="item.icon" size="18" class="nav-icon" />
             <span class="nav-text">{{ item.name }}</span>
