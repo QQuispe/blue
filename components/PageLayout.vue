@@ -44,6 +44,9 @@ const contentMaxWidth = computed(() => (props.maxWidth === 'none' ? 'none' : `${
   min-height: calc(100vh - 60px);
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .page-header {
@@ -52,12 +55,14 @@ const contentMaxWidth = computed(() => (props.maxWidth === 'none' ? 'none' : `${
   align-items: flex-start;
   margin-bottom: 24px;
   gap: 16px;
+  width: 100%;
 }
 
 .header-title {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  align-items: flex-start;
 }
 
 .header-title h1 {
