@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, type Ref } from 'vue'
-import TransactionsTable from '~/components/transactions/TransactionsTable.vue'
-import TransactionFilters from '~/components/transactions/TransactionFilters.vue'
-import TransactionsSummary from '~/components/transactions/TransactionsSummary.vue'
-import TransactionDetail from '~/components/transactions/TransactionDetail.vue'
-import BaseButton from '~/components/BaseButton.vue'
+import PageLayout from '~/components/PageLayout.vue'
+import TransactionsTable from '~/components/finance/TransactionsTable.vue'
+import TransactionFilters from '~/components/finance/TransactionFilters.vue'
+import TransactionsSummary from '~/components/finance/TransactionsSummary.vue'
+import TransactionDetail from '~/components/finance/TransactionDetail.vue'
 
 interface Transaction {
   id: number
@@ -166,7 +166,7 @@ const handleDetailClose = () => {
 </script>
 
 <template>
-  <BasePageLayout title="Transactions">
+  <PageLayout title="Transactions">
     <div class="summary-filters-row">
       <TransactionFilters
         v-model:search="search"
@@ -199,7 +199,7 @@ const handleDetailClose = () => {
       :transaction="selectedTransaction"
       @close="handleDetailClose"
     />
-  </BasePageLayout>
+  </PageLayout>
 </template>
 
 <style scoped>

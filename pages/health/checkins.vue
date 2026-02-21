@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import PageLayout from '~/components/PageLayout.vue'
+import Card from '~/components/Card.vue'
 
 const { $toast } = useNuxtApp()
 
@@ -122,12 +124,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="checkins-page">
-    <div class="page-header">
-      <div>
-        <h1>Progress Check-ins</h1>
-        <p>Track your weight and measurements over time</p>
-      </div>
+  <PageLayout title="Progress Check-ins" subtitle="Track your weight and measurements over time">
+    <div class="page-actions">
       <button class="btn btn-primary" @click="showCheckinModal = true">
         <Icon name="mdi:plus" size="20" />
         New Check-in
@@ -145,7 +143,7 @@ onMounted(() => {
       </div>
 
       <div v-else class="checkins-list">
-        <div v-for="(checkin, index) in checkins" :key="checkin.id" class="checkin-card">
+        <Card v-for="(checkin, index) in checkins" :key="checkin.id" class="checkin-card">
           <div class="checkin-header">
             <span class="checkin-date">{{ formatDate(checkin.checkinDate) }}</span>
             <span
@@ -196,7 +194,7 @@ onMounted(() => {
             <Icon name="mdi:note-text-outline" size="16" />
             {{ checkin.notes }}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
 
@@ -275,32 +273,20 @@ onMounted(() => {
         </div>
       </div>
     </div>
-  </div>
+  </PageLayout>
 </template>
 
 <style scoped>
-.checkins-page {
-  padding: 24px;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.page-header {
+.page-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-end;
   margin-bottom: 24px;
 }
 
-.page-header h1 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 4px;
-}
-
-.page-header p {
-  color: var(--color-text-secondary);
+.loading {
+  text-align: center;
+  padding: 60px;
+  color: var(--color-text-muted);
 }
 
 .btn {
@@ -335,12 +321,6 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-.loading {
-  text-align: center;
-  padding: 60px;
-  color: var(--color-text-muted);
-}
-
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -358,13 +338,6 @@ onMounted(() => {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.checkin-card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 20px;
 }
 
 .checkin-header {

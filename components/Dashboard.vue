@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, type Ref } from 'vue'
-import OverviewCard from "./cards/OverviewCard.vue";
-import BudgetProgressCard from "./cards/BudgetProgressCard.vue";
-import TransactionsCard from "./cards/TransactionsCard.vue";
-import NetWorthCard from "./cards/NetWorthCard.vue";
-import BillsCard from "./cards/BillsCard.vue";
+import OverviewCard from './finance/OverviewCard.vue'
+import BudgetProgressCard from './finance/BudgetProgressCard.vue'
+import TransactionsCard from './finance/TransactionsCard.vue'
+import NetWorthCard from './finance/NetWorthCard.vue'
+import BillsCard from './finance/BillsCard.vue'
 
 const overviewCardRef: Ref<any> = ref(null)
 const netWorthCardRef: Ref<any> = ref(null)
@@ -18,7 +18,8 @@ const refreshAll = (): void => {
   if (typeof overviewCardRef.value?.refresh === 'function') overviewCardRef.value.refresh()
   if (typeof netWorthCardRef.value?.refresh === 'function') netWorthCardRef.value.refresh()
   if (typeof transactionsCardRef.value?.refresh === 'function') transactionsCardRef.value.refresh()
-  if (typeof budgetProgressCardRef.value?.refresh === 'function') budgetProgressCardRef.value.refresh()
+  if (typeof budgetProgressCardRef.value?.refresh === 'function')
+    budgetProgressCardRef.value.refresh()
   if (typeof billsCardRef.value?.refresh === 'function') billsCardRef.value.refresh()
 }
 
@@ -82,8 +83,8 @@ onMounted(async () => {
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: 362px auto;
   grid-template-areas:
-    "networth networth overview"
-    "budget transactions bills";
+    'networth networth overview'
+    'budget transactions bills';
   gap: 16px;
   width: 100%;
   flex: 1;
@@ -134,9 +135,9 @@ onMounted(async () => {
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: 400px repeat(2, 1fr);
     grid-template-areas:
-      "networth networth"
-      "overview budget"
-      "transactions bills";
+      'networth networth'
+      'overview budget'
+      'transactions bills';
   }
 
   .networth-card {
@@ -150,11 +151,11 @@ onMounted(async () => {
     grid-template-columns: 1fr;
     grid-template-rows: auto;
     grid-template-areas:
-      "networth"
-      "overview"
-      "budget"
-      "transactions"
-      "bills";
+      'networth'
+      'overview'
+      'budget'
+      'transactions'
+      'bills';
   }
 
   .networth-card {

@@ -73,7 +73,7 @@ defineExpose({ refresh })
         variant="secondary"
         size="sm"
         class="view-all-btn"
-        to="/transactions"
+        to="/finance/transactions"
       >
         View all
         <Icon name="mdi:arrow-right" size="14" />
@@ -96,7 +96,7 @@ defineExpose({ refresh })
       <div class="empty-content">
         <Icon name="mdi:view-list" size="32" class="empty-icon" />
         <span class="empty-text">No transactions yet</span>
-        <BaseButton variant="secondary" size="sm" to="/accounts" class="setup-btn">
+        <BaseButton variant="secondary" size="sm" to="/finance/accounts" class="setup-btn">
           Connect accounts
           <Icon name="mdi:arrow-right" size="14" />
         </BaseButton>

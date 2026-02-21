@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import PageLayout from '~/components/PageLayout.vue'
+import Card from '~/components/Card.vue'
 
 const { $toast } = useNuxtApp()
 
@@ -114,17 +116,12 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="plan-page">
-    <div class="page-header">
-      <h1>Your Plans</h1>
-      <p>AI-generated meal and workout plans</p>
-    </div>
-
+  <PageLayout title="Your Plans" subtitle="AI-generated meal and workout plans">
     <div v-if="isLoading" class="loading">Loading...</div>
 
     <div v-else class="plans-container">
       <!-- Meal Plan Section -->
-      <div class="plan-section">
+      <Card>
         <div class="section-header">
           <h2>Meal Plan</h2>
           <button class="btn btn-primary" @click="generateMealPlan" :disabled="isGenerating">
@@ -179,10 +176,10 @@ onMounted(() => {
             Generate Meal Plan
           </button>
         </div>
-      </div>
+      </Card>
 
       <!-- Workout Plan Section -->
-      <div class="plan-section">
+      <Card>
         <div class="section-header">
           <h2>Workout Plan</h2>
           <button class="btn btn-primary" @click="generateWorkoutPlan" :disabled="isGenerating">
@@ -245,33 +242,12 @@ onMounted(() => {
             Generate Workout Plan
           </button>
         </div>
-      </div>
+      </Card>
     </div>
-  </div>
+  </PageLayout>
 </template>
 
 <style scoped>
-.plan-page {
-  padding: 24px;
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.page-header {
-  margin-bottom: 24px;
-}
-
-.page-header h1 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 4px;
-}
-
-.page-header p {
-  color: var(--color-text-secondary);
-}
-
 .loading {
   text-align: center;
   padding: 60px;

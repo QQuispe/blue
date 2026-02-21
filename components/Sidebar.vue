@@ -66,9 +66,9 @@ const navGroups: NavGroup[] = [
     icon: 'mdi:finance',
     path: '/finance',
     items: [
-      { name: 'Accounts', icon: 'mdi:bank', path: '/accounts' },
-      { name: 'Transactions', icon: 'mdi:view-list', path: '/transactions' },
-      { name: 'Budgets', icon: 'mdi:chart-pie', path: '/dashboard/budgets' },
+      { name: 'Accounts', icon: 'mdi:bank', path: '/finance/accounts' },
+      { name: 'Transactions', icon: 'mdi:view-list', path: '/finance/transactions' },
+      { name: 'Budgets', icon: 'mdi:chart-pie', path: '/finance/budgets' },
     ],
   },
   {

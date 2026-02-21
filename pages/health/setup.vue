@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import PageLayout from '~/components/PageLayout.vue'
 
 const { $toast } = useNuxtApp()
 const router = useRouter()
@@ -246,13 +247,8 @@ const completeSetup = async () => {
 </script>
 
 <template>
-  <div class="setup-page">
+  <PageLayout title="Health Setup" subtitle="Let's get you started on your health journey">
     <div class="setup-container">
-      <div class="setup-header">
-        <h1>Health Setup</h1>
-        <p>Let's get you started on your health journey</p>
-      </div>
-
       <div class="progress-bar">
         <div
           v-for="step in totalSteps"
@@ -459,7 +455,7 @@ const completeSetup = async () => {
                 type="text"
                 placeholder="chicken, rice, broccoli"
                 @change="
-                  preferences.likedFoods = $event.target.value
+                  preferences.likedFoods = ($event.target as HTMLInputElement).value
                     .split(',')
                     .map((s: string) => s.trim())
                     .filter(Boolean)
@@ -474,7 +470,7 @@ const completeSetup = async () => {
                 type="text"
                 placeholder="fish, mushrooms"
                 @change="
-                  preferences.dislikedFoods = $event.target.value
+                  preferences.dislikedFoods = ($event.target as HTMLInputElement).value
                     .split(',')
                     .map((s: string) => s.trim())
                     .filter(Boolean)
@@ -514,18 +510,10 @@ const completeSetup = async () => {
         </button>
       </div>
     </div>
-  </div>
+  </PageLayout>
 </template>
 
 <style scoped>
-.setup-page {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  min-height: calc(100vh - 40px);
-  padding: 40px 20px;
-}
-
 .setup-container {
   width: 100%;
   max-width: 700px;
@@ -533,23 +521,7 @@ const completeSetup = async () => {
   border-radius: 16px;
   padding: 40px;
   border: 1px solid var(--color-border);
-}
-
-.setup-header {
-  text-align: center;
-  margin-bottom: 32px;
-}
-
-.setup-header h1 {
-  font-size: 2rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 8px;
-}
-
-.setup-header p {
-  color: var(--color-text-secondary);
-  font-size: 1rem;
+  margin: 0 auto;
 }
 
 .progress-bar {

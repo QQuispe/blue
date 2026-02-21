@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, type Ref } from 'vue'
-import OverviewCard from '~/components/cards/OverviewCard.vue'
-import BudgetProgressCard from '~/components/cards/BudgetProgressCard.vue'
-import TransactionsCard from '~/components/cards/TransactionsCard.vue'
-import NetWorthCard from '~/components/cards/NetWorthCard.vue'
-import BillsCard from '~/components/cards/BillsCard.vue'
+import OverviewCard from '~/components/finance/OverviewCard.vue'
+import BudgetProgressCard from '~/components/finance/BudgetProgressCard.vue'
+import TransactionsCard from '~/components/finance/TransactionsCard.vue'
+import NetWorthCard from '~/components/finance/NetWorthCard.vue'
+import BillsCard from '~/components/finance/BillsCard.vue'
 
 const overviewCardRef: Ref<any> = ref(null)
 const netWorthCardRef: Ref<any> = ref(null)

@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import PageLayout from '~/components/PageLayout.vue'
+import Card from '~/components/Card.vue'
+import MacroCard from '~/components/health/MacroCard.vue'
 
 const { $toast } = useNuxtApp()
 
@@ -201,12 +204,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="meals-page">
-    <div class="page-header">
-      <div>
-        <h1>Meal Tracker</h1>
-        <input v-model="selectedDate" type="date" class="date-picker" @change="fetchMeals" />
-      </div>
+  <PageLayout title="Meal Tracker">
+    <div class="page-actions">
+      <input v-model="selectedDate" type="date" class="date-picker" @change="fetchMeals" />
       <button class="btn btn-primary" @click="showAddMealModal = true">
         <Icon name="mdi:plus" size="20" />
         Log Meal
@@ -214,34 +214,28 @@ onMounted(() => {
     </div>
 
     <!-- Daily Summary -->
-    <div class="summary-card">
+    <Card class="summary-card">
       <h3>Daily Totals</h3>
       <div class="summary-macros">
-        <div class="macro-stat">
-          <span class="macro-value">{{ formatNumber(todaysMacros.calories) }}</span>
-          <span class="macro-label">Calories</span>
-        </div>
-        <div class="macro-stat">
-          <span class="macro-value">{{ formatNumber(todaysMacros.protein) }}g</span>
-          <span class="macro-label">Protein</span>
-        </div>
-        <div class="macro-stat">
-          <span class="macro-value">{{ formatNumber(todaysMacros.carbs) }}g</span>
-          <span class="macro-label">Carbs</span>
-        </div>
-        <div class="macro-stat">
-          <span class="macro-value">{{ formatNumber(todaysMacros.fat) }}g</span>
-          <span class="macro-label">Fat</span>
-        </div>
+        <MacroCard
+          label="Calories"
+          :current="todaysMacros.calories"
+          :target="2000"
+          unit=""
+          color="accent"
+        />
+        <MacroCard label="Protein" :current="todaysMacros.protein" :target="120" color="info" />
+        <MacroCard label="Carbs" :current="todaysMacros.carbs" :target="200" color="warning" />
+        <MacroCard label="Fat" :current="todaysMacros.fat" :target="65" color="error" />
       </div>
-    </div>
+    </Card>
 
     <!-- Loading -->
     <div v-if="isLoading" class="loading">Loading...</div>
 
     <!-- Meals List -->
     <div v-else class="meals-list">
-      <div v-for="meal in meals" :key="meal.id" class="meal-card">
+      <Card v-for="meal in meals" :key="meal.id" class="meal-card">
         <div class="meal-header">
           <div>
             <span class="meal-type">{{ meal.mealType }}</span>
@@ -266,7 +260,7 @@ onMounted(() => {
           <span>F: {{ formatNumber(meal.totalFat) }}g</span>
           <span class="total">{{ formatNumber(meal.totalCalories) }} cal</span>
         </div>
-      </div>
+      </Card>
 
       <div v-if="meals.length === 0" class="empty-state">
         <Icon name="mdi:food-off" size="48" />
@@ -353,28 +347,15 @@ onMounted(() => {
         </div>
       </div>
     </div>
-  </div>
+  </PageLayout>
 </template>
 
 <style scoped>
-.meals-page {
-  padding: 24px;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.page-header {
+.page-actions {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
-}
-
-.page-header h1 {
-  font-size: 1.75rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 8px;
 }
 
 .date-picker {
@@ -419,38 +400,19 @@ onMounted(() => {
 }
 
 .summary-card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 20px;
   margin-bottom: 24px;
 }
 
 .summary-card h3 {
   font-size: 0.875rem;
   color: var(--color-text-muted);
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .summary-macros {
-  display: flex;
-  gap: 32px;
-}
-
-.macro-stat {
-  display: flex;
-  flex-direction: column;
-}
-
-.macro-value {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-}
-
-.macro-label {
-  font-size: 0.75rem;
-  color: var(--color-text-muted);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
 }
 
 .loading {
@@ -466,10 +428,7 @@ onMounted(() => {
 }
 
 .meal-card {
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
-  border-radius: 12px;
-  padding: 16px;
+  margin-bottom: 0;
 }
 
 .meal-header {

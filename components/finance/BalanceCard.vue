@@ -90,8 +90,8 @@ defineExpose({ refresh })
 // Navigate to full page
 const navigateToFullPage = () => {
   logger.info('navigate_to_balance_fullpage', { from: route.path })
-  logger.navigation(route.path, '/accounts')
-  router.push('/accounts')
+  logger.navigation(route.path, '/finance/accounts')
+  router.push('/finance/accounts')
 }
 
 // Computed properties for display - show Total Assets only (depository + investment accounts)

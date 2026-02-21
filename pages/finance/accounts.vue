@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, type Ref } from 'vue'
+import PageLayout from '~/components/PageLayout.vue'
 import { getLogger } from '~/utils/logger'
 const logger = getLogger()
 
@@ -364,13 +365,13 @@ const totalAccounts = computed(() => accounts.value.length)
 const totalInstitutions = computed(() => Object.keys(groupedAccounts.value).length)
 
 onMounted(() => {
-  logger.navigation('dashboard', '/accounts', { via: 'router' })
+  logger.navigation('dashboard', '/finance/accounts', { via: 'router' })
   fetchData()
 })
 </script>
 
 <template>
-  <BasePageLayout title="Connected Accounts">
+  <PageLayout title="Connected Accounts">
     <!-- Summary Bar -->
     <div class="summary-bar">
       <div class="summary-section">
@@ -598,7 +599,7 @@ onMounted(() => {
         </ul>
       </div>
     </div>
-  </BasePageLayout>
+  </PageLayout>
 </template>
 
 <style scoped>

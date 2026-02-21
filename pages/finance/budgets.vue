@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch, type Ref, nextTick } from 'vue'
+import PageLayout from '~/components/PageLayout.vue'
 import BaseButton from '~/components/BaseButton.vue'
 import { budgetCategories } from '~/composables/useBudgetCategories'
 import {
@@ -329,7 +330,7 @@ const viewBudgetTransactions = async (budget: Budget) => {
 </script>
 
 <template>
-  <BasePageLayout title="Budgets">
+  <PageLayout title="Budgets">
     <template #header-actions>
       <div class="month-selector">
         <Icon name="mdi:calendar-month" size="18" class="month-icon" />
@@ -596,7 +597,7 @@ const viewBudgetTransactions = async (budget: Budget) => {
         </div>
       </div>
     </div>
-  </BasePageLayout>
+  </PageLayout>
 </template>
 
 <style scoped>
