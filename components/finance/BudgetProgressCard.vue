@@ -94,7 +94,7 @@ const overallProgress = computed(() => {
       <div class="empty-content">
         <Icon name="mdi:chart-pie" size="32" class="empty-icon" />
         <span class="empty-text">No budgets set</span>
-        <BaseButton variant="secondary" size="sm" to="/dashboard/budgets" class="setup-btn">
+        <BaseButton variant="secondary" size="sm" to="/finance/budgets" class="setup-btn">
           Set your first budget
           <Icon name="mdi:arrow-right" size="14" />
         </BaseButton>
