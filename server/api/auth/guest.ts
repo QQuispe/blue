@@ -44,7 +44,7 @@ export default defineEventHandler(async (event): Promise<GuestLoginResponse> => 
 
   try {
     // Find or create guest user
-    let guestUser = await getUserByUsername('guest')
+    const guestUser = await getUserByUsername('guest')
 
     if (!guestUser) {
       throw createError({

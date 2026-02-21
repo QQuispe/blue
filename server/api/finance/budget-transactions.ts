@@ -1,19 +1,19 @@
-import { defineEventHandler, getQuery } from 'h3';
-import { requireAuth } from '~/server/utils/auth.ts';
-import { pool } from '~/server/db/index.js';
+import { defineEventHandler, getQuery } from 'h3'
+import { requireAuth } from '~/server/utils/auth'
+import { pool } from '~/server/db/index.js'
 
 interface Transaction {
-  id: number;
-  name: string;
-  amount: number;
-  date: string;
-  account_name?: string;
+  id: number
+  name: string
+  amount: number
+  date: string
+  account_name?: string
 }
 
-export default defineEventHandler(async (event) => {
-  const user = await requireAuth(event);
+export default defineEventHandler(async event => {
+  const user = await requireAuth(event)
   const query = getQuery(event)
-  
+
   const category = query.category as string
   const startDate = query.startDate as string
   const endDate = query.endDate as string
@@ -38,7 +38,12 @@ export default defineEventHandler(async (event) => {
        AND t.date <= $4
        AND t.amount > 0
      ORDER BY t.date DESC, t.created_at DESC`,
-    [user.id, category.toUpperCase().replace(/ & /g, '_AND_').replace(/&/g, '_AND_').replace(/ /g, '_'), startDate, endDate]
+    [
+      user.id,
+      category.toUpperCase().replace(/ & /g, '_AND_').replace(/&/g, '_AND_').replace(/ /g, '_'),
+      startDate,
+      endDate,
+    ]
   )
 
   return {
@@ -47,7 +52,7 @@ export default defineEventHandler(async (event) => {
       name: row.name,
       amount: Number(row.amount),
       date: row.date,
-      account_name: row.account_name
-    }))
+      account_name: row.account_name,
+    })),
   }
-});
+})

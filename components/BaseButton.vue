@@ -3,7 +3,7 @@ import { computed, type PropType } from 'vue'
 import { NuxtLink } from '#components'
 
 interface Props {
-  variant?: 'primary' | 'secondary' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
   size?: 'sm' | 'md' | 'lg'
   disabled?: boolean
   type?: 'button' | 'submit' | 'reset'
@@ -14,20 +14,20 @@ const props = withDefaults(defineProps<Props>(), {
   variant: 'primary',
   size: 'md',
   disabled: false,
-  type: 'button'
+  type: 'button',
 })
 
 const emit = defineEmits<{
   (e: 'click', event: MouseEvent): void
 }>()
 
-const componentType = computed(() => props.to ? NuxtLink : 'button')
+const componentType = computed(() => (props.to ? NuxtLink : 'button'))
 
 const classes = computed(() => [
   'base-btn',
   `base-btn--${props.variant}`,
   `base-btn--${props.size}`,
-  { 'base-btn--disabled': props.disabled }
+  { 'base-btn--disabled': props.disabled },
 ])
 
 const handleClick = (event: MouseEvent) => {
@@ -38,20 +38,10 @@ const handleClick = (event: MouseEvent) => {
 </script>
 
 <template>
-  <NuxtLink
-    v-if="to"
-    :to="to"
-    :class="classes"
-  >
+  <NuxtLink v-if="to" :to="to" :class="classes">
     <slot />
   </NuxtLink>
-  <button
-    v-else
-    :type="type"
-    :disabled="disabled"
-    :class="classes"
-    @click="handleClick"
-  >
+  <button v-else :type="type" :disabled="disabled" :class="classes" @click="handleClick">
     <slot />
   </button>
 </template>
@@ -127,5 +117,17 @@ const handleClick = (event: MouseEvent) => {
 .base-btn--ghost:hover:not(.base-btn--disabled) {
   background: var(--color-bg-hover);
   color: var(--color-text-primary);
+}
+
+/* Danger variant */
+.base-btn--danger {
+  background: var(--color-error);
+  color: white;
+  border-color: var(--color-error);
+}
+
+.base-btn--danger:hover:not(.base-btn--disabled) {
+  background: #dc2626;
+  border-color: #dc2626;
 }
 </style>

@@ -318,7 +318,7 @@ const getAccountTypeStyle = type => {
 
 // Group accounts by bank connection (item)
 const groupedAccounts = computed(() => {
-  const groups = {}
+  const groups: Record<string, { item: any; institutionName: string; accounts: any[] }> = {}
   accounts.value.forEach(account => {
     const item = getItemForAccount(account)
     // Use item_id as the key to ensure each bank connection is separate

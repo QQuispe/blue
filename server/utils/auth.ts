@@ -1,6 +1,6 @@
 import { H3Event } from 'h3'
 import { createError, getCookie } from 'h3'
-import { User } from '~/types/database'
+import type { User } from '~/types/database'
 import { getUserById } from '~/server/db/queries/users'
 import { verifySignedSession } from '~/server/utils/session'
 
