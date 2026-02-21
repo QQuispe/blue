@@ -17,14 +17,12 @@ useHead({
         })();
       `,
       type: 'text/javascript',
-      tagPosition: 'head'
-    }
-  ]
+      tagPosition: 'head',
+    },
+  ],
 })
 
-const isAuthPage = computed(() => 
-  ['/login', '/register'].includes(route.path)
-)
+const isAuthPage = computed(() => ['/login', '/register'].includes(route.path))
 
 const showSidebar = computed(() => {
   if (isAuthPage.value) return false
@@ -40,12 +38,12 @@ onMounted(() => {
 <template>
   <div class="app-wrapper">
     <Sidebar v-if="showSidebar" />
-    <div 
-      class="main-layout" 
-      :class="{ 
+    <div
+      class="main-layout"
+      :class="{
         'sidebar-collapsed': showSidebar && isCollapsed,
         'sidebar-visible': showSidebar,
-        'auth-layout': isAuthPage
+        'auth-layout': isAuthPage,
       }"
     >
       <HeaderNav v-if="!isAuthPage" />

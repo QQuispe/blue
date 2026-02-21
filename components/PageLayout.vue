@@ -27,11 +27,8 @@ const contentMaxWidth = computed(() => (props.maxWidth === 'none' ? 'none' : `${
         <p v-if="subtitle">{{ subtitle }}</p>
       </div>
       <div class="header-actions">
+        <slot name="header-actions" />
         <slot name="actions" />
-        <NuxtLink v-if="showBack" :to="backRoute" class="back-link">
-          <Icon name="mdi:arrow-left" size="18" />
-          Back
-        </NuxtLink>
       </div>
     </header>
 
