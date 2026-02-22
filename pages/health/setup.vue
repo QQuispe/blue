@@ -18,6 +18,10 @@ const usePlaceholderAsValue = (event: FocusEvent, defaultValue: number) => {
   }
 }
 
+const getEffectiveValue = (current: number | null | undefined, placeholder: number): number => {
+  return current !== null && current !== undefined ? current : placeholder
+}
+
 const adjustValue = (path: string, delta: number, min?: number, max?: number) => {
   const parts = path.split('.')
   let obj: any = profile.value
@@ -124,8 +128,53 @@ watch(
   { deep: true }
 )
 
-onMounted(() => {
+const isEditing = computed(() => !!route.query.step)
+
+const loadExistingData = async () => {
+  try {
+    const [profileRes, goalsRes, prefsRes] = await Promise.all([
+      $fetch('/api/health/profile'),
+      $fetch('/api/health/goals'),
+      $fetch('/api/health/preferences'),
+    ])
+
+    if (profileRes.profile) {
+      profile.value.weight = profileRes.profile.weight
+      profile.value.height = profileRes.profile.height
+      profile.value.age = profileRes.profile.age
+      profile.value.gender = profileRes.profile.gender
+      profile.value.activityLevel = profileRes.profile.activityLevel
+    }
+
+    if (goalsRes.activeGoal) {
+      goal.value.goalType = goalsRes.activeGoal.goalType
+      goal.value.startingWeight = goalsRes.activeGoal.startingWeight
+      goal.value.targetWeight = goalsRes.activeGoal.targetWeight
+      goal.value.targetDate = goalsRes.activeGoal.targetDate
+      goal.value.weeklyRate = goalsRes.activeGoal.weeklyRate
+    }
+
+    if (prefsRes.preferences) {
+      preferences.value.dietaryRestrictions = prefsRes.preferences.dietaryRestrictions || []
+      preferences.value.allergies = prefsRes.preferences.allergies || []
+      preferences.value.likedFoods = prefsRes.preferences.likedFoods || []
+      preferences.value.dislikedFoods = prefsRes.preferences.dislikedFoods || []
+      preferences.value.mealCount = prefsRes.preferences.mealCount || 3
+      preferences.value.equipment = prefsRes.preferences.equipment || []
+      preferences.value.workoutStyle = prefsRes.preferences.workoutStyle
+      preferences.value.workoutFrequency = prefsRes.preferences.workoutFrequency || 4
+      preferences.value.workoutDuration = prefsRes.preferences.workoutDuration || 45
+    }
+  } catch (error) {
+    console.error('Failed to load existing data:', error)
+  }
+}
+
+onMounted(async () => {
   initStep()
+  if (isEditing.value) {
+    await loadExistingData()
+  }
 })
 
 const activityLevels = [
@@ -416,11 +465,21 @@ const completeSetup = async () => {
                   @focus="e => usePlaceholderAsValue(e, 170)"
                 />
                 <div class="spinner-buttons">
-                  <button type="button" @click="adjustValue('weight', 1, 50, 500)">
+                  <button
+                    type="button"
+                    @click="
+                      profile.weight = Math.min(500, getEffectiveValue(profile.weight, 170) + 1)
+                    "
+                  >
                     <Icon name="mdi:chevron-up" size="14" />
                   </button>
                   <div class="spinner-divider"></div>
-                  <button type="button" @click="adjustValue('weight', -1, 50, 500)">
+                  <button
+                    type="button"
+                    @click="
+                      profile.weight = Math.max(50, getEffectiveValue(profile.weight, 170) - 1)
+                    "
+                  >
                     <Icon name="mdi:chevron-down" size="14" />
                   </button>
                 </div>
@@ -439,11 +498,21 @@ const completeSetup = async () => {
                   @focus="e => usePlaceholderAsValue(e, 70)"
                 />
                 <div class="spinner-buttons">
-                  <button type="button" @click="adjustValue('height', 1, 36, 108)">
+                  <button
+                    type="button"
+                    @click="
+                      profile.height = Math.min(108, getEffectiveValue(profile.height, 70) + 1)
+                    "
+                  >
                     <Icon name="mdi:chevron-up" size="14" />
                   </button>
                   <div class="spinner-divider"></div>
-                  <button type="button" @click="adjustValue('height', -1, 36, 108)">
+                  <button
+                    type="button"
+                    @click="
+                      profile.height = Math.max(36, getEffectiveValue(profile.height, 70) - 1)
+                    "
+                  >
                     <Icon name="mdi:chevron-down" size="14" />
                   </button>
                 </div>
@@ -462,11 +531,17 @@ const completeSetup = async () => {
                   @focus="e => usePlaceholderAsValue(e, 30)"
                 />
                 <div class="spinner-buttons">
-                  <button type="button" @click="adjustValue('age', 1, 13, 120)">
+                  <button
+                    type="button"
+                    @click="profile.age = Math.min(120, getEffectiveValue(profile.age, 30) + 1)"
+                  >
                     <Icon name="mdi:chevron-up" size="14" />
                   </button>
                   <div class="spinner-divider"></div>
-                  <button type="button" @click="adjustValue('age', -1, 13, 120)">
+                  <button
+                    type="button"
+                    @click="profile.age = Math.max(13, getEffectiveValue(profile.age, 30) - 1)"
+                  >
                     <Icon name="mdi:chevron-down" size="14" />
                   </button>
                 </div>
@@ -529,14 +604,24 @@ const completeSetup = async () => {
                 <div class="spinner-buttons">
                   <button
                     type="button"
-                    @click="goal.startingWeight = Math.min(500, (goal.startingWeight || 0) + 1)"
+                    @click="
+                      goal.startingWeight = Math.min(
+                        500,
+                        getEffectiveValue(goal.startingWeight, 170) + 1
+                      )
+                    "
                   >
                     <Icon name="mdi:chevron-up" size="14" />
                   </button>
                   <div class="spinner-divider"></div>
                   <button
                     type="button"
-                    @click="goal.startingWeight = Math.max(50, (goal.startingWeight || 0) - 1)"
+                    @click="
+                      goal.startingWeight = Math.max(
+                        50,
+                        getEffectiveValue(goal.startingWeight, 170) - 1
+                      )
+                    "
                   >
                     <Icon name="mdi:chevron-down" size="14" />
                   </button>
@@ -558,14 +643,24 @@ const completeSetup = async () => {
                 <div class="spinner-buttons">
                   <button
                     type="button"
-                    @click="goal.targetWeight = Math.min(500, (goal.targetWeight || 0) + 1)"
+                    @click="
+                      goal.targetWeight = Math.min(
+                        500,
+                        getEffectiveValue(goal.targetWeight, 160) + 1
+                      )
+                    "
                   >
                     <Icon name="mdi:chevron-up" size="14" />
                   </button>
                   <div class="spinner-divider"></div>
                   <button
                     type="button"
-                    @click="goal.targetWeight = Math.max(50, (goal.targetWeight || 0) - 1)"
+                    @click="
+                      goal.targetWeight = Math.max(
+                        50,
+                        getEffectiveValue(goal.targetWeight, 160) - 1
+                      )
+                    "
                   >
                     <Icon name="mdi:chevron-down" size="14" />
                   </button>
@@ -594,7 +689,7 @@ const completeSetup = async () => {
                     @click="
                       goal.weeklyRate = Math.min(
                         3,
-                        Math.round((goal.weeklyRate || 0 + 0.1) * 10) / 10
+                        Math.round((getEffectiveValue(goal.weeklyRate, 1) + 0.1) * 10) / 10
                       )
                     "
                   >
@@ -606,7 +701,7 @@ const completeSetup = async () => {
                     @click="
                       goal.weeklyRate = Math.max(
                         0.1,
-                        Math.round((goal.weeklyRate || 0 - 0.1) * 10) / 10
+                        Math.round((getEffectiveValue(goal.weeklyRate, 1) - 0.1) * 10) / 10
                       )
                     "
                   >
@@ -672,7 +767,7 @@ const completeSetup = async () => {
                     @click="
                       preferences.workoutFrequency = Math.min(
                         7,
-                        (preferences.workoutFrequency || 0) + 1
+                        getEffectiveValue(preferences.workoutFrequency, 4) + 1
                       )
                     "
                   >
@@ -684,7 +779,7 @@ const completeSetup = async () => {
                     @click="
                       preferences.workoutFrequency = Math.max(
                         1,
-                        (preferences.workoutFrequency || 0) - 1
+                        getEffectiveValue(preferences.workoutFrequency, 4) - 1
                       )
                     "
                   >
@@ -701,14 +796,24 @@ const completeSetup = async () => {
                 <div class="spinner-buttons">
                   <button
                     type="button"
-                    @click="preferences.mealCount = Math.min(6, (preferences.mealCount || 0) + 1)"
+                    @click="
+                      preferences.mealCount = Math.min(
+                        6,
+                        getEffectiveValue(preferences.mealCount, 3) + 1
+                      )
+                    "
                   >
                     <Icon name="mdi:chevron-up" size="14" />
                   </button>
                   <div class="spinner-divider"></div>
                   <button
                     type="button"
-                    @click="preferences.mealCount = Math.max(2, (preferences.mealCount || 0) - 1)"
+                    @click="
+                      preferences.mealCount = Math.max(
+                        2,
+                        getEffectiveValue(preferences.mealCount, 3) - 1
+                      )
+                    "
                   >
                     <Icon name="mdi:chevron-down" size="14" />
                   </button>
@@ -732,7 +837,7 @@ const completeSetup = async () => {
                     @click="
                       preferences.workoutDuration = Math.min(
                         120,
-                        (preferences.workoutDuration || 0) + 5
+                        getEffectiveValue(preferences.workoutDuration, 45) + 5
                       )
                     "
                   >
@@ -744,7 +849,7 @@ const completeSetup = async () => {
                     @click="
                       preferences.workoutDuration = Math.max(
                         15,
-                        (preferences.workoutDuration || 0) - 5
+                        getEffectiveValue(preferences.workoutDuration, 45) - 5
                       )
                     "
                   >
