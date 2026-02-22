@@ -127,8 +127,23 @@ onMounted(() => {
 
     <!-- Dashboard Content -->
     <div v-else class="dashboard-grid">
-      <!-- Quick Stats -->
-      <QuickStats :stats="quickStats" />
+      <!-- Quick Stats with edit buttons -->
+      <div class="stats-section">
+        <div class="section-header">
+          <h2>Progress</h2>
+          <div class="edit-buttons">
+            <NuxtLink to="/health/checkins" class="edit-link">
+              <Icon name="mdi:scale" size="16" />
+              Log Weight
+            </NuxtLink>
+            <NuxtLink to="/health/setup?step=goals&from=dashboard" class="edit-link">
+              <Icon name="mdi:pencil" size="16" />
+              Edit Goal
+            </NuxtLink>
+          </div>
+        </div>
+        <QuickStats :stats="quickStats" />
+      </div>
 
       <!-- Macros -->
       <Card>
@@ -242,7 +257,7 @@ onMounted(() => {
           <Icon name="mdi:dumbbell" size="24" />
           <span>View Plans</span>
         </NuxtLink>
-        <NuxtLink to="/health/setup" class="action-btn">
+        <NuxtLink to="/settings" class="action-btn">
           <Icon name="mdi:cog" size="24" />
           <span>Settings</span>
         </NuxtLink>
@@ -312,12 +327,36 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .section-header h2 {
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.edit-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.edit-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.edit-link:hover {
+  color: var(--color-accent);
+  background: var(--color-bg-hover);
 }
 
 .view-link {

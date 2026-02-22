@@ -1,14 +1,64 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
 import BaseButton from '~/components/BaseButton.vue'
 
 const { $toast } = useNuxtApp()
 const router = useRouter()
+const route = useRoute()
+
+const usePlaceholderAsValue = (event: FocusEvent, defaultValue: number) => {
+  const target = event.target as HTMLInputElement
+  if (!target.value && target.placeholder) {
+    const placeholderValue = parseInt(target.placeholder)
+    if (!isNaN(placeholderValue)) {
+      target.value = placeholderValue.toString()
+      target.dispatchEvent(new Event('input', { bubbles: true }))
+    }
+  }
+}
+
+const adjustValue = (path: string, delta: number, min?: number, max?: number) => {
+  const parts = path.split('.')
+  let obj: any = profile.value
+  for (let i = 0; i < parts.length - 1; i++) {
+    obj = obj[parts[i]]
+  }
+  const key = parts[parts.length - 1]
+  const current = obj[key] as number
+  let newValue = (current || 0) + delta
+  if (min !== undefined) newValue = Math.max(min, newValue)
+  if (max !== undefined) newValue = Math.min(max, newValue)
+  obj[key] = newValue
+}
 
 const currentStep = ref(0)
 const totalSteps = 4
 const isLoading = ref(false)
+const hasChanges = ref(false)
+const showExitModal = ref(false)
+
+const initStep = () => {
+  const stepParam = route.query.step as string
+  if (stepParam === 'goals') {
+    currentStep.value = 2
+  } else if (stepParam === 'preferences') {
+    currentStep.value = 3
+  }
+}
+
+const handleExit = () => {
+  if (hasChanges.value) {
+    showExitModal.value = true
+  } else {
+    navigateTo('/health')
+  }
+}
+
+const confirmExit = () => {
+  showExitModal.value = false
+  navigateTo('/health')
+}
 
 interface ProfileData {
   weight: number | null
@@ -64,6 +114,18 @@ const preferences = ref<PreferencesData>({
   workoutStyle: 'strength',
   workoutFrequency: 4,
   workoutDuration: 45,
+})
+
+watch(
+  [profile, goal, preferences],
+  () => {
+    hasChanges.value = true
+  },
+  { deep: true }
+)
+
+onMounted(() => {
+  initStep()
 })
 
 const activityLevels = [
@@ -128,6 +190,10 @@ const canProceed = computed(() => {
 
 const nextStep = () => {
   if (currentStep.value < totalSteps && canProceed.value) {
+    // When going from Body Stats (step 1) to Goals (step 2), prefill starting weight
+    if (currentStep.value === 1 && goal.value.startingWeight === null && profile.value.weight) {
+      goal.value.startingWeight = profile.value.weight
+    }
     currentStep.value++
   }
 }
@@ -250,35 +316,42 @@ const completeSetup = async () => {
 <template>
   <PageLayout title="Health Setup" subtitle="Let's get you started on your health journey">
     <div class="setup-container">
-      <div class="progress-bar">
-        <div
-          v-for="step in totalSteps"
-          :key="step"
-          class="progress-step"
-          :class="{
-            active: currentStep === step,
-            completed: currentStep > step,
-          }"
-        >
-          <div class="step-number">{{ step }}</div>
-          <span class="step-label">
-            {{
-              step === 0
-                ? 'Intro'
-                : step === 1
-                  ? 'Body Stats'
-                  : step === 2
-                    ? 'Goals'
-                    : 'Preferences'
-            }}
-          </span>
-        </div>
-        <div class="progress-line">
+      <div class="setup-header-row">
+        <div class="progress-bar">
           <div
-            class="progress-fill"
-            :style="{ width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` }"
-          ></div>
+            v-for="step in totalSteps"
+            :key="step"
+            class="progress-step"
+            :class="{
+              active: currentStep === step,
+              completed: currentStep > step,
+            }"
+          >
+            <div class="step-number">{{ step }}</div>
+            <span class="step-label">
+              {{
+                step === 0
+                  ? 'Intro'
+                  : step === 1
+                    ? 'Body Stats'
+                    : step === 2
+                      ? 'Goals'
+                      : 'Preferences'
+              }}
+            </span>
+          </div>
+          <div class="progress-line">
+            <div
+              class="progress-fill"
+              :style="{ width: `${((currentStep - 1) / (totalSteps - 1)) * 100}%` }"
+            ></div>
+          </div>
         </div>
+
+        <button class="exit-btn" @click="handleExit">
+          {{ route.query.step ? 'Exit' : 'Exit Setup' }}
+          <Icon name="mdi:close" size="18" />
+        </button>
       </div>
 
       <div class="step-content">
@@ -333,35 +406,71 @@ const completeSetup = async () => {
           <div class="form-grid">
             <div class="form-group">
               <label>Current Weight (lbs)</label>
-              <input
-                v-model.number="profile.weight"
-                type="number"
-                placeholder="170"
-                min="50"
-                max="500"
-              />
+              <div class="number-input-wrapper">
+                <input
+                  v-model.number="profile.weight"
+                  type="number"
+                  placeholder="170"
+                  min="50"
+                  max="500"
+                  @focus="e => usePlaceholderAsValue(e, 170)"
+                />
+                <div class="spinner-buttons">
+                  <button type="button" @click="adjustValue('weight', 1, 50, 500)">
+                    <Icon name="mdi:chevron-up" size="14" />
+                  </button>
+                  <div class="spinner-divider"></div>
+                  <button type="button" @click="adjustValue('weight', -1, 50, 500)">
+                    <Icon name="mdi:chevron-down" size="14" />
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
               <label>Height (inches)</label>
-              <input
-                v-model.number="profile.height"
-                type="number"
-                placeholder="70"
-                min="36"
-                max="108"
-              />
+              <div class="number-input-wrapper">
+                <input
+                  v-model.number="profile.height"
+                  type="number"
+                  placeholder="70"
+                  min="36"
+                  max="108"
+                  @focus="e => usePlaceholderAsValue(e, 70)"
+                />
+                <div class="spinner-buttons">
+                  <button type="button" @click="adjustValue('height', 1, 36, 108)">
+                    <Icon name="mdi:chevron-up" size="14" />
+                  </button>
+                  <div class="spinner-divider"></div>
+                  <button type="button" @click="adjustValue('height', -1, 36, 108)">
+                    <Icon name="mdi:chevron-down" size="14" />
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
               <label>Age</label>
-              <input
-                v-model.number="profile.age"
-                type="number"
-                placeholder="30"
-                min="13"
-                max="120"
-              />
+              <div class="number-input-wrapper">
+                <input
+                  v-model.number="profile.age"
+                  type="number"
+                  placeholder="30"
+                  min="13"
+                  max="120"
+                  @focus="e => usePlaceholderAsValue(e, 30)"
+                />
+                <div class="spinner-buttons">
+                  <button type="button" @click="adjustValue('age', 1, 13, 120)">
+                    <Icon name="mdi:chevron-up" size="14" />
+                  </button>
+                  <div class="spinner-divider"></div>
+                  <button type="button" @click="adjustValue('age', -1, 13, 120)">
+                    <Icon name="mdi:chevron-down" size="14" />
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
@@ -408,24 +517,60 @@ const completeSetup = async () => {
 
             <div class="form-group">
               <label>Starting Weight (lbs)</label>
-              <input
-                v-model.number="goal.startingWeight"
-                type="number"
-                placeholder="170"
-                min="50"
-                max="500"
-              />
+              <div class="number-input-wrapper">
+                <input
+                  v-model.number="goal.startingWeight"
+                  type="number"
+                  placeholder="170"
+                  min="50"
+                  max="500"
+                  @focus="e => usePlaceholderAsValue(e, 170)"
+                />
+                <div class="spinner-buttons">
+                  <button
+                    type="button"
+                    @click="goal.startingWeight = Math.min(500, (goal.startingWeight || 0) + 1)"
+                  >
+                    <Icon name="mdi:chevron-up" size="14" />
+                  </button>
+                  <div class="spinner-divider"></div>
+                  <button
+                    type="button"
+                    @click="goal.startingWeight = Math.max(50, (goal.startingWeight || 0) - 1)"
+                  >
+                    <Icon name="mdi:chevron-down" size="14" />
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
               <label>Target Weight (lbs)</label>
-              <input
-                v-model.number="goal.targetWeight"
-                type="number"
-                placeholder="160"
-                min="50"
-                max="500"
-              />
+              <div class="number-input-wrapper">
+                <input
+                  v-model.number="goal.targetWeight"
+                  type="number"
+                  placeholder="160"
+                  min="50"
+                  max="500"
+                  @focus="e => usePlaceholderAsValue(e, 160)"
+                />
+                <div class="spinner-buttons">
+                  <button
+                    type="button"
+                    @click="goal.targetWeight = Math.min(500, (goal.targetWeight || 0) + 1)"
+                  >
+                    <Icon name="mdi:chevron-up" size="14" />
+                  </button>
+                  <div class="spinner-divider"></div>
+                  <button
+                    type="button"
+                    @click="goal.targetWeight = Math.max(50, (goal.targetWeight || 0) - 1)"
+                  >
+                    <Icon name="mdi:chevron-down" size="14" />
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
@@ -435,7 +580,40 @@ const completeSetup = async () => {
 
             <div class="form-group">
               <label>Weekly Rate (lbs/week)</label>
-              <input v-model.number="goal.weeklyRate" type="number" step="0.1" min="0.1" max="3" />
+              <div class="number-input-wrapper">
+                <input
+                  v-model.number="goal.weeklyRate"
+                  type="number"
+                  step="0.1"
+                  min="0.1"
+                  max="3"
+                />
+                <div class="spinner-buttons">
+                  <button
+                    type="button"
+                    @click="
+                      goal.weeklyRate = Math.min(
+                        3,
+                        Math.round((goal.weeklyRate || 0 + 0.1) * 10) / 10
+                      )
+                    "
+                  >
+                    <Icon name="mdi:chevron-up" size="14" />
+                  </button>
+                  <div class="spinner-divider"></div>
+                  <button
+                    type="button"
+                    @click="
+                      goal.weeklyRate = Math.max(
+                        0.1,
+                        Math.round((goal.weeklyRate || 0 - 0.1) * 10) / 10
+                      )
+                    "
+                  >
+                    <Icon name="mdi:chevron-down" size="14" />
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -481,23 +659,99 @@ const completeSetup = async () => {
 
             <div class="form-group">
               <label>Workouts per Week</label>
-              <input v-model.number="preferences.workoutFrequency" type="number" min="1" max="7" />
+              <div class="number-input-wrapper">
+                <input
+                  v-model.number="preferences.workoutFrequency"
+                  type="number"
+                  min="1"
+                  max="7"
+                />
+                <div class="spinner-buttons">
+                  <button
+                    type="button"
+                    @click="
+                      preferences.workoutFrequency = Math.min(
+                        7,
+                        (preferences.workoutFrequency || 0) + 1
+                      )
+                    "
+                  >
+                    <Icon name="mdi:chevron-up" size="14" />
+                  </button>
+                  <div class="spinner-divider"></div>
+                  <button
+                    type="button"
+                    @click="
+                      preferences.workoutFrequency = Math.max(
+                        1,
+                        (preferences.workoutFrequency || 0) - 1
+                      )
+                    "
+                  >
+                    <Icon name="mdi:chevron-down" size="14" />
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
               <label>Meals per Day</label>
-              <input v-model.number="preferences.mealCount" type="number" min="2" max="6" />
+              <div class="number-input-wrapper">
+                <input v-model.number="preferences.mealCount" type="number" min="2" max="6" />
+                <div class="spinner-buttons">
+                  <button
+                    type="button"
+                    @click="preferences.mealCount = Math.min(6, (preferences.mealCount || 0) + 1)"
+                  >
+                    <Icon name="mdi:chevron-up" size="14" />
+                  </button>
+                  <div class="spinner-divider"></div>
+                  <button
+                    type="button"
+                    @click="preferences.mealCount = Math.max(2, (preferences.mealCount || 0) - 1)"
+                  >
+                    <Icon name="mdi:chevron-down" size="14" />
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group">
               <label>Workout Duration (min)</label>
-              <input
-                v-model.number="preferences.workoutDuration"
-                type="number"
-                min="15"
-                max="120"
-                step="5"
-              />
+              <div class="number-input-wrapper">
+                <input
+                  v-model.number="preferences.workoutDuration"
+                  type="number"
+                  min="15"
+                  max="120"
+                  step="5"
+                />
+                <div class="spinner-buttons">
+                  <button
+                    type="button"
+                    @click="
+                      preferences.workoutDuration = Math.min(
+                        120,
+                        (preferences.workoutDuration || 0) + 5
+                      )
+                    "
+                  >
+                    <Icon name="mdi:chevron-up" size="14" />
+                  </button>
+                  <div class="spinner-divider"></div>
+                  <button
+                    type="button"
+                    @click="
+                      preferences.workoutDuration = Math.max(
+                        15,
+                        (preferences.workoutDuration || 0) - 5
+                      )
+                    "
+                  >
+                    <Icon name="mdi:chevron-down" size="14" />
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="form-group full-width">
@@ -562,6 +816,23 @@ const completeSetup = async () => {
         </button>
       </div>
     </div>
+
+    <!-- Exit Confirmation Modal -->
+    <div v-if="showExitModal" class="modal-overlay" @click="showExitModal = false">
+      <div class="modal" @click.stop>
+        <div class="modal-header">
+          <h3>Unsaved Changes</h3>
+          <button class="close-btn" @click="showExitModal = false">×</button>
+        </div>
+        <div class="modal-body">
+          <p>You have unsaved changes. Are you sure you want to leave?</p>
+        </div>
+        <div class="modal-footer">
+          <BaseButton variant="secondary" @click="showExitModal = false">Stay</BaseButton>
+          <BaseButton variant="danger" @click="confirmExit">Leave Anyway</BaseButton>
+        </div>
+      </div>
+    </div>
   </PageLayout>
 </template>
 
@@ -576,7 +847,15 @@ const completeSetup = async () => {
   margin: 0 auto;
 }
 
+.setup-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
 .progress-bar {
+  flex: 1;
   display: flex;
   justify-content: space-between;
   position: relative;
@@ -865,5 +1144,164 @@ const completeSetup = async () => {
 .btn-secondary:hover:not(:disabled) {
   border-color: var(--color-accent);
   color: var(--color-accent);
+}
+
+.exit-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.exit-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-hover);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: var(--color-bg-card);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  overflow: hidden;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.modal-header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-body p {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.number-input-wrapper {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--color-bg-secondary);
+  transition: border-color 0.15s;
+}
+
+.number-input-wrapper:focus-within {
+  border-color: var(--color-accent);
+}
+
+.number-input-wrapper input[type='number'] {
+  flex: 1;
+  padding-right: 12px;
+  padding-left: 12px;
+  border: none;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.number-input-wrapper input[type='number']::-webkit-inner-spin-button,
+.number-input-wrapper input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.number-input-wrapper input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+.spinner-buttons {
+  display: flex;
+  flex-direction: column;
+  width: 28px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.spinner-buttons button {
+  flex: 1;
+  background: var(--color-bg-card);
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.spinner-buttons button:hover {
+  background: var(--color-bg-subtle);
+  color: var(--color-text-primary);
+}
+
+.spinner-buttons button:active {
+  background: var(--color-accent);
+  color: var(--color-bg-primary);
+}
+
+.spinner-buttons button svg {
+  width: 12px;
+  height: 12px;
+}
+
+.spinner-divider {
+  height: 1px;
+  background: var(--color-border);
 }
 </style>

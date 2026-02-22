@@ -19,29 +19,23 @@ const route = useRoute()
 const username = computed((): string => auth.user.value?.username || 'User')
 const { isCollapsed, toggle } = useSidebar()
 
-const healthSetupComplete = ref(true)
-const routePath = ref('')
+const healthSetupComplete = ref(false)
 
 const checkHealthSetup = async () => {
-  const response = await $fetch('/api/health/setup-status', {
-    credentials: 'include',
-    ignoreResponseError: true,
-  })
-  healthSetupComplete.value = response?.isComplete ?? false
+  try {
+    const response = await $fetch('/api/health/setup-status', {
+      credentials: 'include',
+    })
+    healthSetupComplete.value = response?.isComplete ?? false
+  } catch (e) {
+    console.error('Failed to check health setup:', e)
+    healthSetupComplete.value = false
+  }
 }
 
 onMounted(() => {
-  routePath.value = route.path
   checkHealthSetup()
 })
-
-watch(
-  () => route.path,
-  newPath => {
-    routePath.value = newPath
-    checkHealthSetup()
-  }
-)
 
 const financeExpanded = ref(true)
 const financeTempExpanded = ref(false)
