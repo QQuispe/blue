@@ -164,3 +164,26 @@ CREATE INDEX IF NOT EXISTS idx_health_preferences_user_id ON health_preferences(
 CREATE INDEX IF NOT EXISTS idx_health_meal_plans_user_week ON health_meal_plans(user_id, week_start DESC);
 CREATE INDEX IF NOT EXISTS idx_health_workout_plans_user_week ON health_workout_plans(user_id, week_start DESC);
 CREATE INDEX IF NOT EXISTS idx_health_workout_sessions_user_date ON health_workout_sessions(user_id, session_date DESC);
+
+-- Saved meals/recipes (custom, AI-generated, favorites)
+CREATE TABLE IF NOT EXISTS health_saved_meals (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name VARCHAR(255) NOT NULL,
+    meal_type VARCHAR(20),
+    calories DECIMAL(7,2),
+    protein DECIMAL(6,2),
+    carbs DECIMAL(6,2),
+    fat DECIMAL(6,2),
+    fiber DECIMAL(6,2),
+    ingredients JSONB,
+    instructions TEXT,
+    source VARCHAR(20) CHECK (source IN ('custom', 'ai')) DEFAULT 'custom',
+    is_favorite BOOLEAN DEFAULT FALSE,
+    usda_fdc_id INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_health_saved_meals_user ON health_saved_meals(user_id);
+CREATE INDEX IF NOT EXISTS idx_health_saved_meals_favorite ON health_saved_meals(user_id, is_favorite);

@@ -219,6 +219,16 @@ const dietaryOptions = [
   { value: 'low-carb', label: 'Low-Carb' },
 ]
 
+const allergyOptions = [
+  { value: 'nuts', label: 'Nuts' },
+  { value: 'dairy', label: 'Dairy' },
+  { value: 'gluten', label: 'Gluten' },
+  { value: 'shellfish', label: 'Shellfish' },
+  { value: 'soy', label: 'Soy' },
+  { value: 'eggs', label: 'Eggs' },
+  { value: 'wheat', label: 'Wheat' },
+]
+
 const step1Valid = computed(() => {
   return profile.value.weight && profile.value.height && profile.value.age && profile.value.gender
 })
@@ -729,6 +739,20 @@ const completeSetup = async () => {
                     v-model="preferences.dietaryRestrictions"
                   />
                   {{ diet.label }}
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label>Allergies</label>
+              <div class="checkbox-group">
+                <label
+                  v-for="allergy in allergyOptions"
+                  :key="allergy.value"
+                  class="checkbox-label"
+                >
+                  <input type="checkbox" :value="allergy.value" v-model="preferences.allergies" />
+                  {{ allergy.label }}
                 </label>
               </div>
             </div>

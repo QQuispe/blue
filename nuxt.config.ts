@@ -15,13 +15,10 @@ export default defineNuxtConfig({
   typescript: {
     strict: false,
     typeCheck: false,
-    shim: false
+    shim: false,
   },
 
-  css: [
-    '@/assets/base.css',
-    '@/assets/main.css',
-  ],
+  css: ['@/assets/base.css', '@/assets/main.css'],
 
   app: {
     head: {
@@ -39,24 +36,25 @@ export default defineNuxtConfig({
             document.documentElement.style.colorScheme = t;
           })();`,
           type: 'text/javascript',
-        }
-      ]
-    }
+        },
+      ],
+    },
   },
 
   // Enable experimental features for session support
   nitro: {
     experimental: {
-      wasm: true
-    }
+      wasm: true,
+    },
   },
 
   // Runtime config for session secrets
   runtimeConfig: {
     sessionSecret: process.env.SESSION_SECRET || 'your-session-secret-minimum-32-characters-long',
+    usdaApiKey: process.env.USDA_API_KEY,
     // Public config available on client-side
     public: {
-      logLevel: process.env.LOG_LEVEL || 'info'
-    }
-  }
-});
+      logLevel: process.env.LOG_LEVEL || 'info',
+    },
+  },
+})

@@ -11,6 +11,7 @@ import type {
   HealthMealPlan,
   HealthWorkoutPlan,
   HealthWorkoutSession,
+  HealthSavedMealInput,
 } from '~/types/health.js'
 
 export async function getHealthProfile(userId: number): Promise<QueryResult<HealthProfile>> {
@@ -582,4 +583,152 @@ export async function calculateTargetMacros(
     carbs: Math.max(carbs, 50),
     fat: Math.max(fat, 20),
   }
+}
+
+export async function getSavedMeals(userId: number) {
+  const result = await pool.query(
+    `SELECT * FROM health_saved_meals WHERE user_id = $1 ORDER BY is_favorite DESC, created_at DESC`,
+    [userId]
+  )
+  return result.rows
+}
+
+export async function getSavedMealById(id: number, userId: number) {
+  const result = await pool.query(
+    `SELECT * FROM health_saved_meals WHERE id = $1 AND user_id = $2`,
+    [id, userId]
+  )
+  return result.rows[0] || null
+}
+
+export async function createSavedMeal(userId: number, meal: HealthSavedMealInput) {
+  const result = await pool.query(
+    `INSERT INTO health_saved_meals (user_id, name, meal_type, calories, protein, carbs, fat, fiber, ingredients, instructions, source, usda_fdc_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+     RETURNING *`,
+    [
+      userId,
+      meal.name,
+      meal.meal_type || null,
+      meal.calories || null,
+      meal.protein || null,
+      meal.carbs || null,
+      meal.fat || null,
+      meal.fiber || null,
+      meal.ingredients ? JSON.stringify(meal.ingredients) : null,
+      meal.instructions || null,
+      meal.source || 'custom',
+      meal.usda_fdc_id || null,
+    ]
+  )
+  return result.rows[0]
+}
+
+export async function updateSavedMeal(
+  id: number,
+  userId: number,
+  meal: Partial<HealthSavedMealInput>
+) {
+  const fields: string[] = []
+  const values: any[] = []
+  let paramCount = 1
+
+  if (meal.name !== undefined) {
+    fields.push(`name = $${paramCount++}`)
+    values.push(meal.name)
+  }
+  if (meal.meal_type !== undefined) {
+    fields.push(`meal_type = $${paramCount++}`)
+    values.push(meal.meal_type)
+  }
+  if (meal.calories !== undefined) {
+    fields.push(`calories = $${paramCount++}`)
+    values.push(meal.calories)
+  }
+  if (meal.protein !== undefined) {
+    fields.push(`protein = $${paramCount++}`)
+    values.push(meal.protein)
+  }
+  if (meal.carbs !== undefined) {
+    fields.push(`carbs = $${paramCount++}`)
+    values.push(meal.carbs)
+  }
+  if (meal.fat !== undefined) {
+    fields.push(`fat = $${paramCount++}`)
+    values.push(meal.fat)
+  }
+  if (meal.fiber !== undefined) {
+    fields.push(`fiber = $${paramCount++}`)
+    values.push(meal.fiber)
+  }
+  if (meal.ingredients !== undefined) {
+    fields.push(`ingredients = $${paramCount++}`)
+    values.push(meal.ingredients ? JSON.stringify(meal.ingredients) : null)
+  }
+  if (meal.instructions !== undefined) {
+    fields.push(`instructions = $${paramCount++}`)
+    values.push(meal.instructions)
+  }
+  if (meal.is_favorite !== undefined) {
+    fields.push(`is_favorite = $${paramCount++}`)
+    values.push(meal.is_favorite)
+  }
+
+  if (fields.length === 0) return null
+
+  fields.push(`updated_at = NOW()`)
+  values.push(id, userId)
+
+  const result = await pool.query(
+    `UPDATE health_saved_meals SET ${fields.join(', ')} WHERE id = $${paramCount++} AND user_id = $${paramCount} RETURNING *`,
+    values
+  )
+  return result.rows[0]
+}
+
+export async function deleteSavedMeal(id: number, userId: number) {
+  const result = await pool.query(
+    `DELETE FROM health_saved_meals WHERE id = $1 AND user_id = $2 RETURNING id`,
+    [id, userId]
+  )
+  return result.rows[0]
+}
+
+export async function toggleSavedMealFavorite(id: number, userId: number) {
+  const existing = await pool.query(
+    `SELECT * FROM health_saved_meals WHERE id = $1 AND user_id = $2`,
+    [id, userId]
+  )
+
+  if (!existing.rows[0]) return null
+
+  const meal = existing.rows[0]
+
+  if (meal.is_favorite) {
+    await pool.query(
+      `UPDATE health_saved_meals SET is_favorite = false, updated_at = NOW() WHERE id = $1`,
+      [id]
+    )
+    return { ...meal, is_favorite: false }
+  }
+
+  const result = await pool.query(
+    `INSERT INTO health_saved_meals (user_id, name, meal_type, calories, protein, carbs, fat, fiber, ingredients, instructions, source, is_favorite)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, true)
+     RETURNING *`,
+    [
+      userId,
+      meal.name + ' (Favorite)',
+      meal.meal_type,
+      meal.calories,
+      meal.protein,
+      meal.carbs,
+      meal.fat,
+      meal.fiber,
+      meal.ingredients,
+      meal.instructions,
+      meal.source,
+    ]
+  )
+  return result.rows[0]
 }

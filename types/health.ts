@@ -318,3 +318,37 @@ export interface AIWorkoutPlanRequest {
   goal: HealthGoal
   preferences: HealthPreferences
 }
+
+export interface HealthSavedMeal {
+  id: number
+  user_id: number
+  name: string
+  meal_type: string | null
+  calories: number | null
+  protein: number | null
+  carbs: number | null
+  fat: number | null
+  fiber: number | null
+  ingredients: any | null
+  instructions: string | null
+  source: 'custom' | 'ai'
+  is_favorite: boolean
+  usda_fdc_id: number | null
+  created_at: Date
+  updated_at: Date
+}
+
+export interface HealthSavedMealInput {
+  name: string
+  meal_type?: string
+  calories?: number
+  protein?: number
+  carbs?: number
+  fat?: number
+  fiber?: number
+  ingredients?: any
+  instructions?: string
+  source?: 'custom' | 'ai'
+  usda_fdc_id?: number
+  is_favorite?: boolean
+}

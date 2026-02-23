@@ -49,7 +49,8 @@ interface Meal {
 }
 
 interface Food {
-  id: number
+  fdcId?: number
+  id?: number
   name: string
   brand: string | null
   servingSize: number
@@ -58,13 +59,18 @@ interface Food {
   protein: number
   carbs: number
   fat: number
+  fiber?: number
+  ingredients?: string
 }
 
 const isLoading = ref(true)
 const meals = ref<Meal[]>([])
 const selectedDate = ref(new Date().toISOString().split('T')[0])
+const savedMeals = ref<any[]>([])
+const activeTab = ref<'search' | 'saved'>('search')
 
 const showAddMealModal = ref(false)
+const showCreateRecipeModal = ref(false)
 const isAddingFood = ref(false)
 const searchQuery = ref('')
 const searchResults = ref<Food[]>([])
@@ -90,6 +96,22 @@ const todaysMacros = computed(() => {
   )
 })
 
+const targetMacros = ref({ calories: 2000, protein: 120, carbs: 200, fat: 65 })
+
+const remainingMacros = computed(() => ({
+  calories: Math.max(0, targetMacros.value.calories - todaysMacros.value.calories),
+  protein: Math.max(0, targetMacros.value.protein - todaysMacros.value.protein),
+  carbs: Math.max(0, targetMacros.value.carbs - todaysMacros.value.carbs),
+  fat: Math.max(0, targetMacros.value.fat - todaysMacros.value.fat),
+}))
+
+const macroProgress = computed(() => ({
+  calories: Math.min(100, (todaysMacros.value.calories / targetMacros.value.calories) * 100),
+  protein: Math.min(100, (todaysMacros.value.protein / targetMacros.value.protein) * 100),
+  carbs: Math.min(100, (todaysMacros.value.carbs / targetMacros.value.carbs) * 100),
+  fat: Math.min(100, (todaysMacros.value.fat / targetMacros.value.fat) * 100),
+}))
+
 const fetchMeals = async () => {
   try {
     isLoading.value = true
@@ -110,12 +132,41 @@ const fetchMeals = async () => {
   }
 }
 
-const searchFoods = async () => {
-  if (!searchQuery.value || searchQuery.value.length < 2) {
-    searchResults.value = []
-    return
-  }
+const fetchSavedMeals = async () => {
+  try {
+    const response = await fetch('/api/health/saved-meals', {
+      credentials: 'include',
+    })
 
+    if (!response.ok) {
+      throw new Error('Failed to fetch saved meals')
+    }
+
+    const data = await response.json()
+    savedMeals.value = data.meals || []
+  } catch (err: any) {
+    console.error('Error fetching saved meals:', err)
+  }
+}
+
+const fetchTargetMacros = async () => {
+  try {
+    const response = await fetch('/api/health/dashboard', {
+      credentials: 'include',
+    })
+
+    if (!response.ok) return
+
+    const data = await response.json()
+    if (data.dashboard?.targetMacros) {
+      targetMacros.value = data.dashboard.targetMacros
+    }
+  } catch (err: any) {
+    console.error('Error fetching target macros:', err)
+  }
+}
+
+const doSearch = async () => {
   try {
     const response = await fetch(
       `/api/health/foods/search?q=${encodeURIComponent(searchQuery.value)}`,
@@ -135,6 +186,19 @@ const searchFoods = async () => {
   }
 }
 
+let searchTimeout: ReturnType<typeof setTimeout> | null = null
+
+const searchFoods = () => {
+  if (searchTimeout) clearTimeout(searchTimeout)
+
+  if (!searchQuery.value || searchQuery.value.length < 2) {
+    searchResults.value = []
+    return
+  }
+
+  searchTimeout = setTimeout(doSearch, 300)
+}
+
 const addFood = (food: Food) => {
   selectedFoods.value.push({
     food_name: food.name,
@@ -146,6 +210,83 @@ const addFood = (food: Food) => {
   })
   searchQuery.value = ''
   searchResults.value = []
+}
+
+const openAddMealModal = async () => {
+  await fetchSavedMeals()
+  showAddMealModal.value = true
+}
+
+const addSavedMeal = (meal: any) => {
+  selectedFoods.value.push({
+    food_name: meal.name,
+    servings: 1,
+    calories: meal.calories || 0,
+    protein: meal.protein || 0,
+    carbs: meal.carbs || 0,
+    fat: meal.fat || 0,
+  })
+  $toast.success('Added to meal')
+}
+
+const newRecipe = ref({
+  name: '',
+  meal_type: 'lunch',
+  calories: '',
+  protein: '',
+  carbs: '',
+  fat: '',
+  instructions: '',
+})
+
+const isCreatingRecipe = ref(false)
+
+const createRecipe = async () => {
+  if (!newRecipe.value.name) {
+    $toast.error('Recipe name is required')
+    return
+  }
+
+  try {
+    isCreatingRecipe.value = true
+    const response = await fetch('/api/health/saved-meals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        name: newRecipe.value.name,
+        meal_type: newRecipe.value.meal_type,
+        calories: newRecipe.value.calories ? Number(newRecipe.value.calories) : null,
+        protein: newRecipe.value.protein ? Number(newRecipe.value.protein) : null,
+        carbs: newRecipe.value.carbs ? Number(newRecipe.value.carbs) : null,
+        fat: newRecipe.value.fat ? Number(newRecipe.value.fat) : null,
+        instructions: newRecipe.value.instructions || null,
+        source: 'custom',
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to create recipe')
+    }
+
+    $toast.success('Recipe created!')
+    showCreateRecipeModal.value = false
+    newRecipe.value = {
+      name: '',
+      meal_type: 'lunch',
+      calories: '',
+      protein: '',
+      carbs: '',
+      fat: '',
+      instructions: '',
+    }
+    await fetchSavedMeals()
+  } catch (err: any) {
+    console.error('Error creating recipe:', err)
+    $toast.error('Failed to create recipe')
+  } finally {
+    isCreatingRecipe.value = false
+  }
 }
 
 const removeFood = (index: number) => {
@@ -221,6 +362,7 @@ const formatNumber = (num: number) => num.toFixed(0)
 
 onMounted(() => {
   fetchMeals()
+  fetchTargetMacros()
 })
 </script>
 
@@ -231,7 +373,7 @@ onMounted(() => {
     <template v-else>
       <div class="page-actions">
         <input v-model="selectedDate" type="date" class="date-picker" @change="fetchMeals" />
-        <BaseButton variant="primary" @click="showAddMealModal = true">
+        <BaseButton variant="primary" @click="openAddMealModal">
           <Icon name="mdi:plus" size="20" />
           Log Meal
         </BaseButton>
@@ -239,18 +381,40 @@ onMounted(() => {
 
       <!-- Daily Summary -->
       <Card class="summary-card">
-        <h3>Daily Totals</h3>
+        <h3>Today's Progress</h3>
+        <div class="progress-header">
+          <span class="remaining">{{ remainingMacros.calories }} cal remaining</span>
+          <span class="target">of {{ targetMacros.calories }} target</span>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar" :style="{ width: `${macroProgress.calories}%` }"></div>
+        </div>
         <div class="summary-macros">
           <MacroCard
             label="Calories"
             :current="todaysMacros.calories"
-            :target="2000"
+            :target="targetMacros.calories"
             unit=""
             color="accent"
           />
-          <MacroCard label="Protein" :current="todaysMacros.protein" :target="120" color="info" />
-          <MacroCard label="Carbs" :current="todaysMacros.carbs" :target="200" color="warning" />
-          <MacroCard label="Fat" :current="todaysMacros.fat" :target="65" color="error" />
+          <MacroCard
+            label="Protein"
+            :current="todaysMacros.protein"
+            :target="targetMacros.protein"
+            color="info"
+          />
+          <MacroCard
+            label="Carbs"
+            :current="todaysMacros.carbs"
+            :target="targetMacros.carbs"
+            color="warning"
+          />
+          <MacroCard
+            label="Fat"
+            :current="todaysMacros.fat"
+            :target="targetMacros.fat"
+            color="error"
+          />
         </div>
       </Card>
 
@@ -289,9 +453,7 @@ onMounted(() => {
         <div v-if="meals.length === 0" class="empty-state">
           <Icon name="mdi:food-off" size="48" />
           <p>No meals logged for this day</p>
-          <BaseButton variant="primary" @click="showAddMealModal = true">
-            Log Your First Meal
-          </BaseButton>
+          <BaseButton variant="primary" @click="openAddMealModal"> Log Your First Meal </BaseButton>
         </div>
       </div>
 
@@ -315,24 +477,86 @@ onMounted(() => {
               </select>
             </div>
 
-            <div class="form-group">
-              <label>Search Foods</label>
-              <input
-                v-model="searchQuery"
-                type="text"
-                placeholder="Search foods..."
-                @input="searchFoods"
-              />
-              <div v-if="searchResults.length" class="search-results">
+            <!-- Tabs -->
+            <div class="tabs">
+              <button
+                class="tab"
+                :class="{ active: activeTab === 'search' }"
+                @click="activeTab = 'search'"
+              >
+                Search Foods
+              </button>
+              <button
+                class="tab"
+                :class="{ active: activeTab === 'saved' }"
+                @click="activeTab = 'saved'"
+              >
+                Saved Meals
+              </button>
+            </div>
+
+            <!-- Search Tab -->
+            <div v-if="activeTab === 'search'" class="tab-content">
+              <div class="form-group">
+                <input
+                  v-model="searchQuery"
+                  type="text"
+                  placeholder="Search foods..."
+                  @input="searchFoods"
+                />
+                <div v-if="searchResults.length" class="search-results">
+                  <div
+                    v-for="food in searchResults"
+                    :key="food.fdcId || food.id"
+                    class="search-result"
+                    @click="addFood(food)"
+                  >
+                    <div class="result-main">
+                      <span class="result-name">{{ food.name }}</span>
+                      <span class="result-serving"
+                        >{{ food.servingSize }}{{ food.servingUnit }} per serving</span
+                      >
+                    </div>
+                    <div class="result-macros">
+                      <span class="result-cal">{{ food.calories }} cal</span>
+                      <span class="result-macro">P: {{ food.protein }}g</span>
+                      <span class="result-macro">C: {{ food.carbs }}g</span>
+                      <span class="result-macro">F: {{ food.fat }}g</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Saved Meals Tab -->
+            <div v-if="activeTab === 'saved'" class="tab-content">
+              <div class="saved-header">
+                <BaseButton variant="secondary" size="sm" @click="showCreateRecipeModal = true">
+                  <Icon name="mdi:plus" size="16" />
+                  Create Recipe
+                </BaseButton>
+              </div>
+              <div v-if="savedMeals.length === 0" class="empty-state">
+                <p>No saved meals yet.</p>
+                <p class="hint">Generate a meal plan or create custom recipes to see them here.</p>
+              </div>
+              <div v-else class="saved-meals-list">
                 <div
-                  v-for="food in searchResults"
-                  :key="food.id"
-                  class="search-result"
-                  @click="addFood(food)"
+                  v-for="meal in savedMeals"
+                  :key="meal.id"
+                  class="saved-meal-item"
+                  @click="addSavedMeal(meal)"
                 >
-                  <span class="result-name">{{ food.name }}</span>
-                  <span class="result-info" v-if="food.brand">{{ food.brand }}</span>
-                  <span class="result-cal">{{ food.calories }} cal</span>
+                  <div class="meal-info">
+                    <span class="meal-name">{{ meal.name }}</span>
+                    <span class="meal-type">{{ meal.meal_type }}</span>
+                  </div>
+                  <div class="meal-macros">
+                    <span>{{ meal.calories }} cal</span>
+                    <span class="macro">P: {{ meal.protein }}g</span>
+                    <span class="macro">C: {{ meal.carbs }}g</span>
+                    <span class="macro">F: {{ meal.fat }}g</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -371,6 +595,82 @@ onMounted(() => {
           </div>
         </div>
       </div>
+
+      <!-- Create Recipe Modal -->
+      <div
+        v-if="showCreateRecipeModal"
+        class="modal-overlay"
+        @click.self="showCreateRecipeModal = false"
+      >
+        <div class="modal">
+          <div class="modal-header">
+            <h2>Create Custom Recipe</h2>
+            <button class="close-btn" @click="showCreateRecipeModal = false">
+              <Icon name="mdi:close" size="24" />
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Recipe Name *</label>
+              <input v-model="newRecipe.name" type="text" placeholder="e.g., My Chicken Salad" />
+            </div>
+
+            <div class="form-group">
+              <label>Meal Type</label>
+              <select v-model="newRecipe.meal_type">
+                <option v-for="type in mealTypes" :key="type.value" :value="type.value">
+                  {{ type.label }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Calories</label>
+                <input v-model="newRecipe.calories" type="number" placeholder="0" />
+              </div>
+              <div class="form-group">
+                <label>Protein (g)</label>
+                <input v-model="newRecipe.protein" type="number" placeholder="0" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Carbs (g)</label>
+                <input v-model="newRecipe.carbs" type="number" placeholder="0" />
+              </div>
+              <div class="form-group">
+                <label>Fat (g)</label>
+                <input v-model="newRecipe.fat" type="number" placeholder="0" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Instructions (optional)</label>
+              <textarea
+                v-model="newRecipe.instructions"
+                placeholder="How to prepare..."
+                rows="3"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <BaseButton variant="secondary" @click="showCreateRecipeModal = false"
+              >Cancel</BaseButton
+            >
+            <BaseButton
+              variant="primary"
+              @click="createRecipe"
+              :disabled="isCreatingRecipe || !newRecipe.name"
+            >
+              {{ isCreatingRecipe ? 'Creating...' : 'Create Recipe' }}
+            </BaseButton>
+          </div>
+        </div>
+      </div>
     </template>
   </PageLayout>
 </template>
@@ -402,7 +702,38 @@ onMounted(() => {
 .summary-card h3 {
   font-size: 0.875rem;
   color: var(--color-text-muted);
+  margin-bottom: 8px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 0.875rem;
+}
+
+.progress-header .remaining {
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.progress-header .target {
+  color: var(--color-text-muted);
+}
+
+.progress-bar-container {
+  height: 8px;
+  background: var(--color-bg-elevated);
+  border-radius: 4px;
+  overflow: hidden;
   margin-bottom: 16px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: 4px;
+  transition: width 0.3s ease;
 }
 
 .summary-macros {
@@ -611,6 +942,30 @@ onMounted(() => {
 .result-name {
   flex: 1;
   color: var(--color-text-primary);
+  font-weight: 500;
+}
+
+.result-serving {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.result-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.result-macros {
+  display: flex;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.result-macro {
+  color: var(--color-text-muted);
 }
 
 .result-info {
@@ -677,5 +1032,128 @@ onMounted(() => {
   gap: 12px;
   padding: 20px;
   border-top: 1px solid var(--color-border);
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tab {
+  flex: 1;
+  padding: 10px 16px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  border-color: var(--color-accent);
+}
+
+.tab.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-bg-primary);
+}
+
+.tab-content {
+  margin-bottom: 16px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--color-text-secondary);
+}
+
+.empty-state .hint {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-top: 8px;
+}
+
+.saved-meals-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.saved-meal-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.saved-meal-item:hover {
+  border-color: var(--color-accent);
+  background: var(--color-bg-hover);
+}
+
+.meal-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meal-name {
+  font-weight: 500;
+}
+
+.meal-type {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+}
+
+.meal-macros {
+  display: flex;
+  gap: 12px;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.meal-macros .macro {
+  color: var(--color-text-muted);
+}
+
+.saved-header {
+  margin-bottom: 16px;
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+}
+
+.form-row .form-group {
+  flex: 1;
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  font-family: inherit;
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--color-accent);
 }
 </style>

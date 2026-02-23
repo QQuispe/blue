@@ -8,6 +8,7 @@ import {
   getHealthPreferences,
   createHealthMealPlan,
   calculateTargetMacros,
+  createSavedMeal,
 } from '~/server/db/queries/health'
 
 export default defineEventHandler(async event => {
@@ -19,6 +20,14 @@ export default defineEventHandler(async event => {
 
   try {
     const user = await requireAuth(event)
+
+    if (!process.env.OPENAI_API_KEY) {
+      throw createError({
+        statusCode: 403,
+        statusMessage:
+          'OpenAI API key not configured. Please add your API key in Settings to generate meal plans.',
+      })
+    }
 
     if (method !== 'POST') {
       throw createError({
@@ -50,16 +59,14 @@ export default defineEventHandler(async event => {
     const mealPlanData = {
       profile,
       goal,
-      preferences: preferences || {
-        dietary_restrictions: [],
-        allergies: [],
-        liked_foods: [],
-        disliked_foods: [],
-        meal_count: 3,
-        equipment: [],
-        workout_style: null,
-        workout_frequency: 4,
-        workout_duration: 45,
+      preferences: {
+        dietary_restrictions: preferences?.dietary_restrictions || [],
+        allergies: preferences?.allergies || [],
+        liked_foods: preferences?.liked_foods || [],
+        disliked_foods: preferences?.disliked_foods || [],
+        meal_count: preferences?.meal_count || 3,
+        workout_frequency: preferences?.workout_frequency || 4,
+        workout_duration: preferences?.workout_duration || 45,
       },
       targetCalories: targetMacros.calories,
       targetProtein: targetMacros.protein,
@@ -84,6 +91,28 @@ export default defineEventHandler(async event => {
       daily_carbs: targetMacros.carbs,
       daily_fat: targetMacros.fat,
     })
+
+    const savedMealIds: Record<string, number> = {}
+
+    for (const day of planData) {
+      for (const meal of day.meals) {
+        const mealKey = `${meal.name.toLowerCase()}-${meal.meal_type}`
+
+        if (!savedMealIds[mealKey]) {
+          const savedMeal = await createSavedMeal(user.id, {
+            name: meal.name,
+            meal_type: meal.meal_type,
+            calories: meal.total_calories,
+            protein: meal.total_protein,
+            carbs: meal.total_carbs,
+            fat: meal.total_fat,
+            ingredients: meal.foods,
+            source: 'ai',
+          })
+          savedMealIds[mealKey] = savedMeal.id
+        }
+      }
+    }
 
     const duration = Date.now() - startTime
     serverLogger.api(method, url.pathname, 201, duration, user.id)

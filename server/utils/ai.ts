@@ -1,10 +1,4 @@
-import type {
-  HealthProfile,
-  HealthGoal,
-  HealthPreferences,
-  DailyMealPlan,
-  DailyWorkout,
-} from '~/types/health'
+import type { HealthProfile, HealthGoal, DailyMealPlan, DailyWorkout } from '~/types/health'
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
@@ -12,7 +6,15 @@ const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini'
 interface MealPlanPromptData {
   profile: HealthProfile
   goal: HealthGoal
-  preferences: HealthPreferences
+  preferences: {
+    dietary_restrictions?: string[]
+    allergies?: string[]
+    liked_foods?: string[]
+    disliked_foods?: string[]
+    meal_count?: number
+    workout_frequency?: number
+    workout_duration?: number
+  }
   targetCalories: number
   targetProtein: number
   targetCarbs: number
@@ -22,7 +24,17 @@ interface MealPlanPromptData {
 interface WorkoutPlanPromptData {
   profile: HealthProfile
   goal: HealthGoal
-  preferences: HealthPreferences
+  preferences: {
+    dietary_restrictions?: string[]
+    allergies?: string[]
+    liked_foods?: string[]
+    disliked_foods?: string[]
+    meal_count?: number
+    equipment?: string[]
+    workout_style?: string
+    workout_frequency?: number
+    workout_duration?: number
+  }
 }
 
 export async function generateMealPlan(data: MealPlanPromptData): Promise<DailyMealPlan[]> {

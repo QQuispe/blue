@@ -1,144 +1,97 @@
-import { defineEventHandler, createError, getRequestURL, getMethod } from 'h3'
+import { defineEventHandler, getQuery, createError } from 'h3'
 import { requireAuth } from '~/server/utils/auth'
 import { serverLogger } from '~/server/utils/logger'
-import {
-  searchHealthFoods,
-  getHealthFoodByBarcode,
-  createHealthFood,
-} from '~/server/db/queries/health'
-import type { HealthFoodInput } from '~/types/health'
+
+const USDA_API_BASE = 'https://api.nal.usda.gov/fdc/v1'
 
 export default defineEventHandler(async event => {
   const startTime = Date.now()
-  const url = getRequestURL(event)
-  const method = getMethod(event)
+  const method = 'GET'
 
-  serverLogger.info(`→ ${method} ${url.pathname} - Starting request`)
+  serverLogger.info(`→ ${method} /api/health/foods/search - Starting request`)
 
   try {
     const user = await requireAuth(event)
+    const config = useRuntimeConfig()
+    const apiKey = config.usdaApiKey
 
-    if (method === 'GET') {
-      const query = url.searchParams.get('q') || ''
-      const barcode = url.searchParams.get('barcode')
-      const limit = parseInt(url.searchParams.get('limit') || '20')
-
-      if (barcode) {
-        const food = await getHealthFoodByBarcode(barcode)
-
-        const duration = Date.now() - startTime
-        serverLogger.api(method, url.pathname, 200, duration, user.id)
-
-        return {
-          statusCode: 200,
-          food: food
-            ? {
-                id: food.id,
-                name: food.name,
-                brand: food.brand,
-                barcode: food.barcode,
-                servingSize: food.serving_size,
-                servingUnit: food.serving_unit,
-                calories: food.calories,
-                protein: food.protein,
-                carbs: food.carbs,
-                fat: food.fat,
-                fiber: food.fiber,
-                sugar: food.sugar,
-                sodium: food.sodium,
-                isVerified: food.is_verified,
-                source: food.source,
-              }
-            : null,
-        }
-      }
-
-      if (!query) {
-        throw createError({
-          statusCode: 400,
-          statusMessage: 'Search query is required',
-        })
-      }
-
-      const foods = await searchHealthFoods(query, limit)
-
-      const duration = Date.now() - startTime
-      serverLogger.api(method, url.pathname, 200, duration, user.id)
-
-      return {
-        statusCode: 200,
-        foods: foods.map(f => ({
-          id: f.id,
-          name: f.name,
-          brand: f.brand,
-          barcode: f.barcode,
-          servingSize: f.serving_size,
-          servingUnit: f.serving_unit,
-          calories: f.calories,
-          protein: f.protein,
-          carbs: f.carbs,
-          fat: f.fat,
-          fiber: f.fiber,
-          sugar: f.sugar,
-          sodium: f.sodium,
-          isVerified: f.is_verified,
-          source: f.source,
-        })),
-      }
+    if (!apiKey) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'USDA API key not configured',
+      })
     }
 
-    if (method === 'POST') {
-      const body = await readBody<HealthFoodInput>(event)
+    const query = getQuery(event)
+    const searchQuery = (query.query || query.q) as string
 
-      if (!body.name || body.calories === undefined) {
-        throw createError({
-          statusCode: 400,
-          statusMessage: 'Name and calories are required',
-        })
-      }
-
-      const food = await createHealthFood({
-        ...body,
-        source: 'manual',
+    if (!searchQuery) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Query parameter is required',
       })
+    }
 
-      const duration = Date.now() - startTime
-      serverLogger.api(method, url.pathname, 201, duration, user.id)
-
-      return {
-        statusCode: 201,
-        food: {
-          id: food.id,
-          name: food.name,
-          brand: food.brand,
-          barcode: food.barcode,
-          servingSize: food.serving_size,
-          servingUnit: food.serving_unit,
-          calories: food.calories,
-          protein: food.protein,
-          carbs: food.carbs,
-          fat: food.fat,
-          fiber: food.fiber,
-          sugar: food.sugar,
-          sodium: food.sodium,
-          isVerified: food.is_verified,
-          source: food.source,
+    const response = await fetch(
+      `${USDA_API_BASE}/foods/search?api_key=${apiKey}&query=${encodeURIComponent(searchQuery)}&dataType=Foundation,SR%20Legacy&pageSize=25`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
         },
       }
+    )
+
+    if (!response.ok) {
+      throw createError({
+        statusCode: response.status,
+        statusMessage: `USDA API error: ${response.statusText}`,
+      })
     }
 
-    throw createError({
-      statusCode: 405,
-      statusMessage: 'Method Not Allowed',
-    })
+    const data = await response.json()
+
+    const duration = Date.now() - startTime
+    serverLogger.api(method, '/api/health/foods/search', 200, duration, user.id)
+
+    const nutrientIds = {
+      calories: 1008,
+      protein: 1003,
+      carbs: 1005,
+      fat: 1004,
+      fiber: 1079,
+    }
+
+    return {
+      statusCode: 200,
+      foods:
+        data.foods?.map((food: any) => ({
+          fdcId: food.fdcId,
+          name: food.description,
+          brand: food.brandOwner || food.brandName || null,
+          servingSize: food.servingSize || 100,
+          servingUnit: food.servingSizeUnit || 'g',
+          calories:
+            food.foodNutrients?.find((n: any) => n.nutrientId === nutrientIds.calories)?.value || 0,
+          protein:
+            food.foodNutrients?.find((n: any) => n.nutrientId === nutrientIds.protein)?.value || 0,
+          carbs:
+            food.foodNutrients?.find((n: any) => n.nutrientId === nutrientIds.carbs)?.value || 0,
+          fat: food.foodNutrients?.find((n: any) => n.nutrientId === nutrientIds.fat)?.value || 0,
+          fiber:
+            food.foodNutrients?.find((n: any) => n.nutrientId === nutrientIds.fiber)?.value || 0,
+          dataType: food.dataType,
+          ingredients: food.ingredients,
+        })) || [],
+    }
   } catch (error: any) {
     const duration = Date.now() - startTime
-    serverLogger.api(method, url.pathname, error.statusCode || 500, duration)
-    serverLogger.error(`Health foods request failed: ${error.message}`)
+    serverLogger.api(method, '/api/health/foods/search', error.statusCode || 500, duration)
+    serverLogger.error(`USDA foods search failed: ${error.message}`)
 
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || 'Failed to process health foods',
+      statusMessage: error.statusMessage || 'Failed to search foods',
     })
   }
 })
