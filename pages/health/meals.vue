@@ -27,6 +27,16 @@ const checkSetup = async () => {
 
 checkSetup()
 
+const formatNumber = (num: any) => {
+  if (num === null || num === undefined || typeof num !== 'number') return '0'
+  return num.toFixed(0)
+}
+
+onMounted(() => {
+  fetchMeals()
+  fetchTargetMacros()
+})
+
 interface MealFood {
   food_name: string
   servings: number
@@ -160,6 +170,27 @@ const fetchSavedMeals = async () => {
   }
 }
 
+const deleteSavedMeal = async (id: number) => {
+  if (!confirm('Delete this recipe?')) return
+
+  try {
+    const response = await fetch(`/api/health/saved-meals?id=${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to delete meal')
+    }
+
+    $toast.success('Recipe deleted')
+    await fetchSavedMeals()
+  } catch (err: any) {
+    console.error('Error deleting meal:', err)
+    $toast.error('Failed to delete recipe')
+  }
+}
+
 const fetchTargetMacros = async () => {
   try {
     const response = await fetch('/api/health/dashboard', {
@@ -171,7 +202,13 @@ const fetchTargetMacros = async () => {
     const data = await response.json()
 
     if (data.dashboard?.targetMacros) {
-      targetMacros.value = data.dashboard.targetMacros
+      const tm = data.dashboard.targetMacros
+      targetMacros.value = {
+        calories: Number(tm.calories) || 2000,
+        protein: Number(tm.protein) || 120,
+        carbs: Number(tm.carbs) || 200,
+        fat: Number(tm.fat) || 65,
+      }
     }
 
     if (data.dashboard?.activeGoal) {
@@ -426,13 +463,6 @@ const deleteMeal = async (mealId: number) => {
     $toast.error('Failed to delete meal')
   }
 }
-
-const formatNumber = (num: number) => num.toFixed(0)
-
-onMounted(() => {
-  fetchMeals()
-  fetchTargetMacros()
-})
 </script>
 
 <template>
@@ -635,6 +665,9 @@ onMounted(() => {
                     <span class="macro">C: {{ meal.carbs }}g</span>
                     <span class="macro">F: {{ meal.fat }}g</span>
                   </div>
+                  <button class="delete-meal-btn" @click.stop="deleteSavedMeal(meal.id)">
+                    <Icon name="mdi:delete-outline" size="16" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -1264,8 +1297,8 @@ onMounted(() => {
 
 .saved-meal-item {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
   padding: 12px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border);
@@ -1277,6 +1310,28 @@ onMounted(() => {
 
 .saved-meal-item:hover {
   border-color: var(--color-accent);
+  background: var(--color-bg-hover);
+}
+
+.delete-meal-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  opacity: 0;
+  transition: all 0.2s;
+}
+
+.saved-meal-item:hover .delete-meal-btn {
+  opacity: 1;
+}
+
+.delete-meal-btn:hover {
+  color: var(--color-error);
   background: var(--color-bg-hover);
 }
 

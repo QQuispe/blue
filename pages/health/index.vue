@@ -50,8 +50,9 @@ const getDayName = () => {
   return days[new Date().getDay()]
 }
 
-const formatNumber = (num: number, decimals = 0) => {
-  return num?.toFixed(decimals) || '0'
+const formatNumber = (num: any, decimals = 0) => {
+  if (num === null || num === undefined || typeof num !== 'number') return '0'
+  return num.toFixed(decimals)
 }
 
 const goalText = computed(() => {

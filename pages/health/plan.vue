@@ -52,13 +52,16 @@ const selectedDay = ref(new Date().getDay())
 const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 const currentDayMeals = computed(() => {
-  if (!activeMealPlan.value?.planData) return null
-  return activeMealPlan.value.planData[selectedDay.value]
+  if (!activeMealPlan.value?.planData || !Array.isArray(activeMealPlan.value.planData)) return null
+  const dayIndex = selectedDay.value ?? new Date().getDay()
+  return activeMealPlan.value.planData[dayIndex] || null
 })
 
 const currentDayWorkout = computed(() => {
-  if (!activeWorkoutPlan.value?.planData) return null
-  return activeWorkoutPlan.value.planData[selectedDay.value]
+  if (!activeWorkoutPlan.value?.planData || !Array.isArray(activeWorkoutPlan.value.planData))
+    return null
+  const dayIndex = selectedDay.value ?? new Date().getDay()
+  return activeWorkoutPlan.value.planData[dayIndex] || null
 })
 
 const fetchPlans = async () => {

@@ -548,9 +548,9 @@ export async function createHealthWorkoutSession(
 }
 
 export async function calculateBMR(profile: HealthProfile): Promise<number> {
-  const weight = profile.weight || 70
-  const height = profile.height || 170
-  const age = profile.age || 30
+  const weight = Number(profile.weight) || 70
+  const height = Number(profile.height) || 170
+  const age = Number(profile.age) || 30
 
   if (profile.gender === 'male') {
     return Math.round(10 * weight + 6.25 * height - 5 * age + 5)
@@ -579,10 +579,10 @@ export async function calculateTargetMacros(
 ): Promise<{ calories: number; protein: number; carbs: number; fat: number }> {
   if (goal.target_calories || goal.target_protein || goal.target_carbs || goal.target_fat) {
     return {
-      calories: goal.target_calories || 2000,
-      protein: goal.target_protein || 120,
-      carbs: goal.target_carbs || 200,
-      fat: goal.target_fat || 65,
+      calories: Number(goal.target_calories) || 2000,
+      protein: Number(goal.target_protein) || 120,
+      carbs: Number(goal.target_carbs) || 200,
+      fat: Number(goal.target_fat) || 65,
     }
   }
 
