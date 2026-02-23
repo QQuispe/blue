@@ -100,6 +100,10 @@ export default defineEventHandler(async event => {
               targetWeight: activeGoal.target_weight,
               targetDate: activeGoal.target_date,
               weeklyRate: activeGoal.weekly_rate,
+              targetCalories: activeGoal.target_calories,
+              targetProtein: activeGoal.target_protein,
+              targetCarbs: activeGoal.target_carbs,
+              targetFat: activeGoal.target_fat,
             }
           : null,
         latestCheckin: latestCheckin

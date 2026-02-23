@@ -155,6 +155,22 @@ export async function updateHealthGoal(
     fields.push(`is_active = $${paramCount++}`)
     values.push(goal.is_active)
   }
+  if (goal.target_calories !== undefined) {
+    fields.push(`target_calories = $${paramCount++}`)
+    values.push(goal.target_calories)
+  }
+  if (goal.target_protein !== undefined) {
+    fields.push(`target_protein = $${paramCount++}`)
+    values.push(goal.target_protein)
+  }
+  if (goal.target_carbs !== undefined) {
+    fields.push(`target_carbs = $${paramCount++}`)
+    values.push(goal.target_carbs)
+  }
+  if (goal.target_fat !== undefined) {
+    fields.push(`target_fat = $${paramCount++}`)
+    values.push(goal.target_fat)
+  }
 
   if (fields.length === 0) return null
 
