@@ -97,6 +97,17 @@ const todaysMacros = computed(() => {
 })
 
 const targetMacros = ref({ calories: 2000, protein: 120, carbs: 200, fat: 65 })
+const hasCustomTargets = ref(false)
+const activeGoalId = ref<number | null>(null)
+
+const showEditTargetsModal = ref(false)
+const editTargets = ref({
+  calories: 2000,
+  protein: 120,
+  carbs: 200,
+  fat: 65,
+})
+const isSavingTargets = ref(false)
 
 const remainingMacros = computed(() => ({
   calories: Math.max(0, targetMacros.value.calories - todaysMacros.value.calories),
@@ -158,8 +169,19 @@ const fetchTargetMacros = async () => {
     if (!response.ok) return
 
     const data = await response.json()
+
     if (data.dashboard?.targetMacros) {
       targetMacros.value = data.dashboard.targetMacros
+    }
+
+    if (data.dashboard?.activeGoal) {
+      activeGoalId.value = data.dashboard.activeGoal.id
+      hasCustomTargets.value = !!(
+        data.dashboard.activeGoal.targetCalories ||
+        data.dashboard.activeGoal.targetProtein ||
+        data.dashboard.activeGoal.targetCarbs ||
+        data.dashboard.activeGoal.targetFat
+      )
     }
   } catch (err: any) {
     console.error('Error fetching target macros:', err)
@@ -240,6 +262,53 @@ const newRecipe = ref({
 })
 
 const isCreatingRecipe = ref(false)
+
+const saveTargets = async () => {
+  if (!activeGoalId.value) {
+    $toast.error('No active goal found')
+    return
+  }
+
+  try {
+    isSavingTargets.value = true
+    const response = await fetch(`/api/health/goals?id=${activeGoalId.value}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        target_calories: editTargets.value.calories || null,
+        target_protein: editTargets.value.protein || null,
+        target_carbs: editTargets.value.carbs || null,
+        target_fat: editTargets.value.fat || null,
+      }),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to save targets')
+    }
+
+    const data = await response.json()
+    targetMacros.value = {
+      calories: data.goal.targetCalories || editTargets.value.calories,
+      protein: data.goal.targetProtein || editTargets.value.protein,
+      carbs: data.goal.targetCarbs || editTargets.value.carbs,
+      fat: data.goal.targetFat || editTargets.value.fat,
+    }
+    hasCustomTargets.value = true
+    showEditTargetsModal.value = false
+    $toast.success('Targets updated!')
+  } catch (err: any) {
+    console.error('Error saving targets:', err)
+    $toast.error('Failed to save targets')
+  } finally {
+    isSavingTargets.value = false
+  }
+}
+
+const openEditTargets = () => {
+  editTargets.value = { ...targetMacros.value }
+  showEditTargetsModal.value = true
+}
 
 const createRecipe = async () => {
   if (!newRecipe.value.name) {
@@ -381,10 +450,19 @@ onMounted(() => {
 
       <!-- Daily Summary -->
       <Card class="summary-card">
-        <h3>Today's Progress</h3>
+        <div class="summary-header">
+          <h3>Today's Progress</h3>
+          <button class="edit-targets-btn" @click="openEditTargets">
+            <Icon name="mdi:pencil" size="16" />
+          </button>
+        </div>
         <div class="progress-header">
           <span class="remaining">{{ remainingMacros.calories }} cal remaining</span>
-          <span class="target">of {{ targetMacros.calories }} target</span>
+          <span class="target">
+            of {{ targetMacros.calories }}
+            <span v-if="hasCustomTargets" class="custom-badge">Custom</span>
+            <span v-else class="auto-badge">Auto</span>
+          </span>
         </div>
         <div class="progress-bar-container">
           <div class="progress-bar" :style="{ width: `${macroProgress.calories}%` }"></div>
@@ -671,6 +749,59 @@ onMounted(() => {
           </div>
         </div>
       </div>
+
+      <!-- Edit Targets Modal -->
+      <div
+        v-if="showEditTargetsModal"
+        class="modal-overlay"
+        @click.self="showEditTargetsModal = false"
+      >
+        <div class="modal">
+          <div class="modal-header">
+            <h2>Edit Daily Targets</h2>
+            <button class="close-btn" @click="showEditTargetsModal = false">
+              <Icon name="mdi:close" size="24" />
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <p class="modal-description">
+              Override your auto-calculated targets. Leave blank to use calculated values.
+            </p>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Calories</label>
+                <input v-model.number="editTargets.calories" type="number" placeholder="2000" />
+              </div>
+              <div class="form-group">
+                <label>Protein (g)</label>
+                <input v-model.number="editTargets.protein" type="number" placeholder="120" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Carbs (g)</label>
+                <input v-model.number="editTargets.carbs" type="number" placeholder="200" />
+              </div>
+              <div class="form-group">
+                <label>Fat (g)</label>
+                <input v-model.number="editTargets.fat" type="number" placeholder="65" />
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <BaseButton variant="secondary" @click="showEditTargetsModal = false"
+              >Cancel</BaseButton
+            >
+            <BaseButton variant="primary" @click="saveTargets" :disabled="isSavingTargets">
+              {{ isSavingTargets ? 'Saving...' : 'Save Targets' }}
+            </BaseButton>
+          </div>
+        </div>
+      </div>
     </template>
   </PageLayout>
 </template>
@@ -702,7 +833,55 @@ onMounted(() => {
 .summary-card h3 {
   font-size: 0.875rem;
   color: var(--color-text-muted);
+  margin-bottom: 0;
+}
+
+.summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 8px;
+}
+
+.edit-targets-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.edit-targets-btn:hover {
+  background: var(--color-bg-elevated);
+  color: var(--color-accent);
+}
+
+.custom-badge,
+.auto-badge {
+  font-size: 0.625rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.custom-badge {
+  background: var(--color-accent);
+  color: var(--color-bg-primary);
+}
+
+.auto-badge {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-muted);
+}
+
+.modal-description {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 16px;
 }
 
 .progress-header {

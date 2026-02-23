@@ -25,6 +25,10 @@ CREATE TABLE IF NOT EXISTS health_goals (
     target_date DATE,
     weekly_rate DECIMAL(3,2) DEFAULT 0.5,
     is_active BOOLEAN DEFAULT TRUE,
+    target_calories INTEGER,
+    target_protein INTEGER,
+    target_carbs INTEGER,
+    target_fat INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

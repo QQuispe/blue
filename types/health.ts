@@ -38,6 +38,10 @@ export interface HealthGoal {
   target_date: string | null
   weekly_rate: number
   is_active: boolean
+  target_calories: number | null
+  target_protein: number | null
+  target_carbs: number | null
+  target_fat: number | null
   created_at: Date
   updated_at: Date
 }
@@ -48,6 +52,13 @@ export interface HealthGoalInput {
   target_weight: number
   target_date?: string
   weekly_rate?: number
+}
+
+export interface HealthMacroTargetsInput {
+  target_calories?: number
+  target_protein?: number
+  target_carbs?: number
+  target_fat?: number
 }
 
 export interface HealthCheckin {

@@ -561,6 +561,15 @@ export async function calculateTargetMacros(
   profile: HealthProfile,
   goal: HealthGoal
 ): Promise<{ calories: number; protein: number; carbs: number; fat: number }> {
+  if (goal.target_calories || goal.target_protein || goal.target_carbs || goal.target_fat) {
+    return {
+      calories: goal.target_calories || 2000,
+      protein: goal.target_protein || 120,
+      carbs: goal.target_carbs || 200,
+      fat: goal.target_fat || 65,
+    }
+  }
+
   const tdee = await calculateTDEE(profile)
 
   let calories: number
