@@ -106,13 +106,6 @@ const getLocalDateString = () => {
   return `${year}-${month}-${day}`
 }
 
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return ''
-  const datePart = dateStr.split('T')[0]
-  const [year, month, day] = datePart.split('-')
-  return `${month}/${day}/${year.slice(-2)}`
-}
-
 const selectedDate = ref(getLocalDateString())
 const savedMeals = ref<any[]>([])
 const recentFoods = ref<any[]>([])

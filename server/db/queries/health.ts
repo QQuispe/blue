@@ -233,46 +233,6 @@ export async function createHealthCheckin(
   return result.rows[0]
 }
 
-export async function searchHealthFoods(query: string, limit: number = 20): Promise<HealthFood[]> {
-  const result = await pool.query(
-    `SELECT * FROM health_foods 
-     WHERE name ILIKE $1 
-     ORDER BY is_verified DESC, name ASC 
-     LIMIT $2`,
-    [`%${query}%`, limit]
-  )
-  return result.rows
-}
-
-export async function getHealthFoodByBarcode(barcode: string): Promise<QueryResult<HealthFood>> {
-  const result = await pool.query(`SELECT * FROM health_foods WHERE barcode = $1`, [barcode])
-  return result.rows[0] || null
-}
-
-export async function createHealthFood(food: Partial<HealthFood>): Promise<HealthFood> {
-  const result = await pool.query(
-    `INSERT INTO health_foods (name, brand, barcode, serving_size, serving_unit, calories, protein, carbs, fat, fiber, sugar, sodium, source)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-     RETURNING *`,
-    [
-      food.name,
-      food.brand || null,
-      food.barcode || null,
-      food.serving_size || 1,
-      food.serving_unit || 'serving',
-      food.calories || 0,
-      food.protein || 0,
-      food.carbs || 0,
-      food.fat || 0,
-      food.fiber || null,
-      food.sugar || null,
-      food.sodium || null,
-      food.source || 'manual',
-    ]
-  )
-  return result.rows[0]
-}
-
 export async function getTodayMeals(userId: number, date?: string): Promise<HealthMeal[]> {
   const targetDate = date || new Date().toISOString().split('T')[0]
   const result = await pool.query(
