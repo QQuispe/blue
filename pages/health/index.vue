@@ -229,9 +229,9 @@ onMounted(() => {
               <span class="item-value">{{ formatNumber(meal.totalCalories) }} cal</span>
             </div>
             <div class="item-meta">
-              <span>P: {{ formatNumber(meal.totalProtein) }}g</span>
-              <span>C: {{ formatNumber(meal.totalCarbs) }}g</span>
-              <span>F: {{ formatNumber(meal.totalFat) }}g</span>
+              <span>Protein: {{ formatNumber(meal.totalProtein) }}g</span>
+              <span>Carbs: {{ formatNumber(meal.totalCarbs) }}g</span>
+              <span>Fat: {{ formatNumber(meal.totalFat) }}g</span>
             </div>
           </div>
         </div>

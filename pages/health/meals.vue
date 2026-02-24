@@ -836,9 +836,9 @@ const deleteMeal = async (mealId: number) => {
           </div>
 
           <div class="meal-footer">
-            <span>P: {{ formatNumber(meal.totalProtein) }}g</span>
-            <span>C: {{ formatNumber(meal.totalCarbs) }}g</span>
-            <span>F: {{ formatNumber(meal.totalFat) }}g</span>
+            <span>Protein: {{ formatNumber(meal.totalProtein) }}g</span>
+            <span>Carbs: {{ formatNumber(meal.totalCarbs) }}g</span>
+            <span>Fat: {{ formatNumber(meal.totalFat) }}g</span>
             <span class="total">{{ formatNumber(meal.totalCalories) }} cal</span>
           </div>
         </Card>
@@ -926,9 +926,9 @@ const deleteMeal = async (mealId: number) => {
                     </div>
                     <div class="result-macros">
                       <span class="result-cal">{{ food.calories }} cal</span>
-                      <span class="result-macro">P: {{ food.protein }}g</span>
-                      <span class="result-macro">C: {{ food.carbs }}g</span>
-                      <span class="result-macro">F: {{ food.fat }}g</span>
+                      <span class="result-macro">Protein {{ food.protein }}g</span>
+                      <span class="result-macro">Carbs {{ food.carbs }}g</span>
+                      <span class="result-macro">Fat {{ food.fat }}g</span>
                     </div>
                   </div>
                 </div>
@@ -960,9 +960,9 @@ const deleteMeal = async (mealId: number) => {
                   </div>
                   <div class="meal-macros">
                     <span>{{ meal.calories }} cal</span>
-                    <span class="macro">P: {{ meal.protein }}g</span>
-                    <span class="macro">C: {{ meal.carbs }}g</span>
-                    <span class="macro">F: {{ meal.fat }}g</span>
+                    <span class="macro">Protein {{ meal.protein }}g</span>
+                    <span class="macro">Carbs {{ meal.carbs }}g</span>
+                    <span class="macro">Fat {{ meal.fat }}g</span>
                   </div>
                   <button class="edit-meal-btn" @click.stop="openEditRecipe(meal)">
                     <Icon name="mdi:pencil-outline" size="16" />
@@ -993,9 +993,9 @@ const deleteMeal = async (mealId: number) => {
                   </div>
                   <div class="food-macros">
                     <span>{{ food.calories }} cal/serving</span>
-                    <span class="macro">P: {{ food.protein }}g</span>
-                    <span class="macro">C: {{ food.carbs }}g</span>
-                    <span class="macro">F: {{ food.fat }}g</span>
+                    <span class="macro">Protein {{ food.protein }}g</span>
+                    <span class="macro">Carbs {{ food.carbs }}g</span>
+                    <span class="macro">Fat {{ food.fat }}g</span>
                   </div>
                 </div>
               </div>
@@ -1028,9 +1028,9 @@ const deleteMeal = async (mealId: number) => {
                   </div>
                   <div class="food-macros">
                     <span>{{ food.calories }} cal</span>
-                    <span class="macro">P: {{ food.protein }}g</span>
-                    <span class="macro">C: {{ food.carbs }}g</span>
-                    <span class="macro">F: {{ food.fat }}g</span>
+                    <span class="macro">Protein {{ food.protein }}g</span>
+                    <span class="macro">Carbs {{ food.carbs }}g</span>
+                    <span class="macro">Fat {{ food.fat }}g</span>
                   </div>
                 </div>
               </div>
@@ -1349,19 +1349,19 @@ const deleteMeal = async (mealId: number) => {
                       cal</span
                     >
                     <span
-                      >P:
+                      >Protein
                       {{
                         Math.round((Number(food.protein) || 0) * (Number(food.servings) || 1))
                       }}g</span
                     >
                     <span
-                      >C:
+                      >Carbs
                       {{
                         Math.round((Number(food.carbs) || 0) * (Number(food.servings) || 1))
                       }}g</span
                     >
                     <span
-                      >F:
+                      >Fat
                       {{
                         Math.round((Number(food.fat) || 0) * (Number(food.servings) || 1))
                       }}g</span
