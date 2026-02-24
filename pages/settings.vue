@@ -81,6 +81,73 @@ const fetchAdminStats = async () => {
   }
 }
 
+// User settings
+const userSettings = ref<any>(null)
+const isLoadingSettings = ref(false)
+const isSavingSettings = ref(false)
+
+const timezones = [
+  { value: 'America/New_York', label: 'New York (Eastern)' },
+  { value: 'America/Chicago', label: 'Chicago (Central)' },
+  { value: 'America/Denver', label: 'Denver (Mountain)' },
+  { value: 'America/Los_Angeles', label: 'Los Angeles (Pacific)' },
+  { value: 'America/Anchorage', label: 'Anchorage (Alaska)' },
+  { value: 'Pacific/Honolulu', label: 'Honolulu (Hawaii)' },
+  { value: 'Europe/London', label: 'London' },
+  { value: 'Europe/Paris', label: 'Paris' },
+  { value: 'Europe/Berlin', label: 'Berlin' },
+  { value: 'Asia/Tokyo', label: 'Tokyo' },
+  { value: 'Asia/Shanghai', label: 'Shanghai' },
+  { value: 'Asia/Singapore', label: 'Singapore' },
+  { value: 'Australia/Sydney', label: 'Sydney' },
+  { value: 'UTC', label: 'UTC' },
+]
+
+const fetchSettings = async () => {
+  try {
+    isLoadingSettings.value = true
+    const response = await fetch('/api/user/settings', {
+      credentials: 'include',
+    })
+    if (response.ok) {
+      const data = await response.json()
+      userSettings.value = {
+        currency: data.settings?.currency || 'USD',
+        locale: data.settings?.locale || 'en-US',
+        timezone: data.settings?.timezone || 'America/Los_Angeles',
+        theme: data.settings?.theme || 'light',
+        notificationsEnabled: data.settings?.notificationsEnabled ?? true,
+        budgetAlertsEnabled: data.settings?.budgetAlertsEnabled ?? true,
+      }
+    }
+  } catch (err) {
+    console.error('Failed to fetch settings:', err)
+  } finally {
+    isLoadingSettings.value = false
+  }
+}
+
+const saveSettings = async () => {
+  try {
+    isSavingSettings.value = true
+    const response = await fetch('/api/user/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(userSettings.value),
+    })
+    if (response.ok) {
+      $toast.success('Settings saved!')
+    } else {
+      throw new Error('Failed to save')
+    }
+  } catch (err) {
+    $toast.error('Failed to save settings')
+  } finally {
+    isSavingSettings.value = false
+  }
+}
+
 // Change password
 const changePassword = async () => {
   if (newPassword.value !== confirmPassword.value) {
@@ -148,6 +215,7 @@ const deleteAccount = async () => {
 
 onMounted(() => {
   fetchAdminStats()
+  fetchSettings()
 })
 </script>
 
@@ -271,14 +339,32 @@ onMounted(() => {
             <h2>Preferences</h2>
           </div>
           <div class="separator"></div>
-          <div class="card-content">
+          <div v-if="userSettings" class="card-content">
             <div class="info-row">
               <span class="label">Currency</span>
-              <span class="value">USD ($)</span>
+              <span class="setting-disabled">USD ($)</span>
             </div>
             <div class="info-row">
               <span class="label">Date Format</span>
-              <span class="value">MM/DD/YYYY</span>
+              <span class="setting-disabled">MM/DD/YYYY</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Timezone</span>
+              <select v-model="userSettings.timezone" class="setting-select">
+                <option v-for="tz in timezones" :key="tz.value" :value="tz.value">
+                  {{ tz.label }}
+                </option>
+              </select>
+            </div>
+            <div class="save-row">
+              <BaseButton
+                variant="primary"
+                size="sm"
+                @click="saveSettings"
+                :loading="isSavingSettings"
+              >
+                Save Preferences
+              </BaseButton>
             </div>
           </div>
         </div>
@@ -584,6 +670,31 @@ onMounted(() => {
 
 .info-row:last-child {
   border-bottom: none;
+}
+
+.save-row {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 16px;
+}
+
+.setting-select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  min-width: 150px;
+}
+
+.setting-disabled {
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  border: 1px dashed var(--color-border);
 }
 
 .label {
