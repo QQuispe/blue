@@ -37,9 +37,9 @@ onMounted(() => {
   checkHealthSetup()
 })
 
-const financeExpanded = ref(true)
+const financeExpanded = ref(false)
 const financeTempExpanded = ref(false)
-const healthExpanded = ref(true)
+const healthExpanded = ref(false)
 const healthTempExpanded = ref(false)
 
 const toggleFinance = () => {
