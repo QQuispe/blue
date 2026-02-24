@@ -20,11 +20,45 @@ interface DashboardData {
 
 const isLoading = ref(true)
 const dashboard = ref<DashboardData | null>(null)
+const userTimezone = ref('America/New_York')
+
+const fetchUserSettings = async () => {
+  try {
+    const res = await fetch('/api/user/settings', { credentials: 'include' })
+    if (res.ok) {
+      const data = await res.json()
+      userTimezone.value = data.settings?.timezone || 'America/New_York'
+    }
+  } catch (err) {
+    console.error('Failed to fetch settings:', err)
+  }
+}
+
+onMounted(async () => {
+  await fetchUserSettings()
+  fetchDashboard()
+})
+
+const getLocalDateString = () => {
+  const now = new Date()
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: userTimezone.value,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+  const parts = formatter.formatToParts(now)
+  const year = parts.find(p => p.type === 'year')?.value
+  const month = parts.find(p => p.type === 'month')?.value
+  const day = parts.find(p => p.type === 'day')?.value
+  return `${year}-${month}-${day}`
+}
 
 const fetchDashboard = async () => {
   try {
     isLoading.value = true
-    const response = await fetch('/api/health/dashboard', {
+    const localDate = getLocalDateString()
+    const response = await fetch(`/api/health/dashboard?date=${localDate}`, {
       credentials: 'include',
     })
 

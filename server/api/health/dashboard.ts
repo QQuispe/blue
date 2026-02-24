@@ -21,10 +21,13 @@ export default defineEventHandler(async event => {
   try {
     const user = await requireAuth(event)
 
+    const url = getRequestURL(event)
+    const dateParam = url.searchParams.get('date')
+
     const profile = await getHealthProfile(user.id)
     const activeGoal = await getActiveHealthGoal(user.id)
     const latestCheckin = await getLatestHealthCheckin(user.id)
-    const todayMeals = await getTodayMeals(user.id)
+    const todayMeals = await getTodayMeals(user.id, dateParam || undefined)
     const activeMealPlan = await getActiveMealPlan(user.id)
     const activeWorkoutPlan = await getActiveWorkoutPlan(user.id)
 
@@ -117,10 +120,10 @@ export default defineEventHandler(async event => {
           id: m.id,
           mealType: m.meal_type,
           name: m.name,
-          totalCalories: m.total_calories,
-          totalProtein: m.total_protein,
-          totalCarbs: m.total_carbs,
-          totalFat: m.total_fat,
+          totalCalories: Number(m.total_calories) || 0,
+          totalProtein: Number(m.total_protein) || 0,
+          totalCarbs: Number(m.total_carbs) || 0,
+          totalFat: Number(m.total_fat) || 0,
           foods: m.foods || [],
         })),
         todayMacros,

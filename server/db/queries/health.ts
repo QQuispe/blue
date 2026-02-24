@@ -273,8 +273,8 @@ export async function createHealthFood(food: Partial<HealthFood>): Promise<Healt
   return result.rows[0]
 }
 
-export async function getTodayMeals(userId: number): Promise<HealthMeal[]> {
-  const today = new Date().toISOString().split('T')[0]
+export async function getTodayMeals(userId: number, date?: string): Promise<HealthMeal[]> {
+  const targetDate = date || new Date().toISOString().split('T')[0]
   const result = await pool.query(
     `SELECT m.*, 
             COALESCE(json_agg(
@@ -295,7 +295,7 @@ export async function getTodayMeals(userId: number): Promise<HealthMeal[]> {
      WHERE m.user_id = $1 AND m.meal_date = $2
      GROUP BY m.id
      ORDER BY m.created_at ASC`,
-    [userId, today]
+    [userId, targetDate]
   )
   return result.rows
 }
@@ -324,6 +324,68 @@ export async function getMealsByDate(userId: number, date: string): Promise<Heal
     [userId, date]
   )
   return result.rows
+}
+
+export async function getRecentFoods(userId: number, limit = 10): Promise<any[]> {
+  const result = await pool.query(
+    `SELECT DISTINCT ON (mf.food_name)
+            mf.food_name,
+            mf.food_id,
+            mf.calories / NULLIF(mf.servings, 0) as calories,
+            mf.protein / NULLIF(mf.servings, 0) as protein,
+            mf.carbs / NULLIF(mf.servings, 0) as carbs,
+            mf.fat / NULLIF(mf.servings, 0) as fat,
+            mf.servings as last_servings,
+            m.meal_date,
+            m.meal_type
+     FROM health_meal_foods mf
+     JOIN health_meals m ON mf.meal_id = m.id
+     WHERE m.user_id = $1
+     ORDER BY mf.food_name, m.meal_date DESC
+     LIMIT $2`,
+    [userId, limit]
+  )
+  return result.rows
+}
+
+export async function getCustomFoods(userId: number): Promise<HealthFood[]> {
+  const result = await pool.query(
+    `SELECT * FROM health_foods WHERE user_id = $1 AND source = 'custom' ORDER BY name ASC`,
+    [userId]
+  )
+  return result.rows
+}
+
+export async function createCustomFood(
+  userId: number,
+  food: Partial<HealthFood>
+): Promise<HealthFood> {
+  const result = await pool.query(
+    `INSERT INTO health_foods (user_id, name, brand, serving_size, serving_unit, calories, protein, carbs, fat, fiber, source)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'custom')
+     RETURNING *`,
+    [
+      userId,
+      food.name,
+      food.brand || null,
+      food.serving_size || 100,
+      food.serving_unit || 'g',
+      food.calories || 0,
+      food.protein || 0,
+      food.carbs || 0,
+      food.fat || 0,
+      food.fiber || 0,
+    ]
+  )
+  return result.rows[0]
+}
+
+export async function deleteCustomFood(foodId: number, userId: number): Promise<boolean> {
+  const result = await pool.query(
+    `DELETE FROM health_foods WHERE id = $1 AND user_id = $2 AND source = 'custom' RETURNING id`,
+    [foodId, userId]
+  )
+  return result.rows.length > 0
 }
 
 export async function createHealthMeal(
@@ -390,6 +452,70 @@ export async function deleteHealthMeal(mealId: number, userId: number): Promise<
     [mealId, userId]
   )
   return !!result.rows[0]
+}
+
+export async function updateHealthMeal(
+  mealId: number,
+  userId: number,
+  meal: Partial<HealthMeal>,
+  foods: Partial<HealthMealFood>[]
+): Promise<HealthMeal> {
+  const client = await pool.connect()
+
+  try {
+    await client.query('BEGIN')
+
+    await client.query(
+      `UPDATE health_meals SET 
+        meal_type = $1, 
+        total_calories = $2, 
+        total_protein = $3, 
+        total_carbs = $4, 
+        total_fat = $5
+       WHERE id = $6 AND user_id = $7`,
+      [
+        meal.meal_type,
+        meal.total_calories || 0,
+        meal.total_protein || 0,
+        meal.total_carbs || 0,
+        meal.total_fat || 0,
+        mealId,
+        userId,
+      ]
+    )
+
+    await client.query(`DELETE FROM health_meal_foods WHERE meal_id = $1`, [mealId])
+
+    if (foods.length > 0) {
+      for (const food of foods) {
+        await client.query(
+          `INSERT INTO health_meal_foods (meal_id, food_id, food_name, servings, calories, protein, carbs, fat)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [
+            mealId,
+            food.food_id || null,
+            food.food_name,
+            food.servings || 1,
+            food.calories || 0,
+            food.protein || 0,
+            food.carbs || 0,
+            food.fat || 0,
+          ]
+        )
+      }
+    }
+
+    const result = await client.query(`SELECT * FROM health_meals WHERE id = $1`, [mealId])
+
+    await client.query('COMMIT')
+
+    return result.rows[0]
+  } catch (err) {
+    await client.query('ROLLBACK')
+    throw err
+  } finally {
+    client.release()
+  }
 }
 
 export async function getHealthPreferences(

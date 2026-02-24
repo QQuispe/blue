@@ -6,6 +6,7 @@ import {
   getMealsByDate,
   createHealthMeal,
   deleteHealthMeal,
+  updateHealthMeal,
 } from '~/server/db/queries/health'
 import type { HealthMealInput } from '~/types/health'
 
@@ -132,6 +133,52 @@ export default defineEventHandler(async event => {
       return {
         statusCode: 200,
         message: 'Meal deleted successfully',
+      }
+    }
+
+    if (method === 'PUT') {
+      const query = getRequestURL(event).searchParams
+      const mealId = parseInt(query.get('id') || '')
+
+      if (!mealId) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: 'Meal ID is required',
+        })
+      }
+
+      const body = await readBody<any>(event)
+
+      const meal = await updateHealthMeal(
+        mealId,
+        user.id,
+        {
+          meal_type: body.meal_type,
+          total_calories: body.total_calories,
+          total_protein: body.total_protein,
+          total_carbs: body.total_carbs,
+          total_fat: body.total_fat,
+        },
+        body.foods || []
+      )
+
+      const duration = Date.now() - startTime
+      serverLogger.api(method, url.pathname, 200, duration, user.id)
+
+      return {
+        statusCode: 200,
+        meal: {
+          id: meal.id,
+          mealType: meal.meal_type,
+          mealDate: meal.meal_date,
+          name: meal.name,
+          notes: meal.notes,
+          totalCalories: Number(meal.total_calories) || 0,
+          totalProtein: Number(meal.total_protein) || 0,
+          totalCarbs: Number(meal.total_carbs) || 0,
+          totalFat: Number(meal.total_fat) || 0,
+          createdAt: meal.created_at,
+        },
       }
     }
 

@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS health_checkins (
 -- Food library
 CREATE TABLE IF NOT EXISTS health_foods (
     id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     brand VARCHAR(255),
     barcode VARCHAR(50) UNIQUE,
@@ -162,6 +163,7 @@ CREATE INDEX IF NOT EXISTS idx_health_goals_active ON health_goals(user_id, is_a
 CREATE INDEX IF NOT EXISTS idx_health_checkins_user_date ON health_checkins(user_id, checkin_date DESC);
 CREATE INDEX IF NOT EXISTS idx_health_foods_barcode ON health_foods(barcode);
 CREATE INDEX IF NOT EXISTS idx_health_foods_name ON health_foods(name);
+CREATE INDEX IF NOT EXISTS idx_health_foods_user_id ON health_foods(user_id);
 CREATE INDEX IF NOT EXISTS idx_health_meals_user_date ON health_meals(user_id, meal_date DESC);
 CREATE INDEX IF NOT EXISTS idx_health_meal_foods_meal ON health_meal_foods(meal_id);
 CREATE INDEX IF NOT EXISTS idx_health_preferences_user_id ON health_preferences(user_id);
