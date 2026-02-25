@@ -1,31 +1,27 @@
 import { defineEventHandler, createError, getRequestURL, getMethod, readBody } from 'h3'
 import { requireAuth } from '~/server/utils/auth'
 import { serverLogger } from '~/server/utils/logger'
-import {
-  getTodayMeals,
-  getMealsByDate,
-  createHealthMeal,
-  deleteHealthMeal,
-  updateHealthMeal,
-} from '~/server/db/queries/health'
+import { getTodayMeals, getMealsByDate, createHealthMeal } from '~/server/db/queries/health'
 import type { HealthMealInput } from '~/types/health'
 
 export default defineEventHandler(async event => {
   const startTime = Date.now()
   const url = getRequestURL(event)
   const method = getMethod(event)
+  const path = url.pathname
 
-  serverLogger.info(`→ ${method} ${url.pathname} - Starting request`)
+  serverLogger.info(`→ ${method} ${path} - Starting request`)
 
   try {
     const user = await requireAuth(event)
 
+    // GET /api/health/meals or /api/health/meals?date=YYYY-MM-DD
     if (method === 'GET') {
       const date = url.searchParams.get('date')
       const meals = date ? await getMealsByDate(user.id, date) : await getTodayMeals(user.id)
 
       const duration = Date.now() - startTime
-      serverLogger.api(method, url.pathname, 200, duration, user.id)
+      serverLogger.api(method, path, 200, duration, user.id)
 
       return {
         statusCode: 200,
@@ -45,6 +41,7 @@ export default defineEventHandler(async event => {
       }
     }
 
+    // POST /api/health/meals - create meal
     if (method === 'POST') {
       const body = await readBody<HealthMealInput>(event)
 
@@ -88,7 +85,7 @@ export default defineEventHandler(async event => {
       )
 
       const duration = Date.now() - startTime
-      serverLogger.api(method, url.pathname, 201, duration, user.id)
+      serverLogger.api(method, path, 201, duration, user.id)
 
       return {
         statusCode: 201,
@@ -107,88 +104,13 @@ export default defineEventHandler(async event => {
       }
     }
 
-    if (method === 'DELETE') {
-      const query = getRequestURL(event).searchParams
-      const mealId = parseInt(query.get('id') || '')
-
-      if (!mealId) {
-        throw createError({
-          statusCode: 400,
-          statusMessage: 'Meal ID is required',
-        })
-      }
-
-      const deleted = await deleteHealthMeal(mealId, user.id)
-
-      if (!deleted) {
-        throw createError({
-          statusCode: 404,
-          statusMessage: 'Meal not found',
-        })
-      }
-
-      const duration = Date.now() - startTime
-      serverLogger.api(method, url.pathname, 200, duration, user.id)
-
-      return {
-        statusCode: 200,
-        message: 'Meal deleted successfully',
-      }
-    }
-
-    if (method === 'PUT') {
-      const query = getRequestURL(event).searchParams
-      const mealId = parseInt(query.get('id') || '')
-
-      if (!mealId) {
-        throw createError({
-          statusCode: 400,
-          statusMessage: 'Meal ID is required',
-        })
-      }
-
-      const body = await readBody<any>(event)
-
-      const meal = await updateHealthMeal(
-        mealId,
-        user.id,
-        {
-          meal_type: body.meal_type,
-          total_calories: body.total_calories,
-          total_protein: body.total_protein,
-          total_carbs: body.total_carbs,
-          total_fat: body.total_fat,
-        },
-        body.foods || []
-      )
-
-      const duration = Date.now() - startTime
-      serverLogger.api(method, url.pathname, 200, duration, user.id)
-
-      return {
-        statusCode: 200,
-        meal: {
-          id: meal.id,
-          mealType: meal.meal_type,
-          mealDate: meal.meal_date,
-          name: meal.name,
-          notes: meal.notes,
-          totalCalories: Number(meal.total_calories) || 0,
-          totalProtein: Number(meal.total_protein) || 0,
-          totalCarbs: Number(meal.total_carbs) || 0,
-          totalFat: Number(meal.total_fat) || 0,
-          createdAt: meal.created_at,
-        },
-      }
-    }
-
     throw createError({
       statusCode: 405,
       statusMessage: 'Method Not Allowed',
     })
   } catch (error: any) {
     const duration = Date.now() - startTime
-    serverLogger.api(method, url.pathname, error.statusCode || 500, duration)
+    serverLogger.api(method, path, error.statusCode || 500, duration)
     serverLogger.error(`Health meals request failed: ${error.message}`)
 
     throw createError({

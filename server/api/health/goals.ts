@@ -1,30 +1,30 @@
-import { defineEventHandler, createError, getRequestURL, getMethod, readBody } from 'h3'
+import { defineEventHandler, createError, getMethod, readBody } from 'h3'
 import { requireAuth } from '~/server/utils/auth'
 import { serverLogger } from '~/server/utils/logger'
 import {
   getActiveHealthGoal,
   getAllHealthGoals,
   createHealthGoal,
-  updateHealthGoal,
 } from '~/server/db/queries/health'
 import type { HealthGoalInput } from '~/types/health'
 
 export default defineEventHandler(async event => {
   const startTime = Date.now()
-  const url = getRequestURL(event)
   const method = getMethod(event)
+  const path = event.path
 
-  serverLogger.info(`→ ${method} ${url.pathname} - Starting request`)
+  serverLogger.info(`→ ${method} ${path} - Starting request`)
 
   try {
     const user = await requireAuth(event)
 
+    // GET /api/health/goals
     if (method === 'GET') {
       const active = await getActiveHealthGoal(user.id)
       const all = await getAllHealthGoals(user.id)
 
       const duration = Date.now() - startTime
-      serverLogger.api(method, url.pathname, 200, duration, user.id)
+      serverLogger.api(method, path, 200, duration, user.id)
 
       return {
         statusCode: 200,
@@ -63,6 +63,7 @@ export default defineEventHandler(async event => {
       }
     }
 
+    // POST /api/health/goals
     if (method === 'POST') {
       const body = await readBody<HealthGoalInput>(event)
 
@@ -76,54 +77,10 @@ export default defineEventHandler(async event => {
       const goal = await createHealthGoal(user.id, body)
 
       const duration = Date.now() - startTime
-      serverLogger.api(method, url.pathname, 201, duration, user.id)
+      serverLogger.api(method, path, 201, duration, user.id)
 
       return {
         statusCode: 201,
-        goal: {
-          id: goal.id,
-          goalType: goal.goal_type,
-          startingWeight: goal.starting_weight,
-          targetWeight: goal.target_weight,
-          targetDate: goal.target_date,
-          weeklyRate: goal.weekly_rate,
-          isActive: goal.is_active,
-          targetCalories: goal.target_calories,
-          targetProtein: goal.target_protein,
-          targetCarbs: goal.target_carbs,
-          targetFat: goal.target_fat,
-          createdAt: goal.created_at,
-          updatedAt: goal.updated_at,
-        },
-      }
-    }
-
-    if (method === 'PUT' || method === 'PATCH') {
-      const query = getRequestURL(event).searchParams
-      const goalId = parseInt(query.get('id') || '')
-
-      if (!goalId) {
-        throw createError({
-          statusCode: 400,
-          statusMessage: 'Goal ID is required',
-        })
-      }
-
-      const body = await readBody<Partial<HealthGoalInput>>(event)
-      const goal = await updateHealthGoal(goalId, body)
-
-      if (!goal) {
-        throw createError({
-          statusCode: 404,
-          statusMessage: 'Goal not found',
-        })
-      }
-
-      const duration = Date.now() - startTime
-      serverLogger.api(method, url.pathname, 200, duration, user.id)
-
-      return {
-        statusCode: 200,
         goal: {
           id: goal.id,
           goalType: goal.goal_type,
@@ -148,7 +105,7 @@ export default defineEventHandler(async event => {
     })
   } catch (error: any) {
     const duration = Date.now() - startTime
-    serverLogger.api(method, url.pathname, error.statusCode || 500, duration)
+    serverLogger.api(method, path, error.statusCode || 500, duration)
     serverLogger.error(`Health goals request failed: ${error.message}`)
 
     throw createError({

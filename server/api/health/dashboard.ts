@@ -5,6 +5,7 @@ import {
   getHealthProfile,
   getActiveHealthGoal,
   getLatestHealthCheckin,
+  getHealthCheckins,
   getTodayMeals,
   getActiveMealPlan,
   getActiveWorkoutPlan,
@@ -27,6 +28,7 @@ export default defineEventHandler(async event => {
     const profile = await getHealthProfile(user.id)
     const activeGoal = await getActiveHealthGoal(user.id)
     const latestCheckin = await getLatestHealthCheckin(user.id)
+    const allCheckins = await getHealthCheckins(user.id)
     const todayMeals = await getTodayMeals(user.id, dateParam || undefined)
     const activeMealPlan = await getActiveMealPlan(user.id)
     const activeWorkoutPlan = await getActiveWorkoutPlan(user.id)
@@ -116,6 +118,11 @@ export default defineEventHandler(async event => {
               weight: latestCheckin.weight,
             }
           : null,
+        weightCheckins: allCheckins.slice(0, 90).map(c => ({
+          id: c.id,
+          date: c.checkin_date,
+          weight: Number(c.weight) || 0,
+        })),
         todayMeals: todayMeals.map(m => ({
           id: m.id,
           mealType: m.meal_type,

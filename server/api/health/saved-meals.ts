@@ -5,9 +5,10 @@ import {
   getSavedMeals,
   getSavedMealById,
   createSavedMeal,
-  updateSavedMeal,
-  deleteSavedMeal,
   toggleSavedMealFavorite,
+  calculateRecipeMacros,
+  getFoodByName,
+  createCustomFood,
 } from '~/server/db/queries/health'
 import type { HealthSavedMealInput } from '~/types/health'
 
@@ -21,10 +22,9 @@ export default defineEventHandler(async event => {
   try {
     const user = await requireAuth(event)
     const path = url.pathname
-    const idMatch = path.match(/\/api\/health\/saved-meals\/(\d+)/)
-    const id = idMatch ? parseInt(idMatch[1]) : null
 
-    if (method === 'GET' && !id) {
+    // GET /api/health/saved-meals - list all saved meals
+    if (method === 'GET' && !path.includes('/saved-meals/')) {
       const meals = await getSavedMeals(user.id)
 
       const duration = Date.now() - startTime
@@ -53,14 +53,19 @@ export default defineEventHandler(async event => {
       }
     }
 
-    if (method === 'GET' && id) {
+    // GET /api/health/saved-meals/:id - get single saved meal
+    if (method === 'GET' && path.match(/\/saved-meals\/\d+$/)) {
+      const idMatch = path.match(/\/saved-meals\/(\d+)/)
+      const id = idMatch ? parseInt(idMatch[1]) : null
+
+      if (!id) {
+        throw createError({ statusCode: 400, statusMessage: 'Invalid saved meal ID' })
+      }
+
       const meal = await getSavedMealById(id, user.id)
 
       if (!meal) {
-        throw createError({
-          statusCode: 404,
-          statusMessage: 'Meal not found',
-        })
+        throw createError({ statusCode: 404, statusMessage: 'Meal not found' })
       }
 
       const duration = Date.now() - startTime
@@ -89,14 +94,23 @@ export default defineEventHandler(async event => {
       }
     }
 
-    if (method === 'POST' && path.endsWith('/favorite') && id) {
+    // POST /api/health/saved-meals/:id/favorite - toggle favorite
+    if (
+      method === 'POST' &&
+      path.endsWith('/favorite') &&
+      path.match(/\/saved-meals\/\d+\/favorite$/)
+    ) {
+      const idMatch = path.match(/\/saved-meals\/(\d+)/)
+      const id = idMatch ? parseInt(idMatch[1]) : null
+
+      if (!id) {
+        throw createError({ statusCode: 400, statusMessage: 'Invalid saved meal ID' })
+      }
+
       const meal = await toggleSavedMealFavorite(id, user.id)
 
       if (!meal) {
-        throw createError({
-          statusCode: 404,
-          statusMessage: 'Meal not found',
-        })
+        throw createError({ statusCode: 404, statusMessage: 'Meal not found' })
       }
 
       const duration = Date.now() - startTime
@@ -125,17 +139,60 @@ export default defineEventHandler(async event => {
       }
     }
 
-    if (method === 'POST' && !id) {
-      const body = await readBody<HealthSavedMealInput>(event)
+    // POST /api/health/saved-meals - create new saved meal
+    if (method === 'POST' && !path.match(/\/saved-meals\/\d+/)) {
+      const body = await readBody<any>(event)
 
       if (!body.name) {
-        throw createError({
-          statusCode: 400,
-          statusMessage: 'Name is required',
-        })
+        throw createError({ statusCode: 400, statusMessage: 'Name is required' })
       }
 
-      const meal = await createSavedMeal(user.id, body)
+      let mealData = { ...body }
+
+      if (body.ingredients && body.ingredients.length > 0) {
+        const processedIngredients = []
+
+        for (const ingredient of body.ingredients) {
+          if (ingredient.type === 'custom') {
+            const existingFood = await getFoodByName(user.id, ingredient.food_name)
+
+            if (existingFood) {
+              processedIngredients.push({
+                ...ingredient,
+                type: 'food',
+                food_id: existingFood.id,
+              })
+            } else {
+              const newFood = await createCustomFood(user.id, {
+                name: ingredient.food_name,
+                serving_size: ingredient.serving_size || 100,
+                serving_unit: ingredient.serving_unit || 'g',
+                calories: ingredient.calories || 0,
+                protein: ingredient.protein || 0,
+                carbs: ingredient.carbs || 0,
+                fat: ingredient.fat || 0,
+              })
+
+              processedIngredients.push({
+                ...ingredient,
+                type: 'food',
+                food_id: newFood.id,
+              })
+            }
+          } else {
+            processedIngredients.push(ingredient)
+          }
+        }
+
+        mealData.ingredients = processedIngredients
+        const calculated = await calculateRecipeMacros(processedIngredients)
+        mealData.calories = calculated.calories
+        mealData.protein = calculated.protein
+        mealData.carbs = calculated.carbs
+        mealData.fat = calculated.fat
+      }
+
+      const meal = await createSavedMeal(user.id, mealData)
 
       const duration = Date.now() - startTime
       serverLogger.api(method, url.pathname, 201, duration, user.id)
@@ -160,62 +217,6 @@ export default defineEventHandler(async event => {
           created_at: meal.created_at,
           updated_at: meal.updated_at,
         },
-      }
-    }
-
-    if (method === 'PUT' && id) {
-      const body = await readBody<Partial<HealthSavedMealInput>>(event)
-      const meal = await updateSavedMeal(id, user.id, body)
-
-      if (!meal) {
-        throw createError({
-          statusCode: 404,
-          statusMessage: 'Meal not found',
-        })
-      }
-
-      const duration = Date.now() - startTime
-      serverLogger.api(method, url.pathname, 200, duration, user.id)
-
-      return {
-        statusCode: 200,
-        meal: {
-          id: meal.id,
-          user_id: meal.user_id,
-          name: meal.name,
-          meal_type: meal.meal_type,
-          calories: Number(meal.calories) || 0,
-          protein: Number(meal.protein) || 0,
-          carbs: Number(meal.carbs) || 0,
-          fat: Number(meal.fat) || 0,
-          fiber: Number(meal.fiber) || 0,
-          ingredients: meal.ingredients,
-          instructions: meal.instructions,
-          source: meal.source,
-          is_favorite: meal.is_favorite,
-          usda_fdc_id: meal.usda_fdc_id,
-          created_at: meal.created_at,
-          updated_at: meal.updated_at,
-        },
-      }
-    }
-
-    if (method === 'DELETE' && id) {
-      const result = await deleteSavedMeal(id, user.id)
-
-      if (!result) {
-        throw createError({
-          statusCode: 404,
-          statusMessage: 'Meal not found',
-        })
-      }
-
-      const duration = Date.now() - startTime
-      serverLogger.api(method, url.pathname, 200, duration, user.id)
-
-      return {
-        statusCode: 200,
-        message: 'Meal deleted',
       }
     }
 

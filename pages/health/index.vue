@@ -16,11 +16,24 @@ interface DashboardData {
   activeWorkoutPlan: any
   todayWorkout: any
   progress: { weightChange: number | null; weeksRemaining: number | null; onTrack: boolean | null }
+  weightCheckins: { id: number; date: string; weight: number }[]
 }
+
+const filteredWeightData = computed(() => {
+  if (!dashboard.value?.weightCheckins) return []
+  const checkins = dashboard.value.weightCheckins
+  if (weightChartRange.value === '30') {
+    return checkins.slice(-30)
+  } else if (weightChartRange.value === '90') {
+    return checkins.slice(-90)
+  }
+  return checkins
+})
 
 const isLoading = ref(true)
 const dashboard = ref<DashboardData | null>(null)
 const userTimezone = ref('America/New_York')
+const weightChartRange = ref<'30' | '90' | 'all'>('30')
 
 const fetchUserSettings = async () => {
   try {
@@ -87,6 +100,15 @@ const getDayName = () => {
 const formatNumber = (num: any, decimals = 0) => {
   if (num === null || num === undefined || typeof num !== 'number') return '0'
   return num.toFixed(decimals)
+}
+
+const getWeightHeight = (weight: number) => {
+  const weights = filteredWeightData.value.map(w => w.weight)
+  if (weights.length === 0) return 50
+  const min = Math.min(...weights)
+  const max = Math.max(...weights)
+  const range = max - min || 1
+  return ((weight - min) / range) * 80 + 10
 }
 
 const goalText = computed(() => {
@@ -179,6 +201,53 @@ onMounted(() => {
         </div>
         <QuickStats :stats="quickStats" />
       </div>
+
+      <!-- Weight Chart -->
+      <Card v-if="dashboard?.weightCheckins?.length">
+        <div class="section-header">
+          <h2>Weight Trend</h2>
+          <div class="chart-filters">
+            <button
+              class="filter-btn"
+              :class="{ active: weightChartRange === '30' }"
+              @click="weightChartRange = '30'"
+            >
+              30 days
+            </button>
+            <button
+              class="filter-btn"
+              :class="{ active: weightChartRange === '90' }"
+              @click="weightChartRange = '90'"
+            >
+              90 days
+            </button>
+            <button
+              class="filter-btn"
+              :class="{ active: weightChartRange === 'all' }"
+              @click="weightChartRange = 'all'"
+            >
+              All
+            </button>
+          </div>
+        </div>
+        <div class="weight-chart">
+          <div class="chart-line">
+            <div
+              v-for="(point, idx) in filteredWeightData"
+              :key="idx"
+              class="chart-point"
+              :style="{ height: getWeightHeight(point.weight) + '%' }"
+              :title="`${point.date}: ${point.weight} lbs`"
+            ></div>
+          </div>
+          <div class="chart-labels">
+            <span v-if="filteredWeightData.length">{{ filteredWeightData[0]?.date }}</span>
+            <span v-if="filteredWeightData.length">{{
+              filteredWeightData[filteredWeightData.length - 1]?.date
+            }}</span>
+          </div>
+        </div>
+      </Card>
 
       <!-- Macros -->
       <Card>
@@ -370,6 +439,66 @@ onMounted(() => {
   font-size: 1.125rem;
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.chart-filters {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-btn {
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-btn:hover {
+  border-color: var(--color-accent);
+}
+
+.filter-btn.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: white;
+}
+
+.weight-chart {
+  height: 150px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-line {
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  padding: 10px 0;
+}
+
+.chart-point {
+  flex: 1;
+  min-width: 4px;
+  background: var(--color-accent);
+  border-radius: 2px 2px 0 0;
+  transition: height 0.3s;
+  cursor: pointer;
+}
+
+.chart-point:hover {
+  background: var(--color-accent-hover);
+}
+
+.chart-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
 }
 
 .edit-buttons {

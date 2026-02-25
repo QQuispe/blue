@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
 import Card from '~/components/Card.vue'
 import MacroCard from '~/components/health/MacroCard.vue'
@@ -37,6 +37,9 @@ onMounted(async () => {
   selectedDate.value = getLocalDateString()
   fetchMeals()
   fetchTargetMacros()
+  fetchSavedMeals()
+  fetchRecentFoods()
+  fetchCustomFoods()
 })
 
 interface MealFood {
@@ -79,6 +82,42 @@ const isLoading = ref(true)
 const meals = ref<Meal[]>([])
 const userTimezone = ref('America/Los_Angeles')
 
+const groupedMeals = computed(() => {
+  const groups: Record<string, { meal: Meal; ids: number[] }> = {}
+
+  for (const meal of meals.value) {
+    const type = meal.mealType
+    if (!groups[type]) {
+      groups[type] = {
+        meal: {
+          id: meal.id,
+          mealType: type,
+          mealDate: meal.mealDate,
+          name: meal.name,
+          notes: meal.notes,
+          totalCalories: 0,
+          totalProtein: 0,
+          totalCarbs: 0,
+          totalFat: 0,
+          foods: [],
+          createdAt: meal.createdAt,
+        },
+        ids: [],
+      }
+    }
+    groups[type].meal.totalCalories += meal.totalCalories
+    groups[type].meal.totalProtein += meal.totalProtein
+    groups[type].meal.totalCarbs += meal.totalCarbs
+    groups[type].meal.totalFat += meal.totalFat
+
+    const foodsWithMealId = meal.foods.map((f: any) => ({ ...f, _mealId: meal.id }))
+    groups[type].meal.foods.push(...foodsWithMealId)
+    groups[type].ids.push(meal.id)
+  }
+
+  return Object.values(groups).map(g => ({ ...g.meal, mealIds: g.ids }))
+})
+
 const fetchUserSettings = async () => {
   try {
     const res = await fetch('/api/user/settings', { credentials: 'include' })
@@ -106,25 +145,91 @@ const getLocalDateString = () => {
   return `${year}-${month}-${day}`
 }
 
+const getYesterdayDate = () => {
+  const now = new Date()
+  now.setDate(now.getDate() - 1)
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: userTimezone.value,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+  const parts = formatter.formatToParts(now)
+  const year = parts.find(p => p.type === 'year')?.value
+  const month = parts.find(p => p.type === 'month')?.value
+  const day = parts.find(p => p.type === 'day')?.value
+  return `${year}-${month}-${day}`
+}
+
 const selectedDate = ref(getLocalDateString())
 const savedMeals = ref<any[]>([])
 const recentFoods = ref<any[]>([])
 const customFoods = ref<any[]>([])
-const activeTab = ref<'search' | 'saved' | 'recent' | 'custom'>('search')
+const activeTab = ref<'recent' | 'myFoods' | 'search'>('recent')
+
+const myFoods = computed(() => {
+  const recipes = savedMeals.value.map(m => ({
+    id: m.id,
+    name: m.name,
+    type: 'recipe',
+    meal_type: m.meal_type,
+    calories: m.calories,
+    protein: m.protein,
+    carbs: m.carbs,
+    fat: m.fat,
+    serving_size: m.calories ? 1 : null,
+    serving_unit: 'serving',
+    instructions: m.instructions,
+    ingredients: m.ingredients,
+  }))
+  const foods = customFoods.value.map(f => ({
+    id: f.id,
+    name: f.name,
+    type: 'food',
+    meal_type: null,
+    calories: f.calories,
+    protein: f.protein,
+    carbs: f.carbs,
+    fat: f.fat,
+    serving_size: f.serving_size,
+    serving_unit: f.serving_unit,
+    instructions: null,
+  }))
+  return [...recipes, ...foods]
+})
+
+const filteredMyFoods = computed(() => {
+  const search = myFoodsSearchDebounced.value.toLowerCase().trim()
+  if (!search) return myFoods.value
+  return myFoods.value.filter(food => food.name.toLowerCase().includes(search))
+})
 
 const showAddMealModal = ref(false)
 const showCreateRecipeModal = ref(false)
 const showCreateFoodModal = ref(false)
 const showEditRecipeModal = ref(false)
+const showDeleteConfirmModal = ref(false)
+const deleteConfirmItem = ref<{ id: number; type: 'recipe' | 'food' } | null>(null)
 const showEditMealModal = ref(false)
 const editingRecipe = ref<any>(null)
+const editingFood = ref<any>(null)
 const editingMeal = ref<any>(null)
 const editingMealFoods = ref<any[]>([])
 const isAddingFood = ref(false)
 const searchQuery = ref('')
 const searchResults = ref<Food[]>([])
+const myFoodsSearch = ref('')
+const myFoodsSearchDebounced = ref('')
 const selectedFoods = ref<MealFood[]>([])
 const selectedMealType = ref<string>('breakfast')
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+watch(myFoodsSearch, () => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    myFoodsSearchDebounced.value = myFoodsSearch.value
+  }, 300)
+})
 
 const mealTypes = [
   { value: 'breakfast', label: 'Breakfast' },
@@ -192,6 +297,42 @@ const fetchMeals = async () => {
   }
 }
 
+const copyMealFromYesterday = async (mealType: string) => {
+  const yesterday = getYesterdayDate()
+  try {
+    const response = await fetch(`/api/health/meals?date=${yesterday}`, {
+      credentials: 'include',
+    })
+    if (!response.ok) throw new Error('Failed to fetch yesterday meals')
+    const data = await response.json()
+    const yesterdayMeal = data.meals?.find((m: any) => m.mealType === mealType)
+
+    if (!yesterdayMeal) {
+      $toast.info(`No ${mealType} logged yesterday`)
+      return
+    }
+
+    const newMealResponse = await fetch('/api/health/meals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        meal_type: mealType,
+        meal_date: selectedDate.value,
+        foods: yesterdayMeal.foods,
+      }),
+    })
+
+    if (!newMealResponse.ok) throw new Error('Failed to copy meal')
+
+    $toast.success(`Copied ${mealType} from yesterday`)
+    fetchMeals()
+  } catch (err: any) {
+    console.error('Error copying meal:', err)
+    $toast.error('Failed to copy meal')
+  }
+}
+
 const fetchSavedMeals = async () => {
   try {
     const response = await fetch('/api/health/saved-meals', {
@@ -244,23 +385,37 @@ const fetchCustomFoods = async () => {
 }
 
 const deleteSavedMeal = async (id: number) => {
-  if (!confirm('Delete this recipe?')) return
+  deleteConfirmItem.value = { id, type: 'recipe' }
+  showDeleteConfirmModal.value = true
+}
+
+const confirmDelete = async () => {
+  if (!deleteConfirmItem.value) return
 
   try {
-    const response = await fetch(`/api/health/saved-meals/${id}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+    if (deleteConfirmItem.value.type === 'recipe') {
+      await $fetch(`/api/health/saved-meals/${deleteConfirmItem.value.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
 
-    if (!response.ok) {
-      throw new Error('Failed to delete meal')
+      $toast.success('Recipe deleted')
+      await fetchSavedMeals()
+    } else if (deleteConfirmItem.value.type === 'food') {
+      await $fetch(`/api/health/foods/custom/${deleteConfirmItem.value.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+
+      $toast.success('Food deleted')
+      await fetchCustomFoods()
     }
-
-    $toast.success('Recipe deleted')
-    await fetchSavedMeals()
   } catch (err: any) {
-    console.error('Error deleting meal:', err)
-    $toast.error('Failed to delete recipe')
+    console.error('Error deleting:', err)
+    $toast.error('Failed to delete')
+  } finally {
+    showDeleteConfirmModal.value = false
+    deleteConfirmItem.value = null
   }
 }
 
@@ -368,6 +523,36 @@ const addCustomFood = (food: any) => {
   $toast.success('Added to meal')
 }
 
+const addMyFood = (food: any) => {
+  selectedFoods.value.push({
+    food_name: food.name,
+    servings: 1,
+    calories: food.calories,
+    protein: food.protein,
+    carbs: food.carbs,
+    fat: food.fat,
+  })
+  $toast.success('Added to meal')
+}
+
+const openEditMyFood = (food: any) => {
+  if (food.type === 'recipe') {
+    openEditRecipe(food)
+  } else {
+    openEditCustomFood(food)
+  }
+}
+
+const deleteMyFood = async (food: any) => {
+  if (food.type === 'recipe') {
+    deleteConfirmItem.value = { id: food.id, type: 'recipe' }
+    showDeleteConfirmModal.value = true
+  } else {
+    deleteConfirmItem.value = { id: food.id, type: 'food' }
+    showDeleteConfirmModal.value = true
+  }
+}
+
 const openAddMealModal = async () => {
   await Promise.all([fetchSavedMeals(), fetchRecentFoods(), fetchCustomFoods()])
   showAddMealModal.value = true
@@ -385,6 +570,20 @@ const addSavedMeal = (meal: any) => {
   $toast.success('Added to meal')
 }
 
+interface RecipeIngredient {
+  type: 'food' | 'custom' | 'recipe'
+  food_id?: number
+  recipe_id?: number
+  food_name: string
+  servings: number
+  serving_size?: number
+  serving_unit?: string
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+}
+
 const newRecipe = ref({
   name: '',
   meal_type: 'lunch',
@@ -393,6 +592,7 @@ const newRecipe = ref({
   carbs: '',
   fat: '',
   instructions: '',
+  ingredients: [] as RecipeIngredient[],
 })
 
 const editRecipe = ref({
@@ -403,7 +603,121 @@ const editRecipe = ref({
   carbs: '',
   fat: '',
   instructions: '',
+  ingredients: [] as RecipeIngredient[],
 })
+
+const recipeIngredientSearch = ref('')
+const recipeIngredientResults = ref<{ foods: any[]; recipes: any[] }>({ foods: [], recipes: [] })
+const isSearchingIngredients = ref(false)
+const showCustomIngredientForm = ref(false)
+const newCustomIngredient = ref({
+  food_name: '',
+  servings: '1',
+  calories: '',
+  protein: '',
+  carbs: '',
+  fat: '',
+})
+
+const searchRecipeIngredients = async () => {
+  const query = recipeIngredientSearch.value.trim()
+  if (!query || query.length < 1) {
+    recipeIngredientResults.value = { foods: [], recipes: [] }
+    return
+  }
+
+  isSearchingIngredients.value = true
+  try {
+    const response = await fetch(`/api/health/ingredients/search?q=${encodeURIComponent(query)}`, {
+      credentials: 'include',
+    })
+    if (response.ok) {
+      const data = await response.json()
+      recipeIngredientResults.value = data
+    }
+  } catch (err) {
+    console.error('Error searching ingredients:', err)
+  } finally {
+    isSearchingIngredients.value = false
+  }
+}
+
+let ingredientSearchTimer: ReturnType<typeof setTimeout> | null = null
+watch(recipeIngredientSearch, () => {
+  if (ingredientSearchTimer) clearTimeout(ingredientSearchTimer)
+  ingredientSearchTimer = setTimeout(() => {
+    searchRecipeIngredients()
+  }, 300)
+})
+
+const addIngredientToRecipe = (
+  ingredient: any,
+  recipe: 'new' | 'edit',
+  targetList: RecipeIngredient[]
+) => {
+  const newIngredient: RecipeIngredient = {
+    type: ingredient.type,
+    food_id: ingredient.type === 'food' ? ingredient.id : undefined,
+    recipe_id: ingredient.type === 'recipe' ? ingredient.id : undefined,
+    food_name: ingredient.name,
+    servings: ingredient.serving_size || 1,
+    serving_size: ingredient.serving_size,
+    serving_unit: ingredient.serving_unit,
+    calories: ingredient.calories,
+    protein: ingredient.protein,
+    carbs: ingredient.carbs,
+    fat: ingredient.fat,
+  }
+  targetList.push(newIngredient)
+  recipeIngredientSearch.value = ''
+  recipeIngredientResults.value = { foods: [], recipes: [] }
+}
+
+const addCustomFromSearch = (recipe: 'new' | 'edit', targetList: RecipeIngredient[]) => {
+  newCustomIngredient.value.food_name = recipeIngredientSearch.value
+  showCustomIngredientForm.value = true
+}
+
+const addCustomIngredientToRecipe = (recipe: 'new' | 'edit', targetList: RecipeIngredient[]) => {
+  if (!newCustomIngredient.value.food_name) return
+
+  const ingredient: RecipeIngredient = {
+    type: 'custom',
+    food_name: newCustomIngredient.value.food_name,
+    servings: Number(newCustomIngredient.value.servings) || 1,
+    calories: Number(newCustomIngredient.value.calories) || 0,
+    protein: Number(newCustomIngredient.value.protein) || 0,
+    carbs: Number(newCustomIngredient.value.carbs) || 0,
+    fat: Number(newCustomIngredient.value.fat) || 0,
+  }
+  targetList.push(ingredient)
+
+  newCustomIngredient.value = {
+    food_name: '',
+    servings: '1',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+  }
+  showCustomIngredientForm.value = false
+}
+
+const removeIngredientFromRecipe = (index: number, targetList: RecipeIngredient[]) => {
+  targetList.splice(index, 1)
+}
+
+const calculatedRecipeMacros = (ingredients: RecipeIngredient[]) => {
+  return ingredients.reduce(
+    (acc, ing) => ({
+      calories: acc.calories + (ing.calories || 0) * (ing.servings || 1),
+      protein: acc.protein + (ing.protein || 0) * (ing.servings || 1),
+      carbs: acc.carbs + (ing.carbs || 0) * (ing.servings || 1),
+      fat: acc.fat + (ing.fat || 0) * (ing.servings || 1),
+    }),
+    { calories: 0, protein: 0, carbs: 0, fat: 0 }
+  )
+}
 
 const newCustomFood = ref({
   name: '',
@@ -431,11 +745,13 @@ const openEditRecipe = (meal: any) => {
     carbs: meal.carbs?.toString() || '',
     fat: meal.fat?.toString() || '',
     instructions: meal.instructions || '',
+    ingredients: meal.ingredients || [],
   }
   showEditRecipeModal.value = true
 }
 
 const saveEditedRecipe = async () => {
+  console.log('saveEditedRecipe CALLED')
   if (!editingRecipe.value) return
   if (!editRecipe.value.name) {
     $toast.error('Recipe name is required')
@@ -444,18 +760,22 @@ const saveEditedRecipe = async () => {
 
   try {
     isUpdatingRecipe.value = true
-    const response = await fetch(`/api/health/saved-meals/${editingRecipe.value.id}`, {
+    const baseUrl = window.location.origin
+    console.log('Saving recipe, ingredients:', editRecipe.value.ingredients)
+    const macros = calculatedRecipeMacros(editRecipe.value.ingredients)
+    const response = await fetch(`${baseUrl}/api/health/saved-meals/${editingRecipe.value.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
         name: editRecipe.value.name,
         meal_type: editRecipe.value.meal_type,
-        calories: editRecipe.value.calories ? Number(editRecipe.value.calories) : null,
-        protein: editRecipe.value.protein ? Number(editRecipe.value.protein) : null,
-        carbs: editRecipe.value.carbs ? Number(editRecipe.value.carbs) : null,
-        fat: editRecipe.value.fat ? Number(editRecipe.value.fat) : null,
+        calories: macros.calories,
+        protein: macros.protein,
+        carbs: macros.carbs,
+        fat: macros.fat,
         instructions: editRecipe.value.instructions || null,
+        ingredients: editRecipe.value.ingredients,
       }),
     })
 
@@ -466,6 +786,7 @@ const saveEditedRecipe = async () => {
     $toast.success('Recipe updated!')
     showEditRecipeModal.value = false
     editingRecipe.value = null
+    editRecipe.value.ingredients = []
     await fetchSavedMeals()
   } catch (err: any) {
     console.error('Error updating recipe:', err)
@@ -483,7 +804,7 @@ const saveTargets = async () => {
 
   try {
     isSavingTargets.value = true
-    const response = await fetch(`/api/health/goals?id=${activeGoalId.value}`, {
+    const response = await fetch(`/api/health/goals/${activeGoalId.value}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -530,6 +851,7 @@ const createRecipe = async () => {
 
   try {
     isCreatingRecipe.value = true
+    const macros = calculatedRecipeMacros(newRecipe.value.ingredients)
     const response = await fetch('/api/health/saved-meals', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -537,12 +859,13 @@ const createRecipe = async () => {
       body: JSON.stringify({
         name: newRecipe.value.name,
         meal_type: newRecipe.value.meal_type,
-        calories: newRecipe.value.calories ? Number(newRecipe.value.calories) : null,
-        protein: newRecipe.value.protein ? Number(newRecipe.value.protein) : null,
-        carbs: newRecipe.value.carbs ? Number(newRecipe.value.carbs) : null,
-        fat: newRecipe.value.fat ? Number(newRecipe.value.fat) : null,
+        calories: macros.calories,
+        protein: macros.protein,
+        carbs: macros.carbs,
+        fat: macros.fat,
         instructions: newRecipe.value.instructions || null,
         source: 'custom',
+        ingredients: newRecipe.value.ingredients,
       }),
     })
 
@@ -560,6 +883,7 @@ const createRecipe = async () => {
       carbs: '',
       fat: '',
       instructions: '',
+      ingredients: [],
     }
     await fetchSavedMeals()
   } catch (err: any) {
@@ -603,6 +927,7 @@ const createCustomFood = async () => {
 
     $toast.success('Food created!')
     showCreateFoodModal.value = false
+    editingFood.value = null
     newCustomFood.value = {
       name: '',
       brand: '',
@@ -618,6 +943,89 @@ const createCustomFood = async () => {
   } catch (err: any) {
     console.error('Error creating food:', err)
     $toast.error('Failed to create food')
+  } finally {
+    isCreatingFood.value = false
+  }
+}
+
+const deleteCustomFood = async (id: number) => {
+  try {
+    await $fetch(`/api/health/foods/custom/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+    $toast.success('Food deleted')
+    fetchCustomFoods()
+  } catch (err: any) {
+    console.error('Error deleting food:', err)
+    $toast.error('Failed to delete food')
+  }
+}
+
+const openEditCustomFood = (food: any) => {
+  editingFood.value = food
+  newCustomFood.value = {
+    name: food.name,
+    brand: food.brand || '',
+    serving_size: food.serving_size?.toString() || '100',
+    serving_unit: food.serving_unit || 'g',
+    calories: food.calories?.toString() || '',
+    protein: food.protein?.toString() || '',
+    carbs: food.carbs?.toString() || '',
+    fat: food.fat?.toString() || '',
+    fiber: food.fiber?.toString() || '',
+  }
+  showCreateFoodModal.value = true
+}
+
+const saveEditedCustomFood = async () => {
+  if (!editingFood.value) return
+  if (!newCustomFood.value.name) {
+    $toast.error('Food name is required')
+    return
+  }
+
+  try {
+    isCreatingFood.value = true
+    const response = await fetch(`/api/health/foods/custom/${editingFood.value.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        name: newCustomFood.value.name,
+        brand: newCustomFood.value.brand || null,
+        serving_size: newCustomFood.value.serving_size
+          ? Number(newCustomFood.value.serving_size)
+          : 100,
+        serving_unit: newCustomFood.value.serving_unit || 'g',
+        calories: newCustomFood.value.calories ? Number(newCustomFood.value.calories) : 0,
+        protein: newCustomFood.value.protein ? Number(newCustomFood.value.protein) : 0,
+        carbs: newCustomFood.value.carbs ? Number(newCustomFood.value.carbs) : 0,
+        fat: newCustomFood.value.fat ? Number(newCustomFood.value.fat) : 0,
+        fiber: newCustomFood.value.fiber ? Number(newCustomFood.value.fiber) : 0,
+      }),
+    })
+
+    if (!response.ok) throw new Error('Failed to update food')
+
+    $toast.success('Food updated')
+    showCreateFoodModal.value = false
+    editingFood.value = null
+    newCustomFood.value = {
+      name: '',
+      brand: '',
+      serving_size: '100',
+      serving_unit: 'g',
+      calories: '',
+      protein: '',
+      carbs: '',
+      fat: '',
+      fiber: '',
+    }
+    fetchCustomFoods()
+  } catch (err: any) {
+    console.error('Error updating food:', err)
+    $toast.error('Failed to update food')
   } finally {
     isCreatingFood.value = false
   }
@@ -691,12 +1099,13 @@ const saveEditedMeal = async () => {
   )
 
   try {
-    const response = await fetch(`/api/health/meals?id=${editingMeal.value.id}`, {
-      method: 'PUT',
+    const response = await fetch('/api/health/meals', {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({
         meal_type: editingMeal.value.mealType,
+        meal_date: editingMeal.value.mealDate,
         total_calories: totals.calories,
         total_protein: totals.protein,
         total_carbs: totals.carbs,
@@ -727,21 +1136,38 @@ const saveEditedMeal = async () => {
   }
 }
 
-const deleteMeal = async (mealId: number) => {
-  try {
-    const response = await fetch(`/api/health/meals?id=${mealId}`, {
-      method: 'DELETE',
-      credentials: 'include',
-    })
+const deleteMeal = async (meal: any) => {
+  const idsToDelete = meal.mealIds || [meal.id]
 
-    if (!response.ok) {
-      throw new Error('Failed to delete meal')
+  try {
+    for (const id of idsToDelete) {
+      await $fetch(`/api/health/meals/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
     }
 
     $toast.success('Meal deleted')
     fetchMeals()
   } catch (err: any) {
     $toast.error('Failed to delete meal')
+  }
+}
+
+const deleteFoodFromMeal = async (food: any, mealType: string) => {
+  const mealFoodId = food.id
+
+  try {
+    await $fetch(`/api/health/meal-foods/${mealFoodId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+
+    $toast.success('Food removed')
+    fetchMeals()
+  } catch (err: any) {
+    console.error('Error deleting food:', err)
+    $toast.error('Failed to remove food')
   }
 }
 </script>
@@ -812,16 +1238,23 @@ const deleteMeal = async (mealId: number) => {
 
       <!-- Meals List -->
       <div v-else class="meals-list">
-        <Card v-for="meal in meals" :key="meal.id" class="meal-card">
+        <Card v-for="meal in groupedMeals" :key="meal.mealType" class="meal-card">
           <div class="meal-header">
             <div>
               <span class="meal-type">{{ meal.mealType }}</span>
             </div>
             <div class="meal-actions">
+              <button
+                class="copy-btn"
+                @click="copyMealFromYesterday(meal.mealType)"
+                title="Copy from yesterday"
+              >
+                <Icon name="mdi:content-copy" size="18" />
+              </button>
               <button class="edit-btn" @click="openEditMealModal(meal)">
                 <Icon name="mdi:pencil-outline" size="18" />
               </button>
-              <button class="delete-btn" @click="deleteMeal(meal.id)">
+              <button class="delete-btn" @click="deleteMeal(meal)">
                 <Icon name="mdi:delete-outline" size="18" />
               </button>
             </div>
@@ -832,6 +1265,13 @@ const deleteMeal = async (mealId: number) => {
               <span class="food-name">{{ food.food_name }}</span>
               <span class="food-portion">{{ food.servings }}x</span>
               <span class="food-calories">{{ formatNumber(food.calories) }} cal</span>
+              <button
+                class="remove-food-btn"
+                @click.stop="deleteFoodFromMeal(food, meal.mealType)"
+                title="Remove food"
+              >
+                <Icon name="mdi:close" size="14" />
+              </button>
             </div>
           </div>
 
@@ -852,7 +1292,7 @@ const deleteMeal = async (mealId: number) => {
 
       <!-- Add Meal Modal -->
       <div v-if="showAddMealModal" class="modal-overlay" @click.self="showAddMealModal = false">
-        <div class="modal">
+        <div class="modal modal-lg">
           <div class="modal-header">
             <h2>Log Meal</h2>
             <button class="close-btn" @click="showAddMealModal = false">
@@ -874,20 +1314,6 @@ const deleteMeal = async (mealId: number) => {
             <div class="tabs">
               <button
                 class="tab"
-                :class="{ active: activeTab === 'search' }"
-                @click="activeTab = 'search'"
-              >
-                Search Foods
-              </button>
-              <button
-                class="tab"
-                :class="{ active: activeTab === 'saved' }"
-                @click="activeTab = 'saved'"
-              >
-                Recipes
-              </button>
-              <button
-                class="tab"
                 :class="{ active: activeTab === 'recent' }"
                 @click="activeTab = 'recent'"
               >
@@ -895,10 +1321,17 @@ const deleteMeal = async (mealId: number) => {
               </button>
               <button
                 class="tab"
-                :class="{ active: activeTab === 'custom' }"
-                @click="activeTab = 'custom'"
+                :class="{ active: activeTab === 'myFoods' }"
+                @click="activeTab = 'myFoods'"
               >
                 My Foods
+              </button>
+              <button
+                class="tab"
+                :class="{ active: activeTab === 'search' }"
+                @click="activeTab = 'search'"
+              >
+                Search
               </button>
             </div>
 
@@ -935,45 +1368,6 @@ const deleteMeal = async (mealId: number) => {
               </div>
             </div>
 
-            <!-- Saved Meals Tab -->
-            <div v-if="activeTab === 'saved'" class="tab-content">
-              <div class="saved-header">
-                <BaseButton variant="secondary" size="sm" @click="showCreateRecipeModal = true">
-                  <Icon name="mdi:plus" size="16" />
-                  Create Recipe
-                </BaseButton>
-              </div>
-              <div v-if="savedMeals.length === 0" class="empty-state">
-                <p>No saved meals yet.</p>
-                <p class="hint">Generate a meal plan or create custom recipes to see them here.</p>
-              </div>
-              <div v-else class="saved-meals-list">
-                <div
-                  v-for="meal in savedMeals"
-                  :key="meal.id"
-                  class="saved-meal-item"
-                  @click="addSavedMeal(meal)"
-                >
-                  <div class="meal-info">
-                    <span class="meal-name">{{ meal.name }}</span>
-                    <span class="meal-type">{{ meal.meal_type }}</span>
-                  </div>
-                  <div class="meal-macros">
-                    <span>{{ meal.calories }} cal</span>
-                    <span class="macro">Protein {{ meal.protein }}g</span>
-                    <span class="macro">Carbs {{ meal.carbs }}g</span>
-                    <span class="macro">Fat {{ meal.fat }}g</span>
-                  </div>
-                  <button class="edit-meal-btn" @click.stop="openEditRecipe(meal)">
-                    <Icon name="mdi:pencil-outline" size="16" />
-                  </button>
-                  <button class="delete-meal-btn" @click.stop="deleteSavedMeal(meal.id)">
-                    <Icon name="mdi:delete-outline" size="16" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
             <!-- Recent Tab -->
             <div v-if="activeTab === 'recent'" class="tab-content">
               <div v-if="recentFoods.length === 0" class="empty-state">
@@ -1002,35 +1396,55 @@ const deleteMeal = async (mealId: number) => {
             </div>
 
             <!-- My Foods Tab -->
-            <div v-if="activeTab === 'custom'" class="tab-content">
-              <div class="saved-header">
-                <BaseButton variant="secondary" size="sm" @click="showCreateFoodModal = true">
-                  <Icon name="mdi:plus" size="16" />
-                  Add Food
-                </BaseButton>
+            <div v-if="activeTab === 'myFoods'" class="tab-content">
+              <div class="saved-header my-foods-header">
+                <div class="header-buttons">
+                  <BaseButton variant="secondary" size="sm" @click="showCreateRecipeModal = true">
+                    <Icon name="mdi:plus" size="16" />
+                    Create Recipe
+                  </BaseButton>
+                  <BaseButton variant="secondary" size="sm" @click="showCreateFoodModal = true">
+                    <Icon name="mdi:plus" size="16" />
+                    Add Food
+                  </BaseButton>
+                </div>
+                <input
+                  v-model="myFoodsSearch"
+                  type="text"
+                  placeholder="Search foods..."
+                  class="search-input"
+                />
               </div>
-              <div v-if="customFoods.length === 0" class="empty-state">
-                <p>No custom foods yet.</p>
-                <p class="hint">Add your own foods for quick logging.</p>
+              <div v-if="myFoods.length === 0" class="empty-state">
+                <p>No saved foods yet.</p>
+                <p class="hint">Add custom foods or save recipes for quick logging.</p>
               </div>
               <div v-else class="recent-foods-list">
                 <div
-                  v-for="food in customFoods"
-                  :key="food.id"
+                  v-for="food in filteredMyFoods"
+                  :key="food.id + food.type"
                   class="recent-food-item"
-                  @click="addCustomFood(food)"
+                  @click="addMyFood(food)"
                 >
                   <div class="food-info">
                     <span class="food-name">{{ food.name }}</span>
-                    <span class="food-meta"
-                      >{{ food.serving_size }}{{ food.serving_unit }} per serving</span
-                    >
+                    <span class="food-meta">{{
+                      food.type === 'recipe' ? 'Recipe' : `${food.serving_size}${food.serving_unit}`
+                    }}</span>
                   </div>
                   <div class="food-macros">
                     <span>{{ food.calories }} cal</span>
                     <span class="macro">Protein {{ food.protein }}g</span>
                     <span class="macro">Carbs {{ food.carbs }}g</span>
                     <span class="macro">Fat {{ food.fat }}g</span>
+                  </div>
+                  <div class="item-actions">
+                    <button class="edit-btn" @click.stop="openEditMyFood(food)">
+                      <Icon name="mdi:pencil-outline" size="16" />
+                    </button>
+                    <button class="delete-btn" @click.stop="deleteMyFood(food)">
+                      <Icon name="mdi:delete-outline" size="16" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1077,7 +1491,7 @@ const deleteMeal = async (mealId: number) => {
         class="modal-overlay"
         @click.self="showCreateRecipeModal = false"
       >
-        <div class="modal">
+        <div class="modal modal-lg">
           <div class="modal-header">
             <h2>Create Custom Recipe</h2>
             <button class="close-btn" @click="showCreateRecipeModal = false">
@@ -1103,23 +1517,180 @@ const deleteMeal = async (mealId: number) => {
             <div class="form-row">
               <div class="form-group">
                 <label>Calories</label>
-                <input v-model="newRecipe.calories" type="number" placeholder="0" />
+                <input v-model="newRecipe.calories" type="number" placeholder="Auto" />
               </div>
               <div class="form-group">
                 <label>Protein (g)</label>
-                <input v-model="newRecipe.protein" type="number" placeholder="0" />
+                <input v-model="newRecipe.protein" type="number" placeholder="Auto" />
               </div>
-            </div>
-
-            <div class="form-row">
               <div class="form-group">
                 <label>Carbs (g)</label>
-                <input v-model="newRecipe.carbs" type="number" placeholder="0" />
+                <input v-model="newRecipe.carbs" type="number" placeholder="Auto" />
               </div>
               <div class="form-group">
                 <label>Fat (g)</label>
-                <input v-model="newRecipe.fat" type="number" placeholder="0" />
+                <input v-model="newRecipe.fat" type="number" placeholder="Auto" />
               </div>
+            </div>
+
+            <div class="recipe-ingredients-section">
+              <label>Ingredients</label>
+              <div class="ingredient-search-row">
+                <input
+                  v-model="recipeIngredientSearch"
+                  type="text"
+                  placeholder="Search foods or recipes..."
+                  class="ingredient-search-input"
+                />
+                <BaseButton variant="secondary" size="sm" @click="showCustomIngredientForm = true">
+                  Custom
+                </BaseButton>
+              </div>
+
+              <div
+                v-if="
+                  recipeIngredientSearch &&
+                  (recipeIngredientResults.foods.length > 0 ||
+                    recipeIngredientResults.recipes.length > 0 ||
+                    (recipeIngredientResults.foods.length === 0 &&
+                      recipeIngredientResults.recipes.length === 0))
+                "
+                class="ingredient-search-results"
+              >
+                <div v-if="recipeIngredientResults.foods.length > 0" class="result-group">
+                  <div class="result-group-title">My Foods</div>
+                  <div
+                    v-for="food in recipeIngredientResults.foods"
+                    :key="'food-' + food.id"
+                    class="result-item"
+                    @click="addIngredientToRecipe(food, 'new', newRecipe.ingredients)"
+                  >
+                    <span class="result-name">{{ food.name }}</span>
+                    <span class="result-macros">{{ food.calories }} cal</span>
+                  </div>
+                </div>
+                <div v-if="recipeIngredientResults.recipes.length > 0" class="result-group">
+                  <div class="result-group-title">Recipes</div>
+                  <div
+                    v-for="recipe in recipeIngredientResults.recipes"
+                    :key="'recipe-' + recipe.id"
+                    class="result-item"
+                    @click="addIngredientToRecipe(recipe, 'new', newRecipe.ingredients)"
+                  >
+                    <span class="result-name">{{ recipe.name }}</span>
+                    <span class="result-macros">{{ recipe.calories }} cal</span>
+                    <span v-if="recipe.has_ingredients" class="result-badge">Has ingredients</span>
+                  </div>
+                </div>
+                <div
+                  v-if="
+                    recipeIngredientResults.foods.length === 0 &&
+                    recipeIngredientResults.recipes.length === 0
+                  "
+                  class="result-group"
+                >
+                  <div
+                    class="result-item add-custom-result"
+                    @click="addCustomFromSearch('new', newRecipe.ingredients)"
+                  >
+                    <span class="result-name">Add "{{ recipeIngredientSearch }}" as custom</span>
+                    <span class="result-macros">→</span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="showCustomIngredientForm" class="custom-ingredient-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Name</label>
+                    <input
+                      v-model="newCustomIngredient.food_name"
+                      type="text"
+                      placeholder="Ingredient name"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Servings</label>
+                    <input v-model="newCustomIngredient.servings" type="number" placeholder="1" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Calories</label>
+                    <input v-model="newCustomIngredient.calories" type="number" placeholder="0" />
+                  </div>
+                  <div class="form-group">
+                    <label>Protein</label>
+                    <input v-model="newCustomIngredient.protein" type="number" placeholder="0" />
+                  </div>
+                  <div class="form-group">
+                    <label>Carbs</label>
+                    <input v-model="newCustomIngredient.carbs" type="number" placeholder="0" />
+                  </div>
+                  <div class="form-group">
+                    <label>Fat</label>
+                    <input v-model="newCustomIngredient.fat" type="number" placeholder="0" />
+                  </div>
+                </div>
+                <div class="custom-form-actions">
+                  <BaseButton
+                    variant="secondary"
+                    size="sm"
+                    @click="showCustomIngredientForm = false"
+                    >Cancel</BaseButton
+                  >
+                  <BaseButton
+                    variant="primary"
+                    size="sm"
+                    @click="addCustomIngredientToRecipe('new', newRecipe.ingredients)"
+                    >Add</BaseButton
+                  >
+                </div>
+              </div>
+
+              <div v-if="newRecipe.ingredients.length > 0" class="ingredients-list">
+                <div
+                  v-for="(ing, index) in newRecipe.ingredients"
+                  :key="index"
+                  class="ingredient-item"
+                >
+                  <div class="ingredient-info">
+                    <span class="ingredient-name">
+                      {{ ing.food_name }}
+                      <span v-if="ing.type === 'recipe'" class="ingredient-badge">Recipe</span>
+                    </span>
+                    <div class="ingredient-macros">
+                      {{ ((ing.calories || 0) * ing.servings).toFixed(0) }} cal P:
+                      {{ ((ing.protein || 0) * ing.servings).toFixed(0) }}g C:
+                      {{ ((ing.carbs || 0) * ing.servings).toFixed(0) }}g F:
+                      {{ ((ing.fat || 0) * ing.servings).toFixed(0) }}g
+                    </div>
+                  </div>
+                  <div class="ingredient-controls">
+                    <input
+                      v-model.number="ing.servings"
+                      type="number"
+                      min="0.25"
+                      step="0.25"
+                      class="servings-input"
+                    />
+                    <button
+                      class="remove-btn"
+                      @click="removeIngredientFromRecipe(index, newRecipe.ingredients)"
+                    >
+                      <Icon name="mdi:close" size="16" />
+                    </button>
+                  </div>
+                </div>
+                <div class="ingredients-total">
+                  <strong>Total:</strong>
+                  {{ calculatedRecipeMacros(newRecipe.ingredients).calories.toFixed(0) }} cal | P:
+                  {{ calculatedRecipeMacros(newRecipe.ingredients).protein.toFixed(0) }}g | C:
+                  {{ calculatedRecipeMacros(newRecipe.ingredients).carbs.toFixed(0) }}g | F:
+                  {{ calculatedRecipeMacros(newRecipe.ingredients).fat.toFixed(0) }}g
+                </div>
+              </div>
+              <div v-else class="ingredients-empty">No ingredients added yet</div>
             </div>
 
             <div class="form-group">
@@ -1153,7 +1724,7 @@ const deleteMeal = async (mealId: number) => {
         class="modal-overlay"
         @click.self="showEditRecipeModal = false"
       >
-        <div class="modal">
+        <div class="modal modal-lg">
           <div class="modal-header">
             <h2>Edit Recipe</h2>
             <button class="close-btn" @click="showEditRecipeModal = false">
@@ -1179,23 +1750,180 @@ const deleteMeal = async (mealId: number) => {
             <div class="form-row">
               <div class="form-group">
                 <label>Calories</label>
-                <input v-model="editRecipe.calories" type="number" placeholder="0" />
+                <input v-model="editRecipe.calories" type="number" placeholder="Auto" />
               </div>
               <div class="form-group">
                 <label>Protein (g)</label>
-                <input v-model="editRecipe.protein" type="number" placeholder="0" />
+                <input v-model="editRecipe.protein" type="number" placeholder="Auto" />
               </div>
-            </div>
-
-            <div class="form-row">
               <div class="form-group">
                 <label>Carbs (g)</label>
-                <input v-model="editRecipe.carbs" type="number" placeholder="0" />
+                <input v-model="editRecipe.carbs" type="number" placeholder="Auto" />
               </div>
               <div class="form-group">
                 <label>Fat (g)</label>
-                <input v-model="editRecipe.fat" type="number" placeholder="0" />
+                <input v-model="editRecipe.fat" type="number" placeholder="Auto" />
               </div>
+            </div>
+
+            <div class="recipe-ingredients-section">
+              <label>Ingredients</label>
+              <div class="ingredient-search-row">
+                <input
+                  v-model="recipeIngredientSearch"
+                  type="text"
+                  placeholder="Search foods or recipes..."
+                  class="ingredient-search-input"
+                />
+                <BaseButton variant="secondary" size="sm" @click="showCustomIngredientForm = true">
+                  Custom
+                </BaseButton>
+              </div>
+
+              <div
+                v-if="
+                  recipeIngredientSearch &&
+                  (recipeIngredientResults.foods.length > 0 ||
+                    recipeIngredientResults.recipes.length > 0 ||
+                    (recipeIngredientResults.foods.length === 0 &&
+                      recipeIngredientResults.recipes.length === 0))
+                "
+                class="ingredient-search-results"
+              >
+                <div v-if="recipeIngredientResults.foods.length > 0" class="result-group">
+                  <div class="result-group-title">My Foods</div>
+                  <div
+                    v-for="food in recipeIngredientResults.foods"
+                    :key="'food-' + food.id"
+                    class="result-item"
+                    @click="addIngredientToRecipe(food, 'edit', editRecipe.ingredients)"
+                  >
+                    <span class="result-name">{{ food.name }}</span>
+                    <span class="result-macros">{{ food.calories }} cal</span>
+                  </div>
+                </div>
+                <div v-if="recipeIngredientResults.recipes.length > 0" class="result-group">
+                  <div class="result-group-title">Recipes</div>
+                  <div
+                    v-for="recipe in recipeIngredientResults.recipes"
+                    :key="'recipe-' + recipe.id"
+                    class="result-item"
+                    @click="addIngredientToRecipe(recipe, 'edit', editRecipe.ingredients)"
+                  >
+                    <span class="result-name">{{ recipe.name }}</span>
+                    <span class="result-macros">{{ recipe.calories }} cal</span>
+                    <span v-if="recipe.has_ingredients" class="result-badge">Has ingredients</span>
+                  </div>
+                </div>
+                <div
+                  v-if="
+                    recipeIngredientResults.foods.length === 0 &&
+                    recipeIngredientResults.recipes.length === 0
+                  "
+                  class="result-group"
+                >
+                  <div
+                    class="result-item add-custom-result"
+                    @click="addCustomFromSearch('edit', editRecipe.ingredients)"
+                  >
+                    <span class="result-name">Add "{{ recipeIngredientSearch }}" as custom</span>
+                    <span class="result-macros">→</span>
+                  </div>
+                </div>
+              </div>
+
+              <div v-if="showCustomIngredientForm" class="custom-ingredient-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Name</label>
+                    <input
+                      v-model="newCustomIngredient.food_name"
+                      type="text"
+                      placeholder="Ingredient name"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Servings</label>
+                    <input v-model="newCustomIngredient.servings" type="number" placeholder="1" />
+                  </div>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label>Calories</label>
+                    <input v-model="newCustomIngredient.calories" type="number" placeholder="0" />
+                  </div>
+                  <div class="form-group">
+                    <label>Protein</label>
+                    <input v-model="newCustomIngredient.protein" type="number" placeholder="0" />
+                  </div>
+                  <div class="form-group">
+                    <label>Carbs</label>
+                    <input v-model="newCustomIngredient.carbs" type="number" placeholder="0" />
+                  </div>
+                  <div class="form-group">
+                    <label>Fat</label>
+                    <input v-model="newCustomIngredient.fat" type="number" placeholder="0" />
+                  </div>
+                </div>
+                <div class="custom-form-actions">
+                  <BaseButton
+                    variant="secondary"
+                    size="sm"
+                    @click="showCustomIngredientForm = false"
+                    >Cancel</BaseButton
+                  >
+                  <BaseButton
+                    variant="primary"
+                    size="sm"
+                    @click="addCustomIngredientToRecipe('edit', editRecipe.ingredients)"
+                    >Add</BaseButton
+                  >
+                </div>
+              </div>
+
+              <div v-if="editRecipe.ingredients.length > 0" class="ingredients-list">
+                <div
+                  v-for="(ing, index) in editRecipe.ingredients"
+                  :key="index"
+                  class="ingredient-item"
+                >
+                  <div class="ingredient-info">
+                    <span class="ingredient-name">
+                      {{ ing.food_name }}
+                      <span v-if="ing.type === 'recipe'" class="ingredient-badge">Recipe</span>
+                    </span>
+                    <div class="ingredient-macros">
+                      {{ ((ing.calories || 0) * ing.servings).toFixed(0) }} cal P:
+                      {{ ((ing.protein || 0) * ing.servings).toFixed(0) }}g C:
+                      {{ ((ing.carbs || 0) * ing.servings).toFixed(0) }}g F:
+                      {{ ((ing.fat || 0) * ing.servings).toFixed(0) }}g
+                    </div>
+                  </div>
+                  <div class="ingredient-controls">
+                    <input
+                      v-model.number="ing.servings"
+                      type="number"
+                      min="0.25"
+                      step="0.25"
+                      class="servings-input"
+                    />
+                    <button
+                      class="remove-btn"
+                      @click="removeIngredientFromRecipe(index, editRecipe.ingredients)"
+                    >
+                      <Icon name="mdi:close" size="16" />
+                    </button>
+                  </div>
+                </div>
+                <div class="ingredients-total">
+                  <strong>Total:</strong>
+                  {{ calculatedRecipeMacros(editRecipe.ingredients).calories.toFixed(0) }} cal | P:
+                  {{ calculatedRecipeMacros(editRecipe.ingredients).protein.toFixed(0) }}g | C:
+                  {{ calculatedRecipeMacros(editRecipe.ingredients).carbs.toFixed(0) }}g | F:
+                  {{ calculatedRecipeMacros(editRecipe.ingredients).fat.toFixed(0) }}g
+                </div>
+              </div>
+              <div v-else class="ingredients-empty">No ingredients added yet</div>
             </div>
 
             <div class="form-group">
@@ -1212,7 +1940,7 @@ const deleteMeal = async (mealId: number) => {
             <BaseButton variant="secondary" @click="showEditRecipeModal = false">Cancel</BaseButton>
             <BaseButton
               variant="primary"
-              @click="saveEditedRecipe"
+              @click.prevent="saveEditedRecipe"
               :disabled="isUpdatingRecipe || !editRecipe.name"
             >
               {{ isUpdatingRecipe ? 'Saving...' : 'Save Changes' }}
@@ -1221,16 +1949,57 @@ const deleteMeal = async (mealId: number) => {
         </div>
       </div>
 
-      <!-- Create Custom Food Modal -->
+      <!-- Delete Confirmation Modal -->
       <div
-        v-if="showCreateFoodModal"
+        v-if="showDeleteConfirmModal"
         class="modal-overlay"
-        @click.self="showCreateFoodModal = false"
+        @click.self="showDeleteConfirmModal = false"
       >
         <div class="modal">
           <div class="modal-header">
-            <h2>Add Custom Food</h2>
-            <button class="close-btn" @click="showCreateFoodModal = false">
+            <h2>Delete {{ deleteConfirmItem?.type === 'recipe' ? 'Recipe' : 'Food' }}</h2>
+            <button class="close-btn" @click="showDeleteConfirmModal = false">
+              <Icon name="mdi:close" size="24" />
+            </button>
+          </div>
+          <div class="modal-body">
+            <p>
+              Are you sure you want to delete this {{ deleteConfirmItem?.type }}? This action cannot
+              be undone.
+            </p>
+          </div>
+          <div class="modal-footer">
+            <BaseButton variant="secondary" @click="showDeleteConfirmModal = false">
+              Cancel
+            </BaseButton>
+            <BaseButton variant="primary" @click="confirmDelete"> Delete </BaseButton>
+          </div>
+        </div>
+      </div>
+
+      <!-- Create/Edit Custom Food Modal -->
+      <div
+        v-if="showCreateFoodModal"
+        class="modal-overlay"
+        @click.self="
+          () => {
+            showCreateFoodModal = false
+            editingFood = null
+          }
+        "
+      >
+        <div class="modal modal-lg">
+          <div class="modal-header">
+            <h2>{{ editingFood ? 'Edit Food' : 'Add Custom Food' }}</h2>
+            <button
+              class="close-btn"
+              @click="
+                () => {
+                  showCreateFoodModal = false
+                  editingFood = null
+                }
+              "
+            >
               <Icon name="mdi:close" size="24" />
             </button>
           </div>
@@ -1289,13 +2058,30 @@ const deleteMeal = async (mealId: number) => {
           </div>
 
           <div class="modal-footer">
-            <BaseButton variant="secondary" @click="showCreateFoodModal = false">Cancel</BaseButton>
+            <BaseButton
+              variant="secondary"
+              @click="
+                () => {
+                  showCreateFoodModal = false
+                  editingFood = null
+                }
+              "
+              >Cancel</BaseButton
+            >
             <BaseButton
               variant="primary"
-              @click="createCustomFood"
+              @click="editingFood ? saveEditedCustomFood() : createCustomFood()"
               :disabled="isCreatingFood || !newCustomFood.name"
             >
-              {{ isCreatingFood ? 'Creating...' : 'Add Food' }}
+              {{
+                isCreatingFood
+                  ? editingFood
+                    ? 'Saving...'
+                    : 'Creating...'
+                  : editingFood
+                    ? 'Save Changes'
+                    : 'Add Food'
+              }}
             </BaseButton>
           </div>
         </div>
@@ -1610,6 +2396,18 @@ const deleteMeal = async (mealId: number) => {
   padding: 4px;
 }
 
+.copy-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.copy-btn:hover {
+  color: var(--color-accent);
+}
+
 .delete-btn:hover {
   color: var(--color-error);
 }
@@ -1628,6 +2426,32 @@ const deleteMeal = async (mealId: number) => {
   padding: 8px 12px;
   background: var(--color-bg-elevated);
   border-radius: 6px;
+}
+
+.remove-food-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0;
+  transition:
+    opacity 0.15s,
+    background 0.15s;
+}
+
+.food-item:hover .remove-food-btn {
+  opacity: 1;
+}
+
+.remove-food-btn:hover {
+  background: var(--color-error-bg);
+  color: var(--color-error);
 }
 
 .food-name {
@@ -1903,6 +2727,27 @@ const deleteMeal = async (mealId: number) => {
   border-top: 1px solid var(--color-border);
 }
 
+.quick-add-food-info {
+  text-align: center;
+  padding: 16px;
+  background: var(--color-bg-elevated);
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.quick-add-food-name {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.quick-add-food-macros {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
 .tabs {
   display: flex;
   gap: 8px;
@@ -2085,6 +2930,33 @@ const deleteMeal = async (mealId: number) => {
   margin-bottom: 16px;
 }
 
+.my-foods-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.search-input {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+  width: 180px;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
 .form-row {
   display: flex;
   gap: 16px;
@@ -2108,5 +2980,212 @@ textarea {
 textarea:focus {
   outline: none;
   border-color: var(--color-accent);
+}
+
+.recipe-ingredients-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.recipe-ingredients-section > label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--color-text);
+}
+
+.ingredient-search-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ingredient-search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.ingredient-search-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.ingredient-search-results {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 12px;
+}
+
+.result-group {
+  padding: 8px;
+}
+
+.result-group:not(:last-child) {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.result-group-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.result-item:hover {
+  background: var(--color-bg-hover);
+}
+
+.add-custom-result {
+  background: var(--color-primary);
+  color: white;
+}
+
+.add-custom-result:hover {
+  background: var(--color-primary-hover, var(--color-primary));
+  opacity: 0.9;
+}
+
+.add-custom-result .result-name {
+  color: white;
+}
+
+.add-custom-result .result-macros {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.result-name {
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.result-macros {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.result-badge {
+  font-size: 10px;
+  background: var(--color-primary);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+.custom-ingredient-form {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+
+.custom-ingredient-form .form-row {
+  margin-bottom: 8px;
+}
+
+.custom-form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ingredients-list {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.ingredient-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.ingredient-info {
+  flex: 1;
+}
+
+.ingredient-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ingredient-badge {
+  font-size: 10px;
+  background: var(--color-primary);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.ingredient-macros {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 4px;
+}
+
+.ingredient-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.servings-input {
+  width: 60px;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 14px;
+  text-align: center;
+}
+
+.ingredients-total {
+  text-align: right;
+  font-size: 14px;
+  color: var(--color-text);
+  padding: 12px;
+  background: var(--color-bg);
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.ingredients-empty {
+  text-align: center;
+  padding: 20px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  background: var(--color-bg);
+  border-radius: 8px;
 }
 </style>

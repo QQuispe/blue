@@ -1,27 +1,26 @@
 import { defineEventHandler, getRequestURL, getMethod, readBody, createError } from 'h3'
 import { requireAuth } from '~/server/utils/auth'
 import { serverLogger } from '~/server/utils/logger'
-import { getCustomFoods, createCustomFood, deleteCustomFood } from '~/server/db/queries/health'
+import { getCustomFoods, createCustomFood } from '~/server/db/queries/health'
 import type { HealthFoodInput } from '~/types/health'
 
 export default defineEventHandler(async event => {
   const startTime = Date.now()
   const url = getRequestURL(event)
   const method = getMethod(event)
+  const path = url.pathname
 
-  serverLogger.info(`→ ${method} ${url.pathname} - Starting request`)
+  serverLogger.info(`→ ${method} ${path} - Starting request`)
 
   try {
     const user = await requireAuth(event)
-    const path = url.pathname
-    const idMatch = path.match(/\/api\/health\/foods\/custom\/(\d+)/)
-    const id = idMatch ? parseInt(idMatch[1]) : null
 
-    if (method === 'GET' && !id) {
+    // GET /api/health/foods/custom - list custom foods
+    if (method === 'GET') {
       const foods = await getCustomFoods(user.id)
 
       const duration = Date.now() - startTime
-      serverLogger.api(method, url.pathname, 200, duration, user.id)
+      serverLogger.api(method, path, 200, duration, user.id)
 
       return {
         statusCode: 200,
@@ -40,7 +39,8 @@ export default defineEventHandler(async event => {
       }
     }
 
-    if (method === 'POST' && !id) {
+    // POST /api/health/foods/custom - create custom food
+    if (method === 'POST') {
       const body = await readBody<HealthFoodInput>(event)
 
       if (!body.name) {
@@ -53,7 +53,7 @@ export default defineEventHandler(async event => {
       const food = await createCustomFood(user.id, body)
 
       const duration = Date.now() - startTime
-      serverLogger.api(method, url.pathname, 201, duration, user.id)
+      serverLogger.api(method, path, 201, duration, user.id)
 
       return {
         statusCode: 201,
@@ -72,32 +72,13 @@ export default defineEventHandler(async event => {
       }
     }
 
-    if (method === 'DELETE' && id) {
-      const deleted = await deleteCustomFood(id, user.id)
-
-      if (!deleted) {
-        throw createError({
-          statusCode: 404,
-          statusMessage: 'Food not found',
-        })
-      }
-
-      const duration = Date.now() - startTime
-      serverLogger.api(method, url.pathname, 200, duration, user.id)
-
-      return {
-        statusCode: 200,
-        message: 'Food deleted',
-      }
-    }
-
     throw createError({
       statusCode: 405,
       statusMessage: 'Method Not Allowed',
     })
   } catch (error: any) {
     const duration = Date.now() - startTime
-    serverLogger.api(method, url.pathname, error.statusCode || 500, duration)
+    serverLogger.api(method, path, error.statusCode || 500, duration)
     serverLogger.error(`Custom foods request failed: ${error.message}`)
 
     throw createError({

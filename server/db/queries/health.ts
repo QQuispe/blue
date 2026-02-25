@@ -316,6 +316,14 @@ export async function getCustomFoods(userId: number): Promise<HealthFood[]> {
   return result.rows
 }
 
+export async function getFoodByName(userId: number, name: string): Promise<HealthFood | null> {
+  const result = await pool.query(
+    `SELECT * FROM health_foods WHERE user_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1`,
+    [userId, name]
+  )
+  return result.rows[0] || null
+}
+
 export async function createCustomFood(
   userId: number,
   food: Partial<HealthFood>
@@ -346,6 +354,58 @@ export async function deleteCustomFood(foodId: number, userId: number): Promise<
     [foodId, userId]
   )
   return result.rows.length > 0
+}
+
+export async function updateCustomFood(
+  foodId: number,
+  userId: number,
+  food: Partial<HealthFood>
+): Promise<HealthFood | null> {
+  const result = await pool.query(
+    `UPDATE health_foods 
+     SET name = COALESCE($3, name),
+         brand = $4,
+         serving_size = COALESCE($5, serving_size),
+         serving_unit = $6,
+         calories = COALESCE($7, calories),
+         protein = COALESCE($8, protein),
+         carbs = COALESCE($9, carbs),
+         fat = COALESCE($10, fat),
+         fiber = COALESCE($11, fiber)
+     WHERE id = $1 AND user_id = $2 AND source = 'custom'
+     RETURNING *`,
+    [
+      foodId,
+      userId,
+      food.name,
+      food.brand,
+      food.serving_size,
+      food.serving_unit,
+      food.calories,
+      food.protein,
+      food.carbs,
+      food.fat,
+      food.fiber,
+    ]
+  )
+  return result.rows[0]
+}
+
+export async function calculateRecipeMacros(ingredients: any[]) {
+  let calories = 0
+  let protein = 0
+  let carbs = 0
+  let fat = 0
+
+  for (const ing of ingredients) {
+    const servings = ing.servings || 1
+    calories += (ing.calories || 0) * servings
+    protein += (ing.protein || 0) * servings
+    carbs += (ing.carbs || 0) * servings
+    fat += (ing.fat || 0) * servings
+  }
+
+  return { calories, protein, carbs, fat }
 }
 
 export async function createHealthMeal(
@@ -412,6 +472,62 @@ export async function deleteHealthMeal(mealId: number, userId: number): Promise<
     [mealId, userId]
   )
   return !!result.rows[0]
+}
+
+export async function getMealFoodById(mealFoodId: number): Promise<HealthMealFood | null> {
+  const result = await pool.query(
+    `SELECT mf.*, m.user_id 
+     FROM health_meal_foods mf
+     JOIN health_meals m ON mf.meal_id = m.id
+     WHERE mf.id = $1`,
+    [mealFoodId]
+  )
+  return result.rows[0] || null
+}
+
+export async function deleteMealFood(mealFoodId: number, mealId: number, userId: number) {
+  const client = await pool.connect()
+
+  try {
+    await client.query('BEGIN')
+
+    const deleteResult = await client.query(
+      `DELETE FROM health_meal_foods WHERE id = $1 AND meal_id = $2 RETURNING *`,
+      [mealFoodId, mealId]
+    )
+
+    if (deleteResult.rows.length === 0) {
+      throw new Error('Meal food not found')
+    }
+
+    const remainingFoods = await client.query(
+      `SELECT * FROM health_meal_foods WHERE meal_id = $1`,
+      [mealId]
+    )
+
+    let totals = { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    for (const food of remainingFoods.rows) {
+      totals.calories += Number(food.calories) || 0
+      totals.protein += Number(food.protein) || 0
+      totals.carbs += Number(food.carbs) || 0
+      totals.fat += Number(food.fat) || 0
+    }
+
+    await client.query(
+      `UPDATE health_meals 
+       SET total_calories = $1, total_protein = $2, total_carbs = $3, total_fat = $4 
+       WHERE id = $5 AND user_id = $6`,
+      [totals.calories, totals.protein, totals.carbs, totals.fat, mealId, userId]
+    )
+
+    await client.query('COMMIT')
+    return { success: true, deletedFood: deleteResult.rows[0] }
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
+  }
 }
 
 export async function updateHealthMeal(
