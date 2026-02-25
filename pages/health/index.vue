@@ -202,53 +202,6 @@ onMounted(() => {
         <QuickStats :stats="quickStats" />
       </div>
 
-      <!-- Weight Chart -->
-      <Card v-if="dashboard?.weightCheckins?.length">
-        <div class="section-header">
-          <h2>Weight Trend</h2>
-          <div class="chart-filters">
-            <button
-              class="filter-btn"
-              :class="{ active: weightChartRange === '30' }"
-              @click="weightChartRange = '30'"
-            >
-              30 days
-            </button>
-            <button
-              class="filter-btn"
-              :class="{ active: weightChartRange === '90' }"
-              @click="weightChartRange = '90'"
-            >
-              90 days
-            </button>
-            <button
-              class="filter-btn"
-              :class="{ active: weightChartRange === 'all' }"
-              @click="weightChartRange = 'all'"
-            >
-              All
-            </button>
-          </div>
-        </div>
-        <div class="weight-chart">
-          <div class="chart-line">
-            <div
-              v-for="(point, idx) in filteredWeightData"
-              :key="idx"
-              class="chart-point"
-              :style="{ height: getWeightHeight(point.weight) + '%' }"
-              :title="`${point.date}: ${point.weight} lbs`"
-            ></div>
-          </div>
-          <div class="chart-labels">
-            <span v-if="filteredWeightData.length">{{ filteredWeightData[0]?.date }}</span>
-            <span v-if="filteredWeightData.length">{{
-              filteredWeightData[filteredWeightData.length - 1]?.date
-            }}</span>
-          </div>
-        </div>
-      </Card>
-
       <!-- Macros -->
       <Card>
         <div class="section-header">
@@ -312,40 +265,90 @@ onMounted(() => {
         </div>
       </Card>
 
-      <!-- Today's Workout -->
-      <Card>
-        <div class="section-header">
-          <h2>Today's Workout - {{ getDayName() }}</h2>
-          <NuxtLink to="/health/plan" class="view-link">View Plan</NuxtLink>
-        </div>
-
-        <div v-if="dashboard?.todayWorkout" class="workout-content">
-          <div class="workout-title">{{ dashboard.todayWorkout.name }}</div>
-          <div class="workout-type">{{ dashboard.todayWorkout.type }}</div>
-          <div class="exercises-list">
-            <div
-              v-for="(ex, idx) in dashboard.todayWorkout.exercises?.slice(0, 3)"
-              :key="idx"
-              class="exercise-item"
-            >
-              {{ ex.name }} - {{ ex.sets }}x{{ ex.reps }}
-            </div>
-            <div v-if="dashboard.todayWorkout.exercises?.length > 3" class="more">
-              +{{ dashboard.todayWorkout.exercises.length - 3 }} more
+      <!-- Weight Trend & Today's Workout - Side by Side -->
+      <div class="side-by-side-grid">
+        <!-- Weight Trend -->
+        <Card v-if="dashboard?.weightCheckins?.length">
+          <div class="section-header">
+            <h2>Weight Trend</h2>
+            <div class="chart-filters">
+              <button
+                class="filter-btn"
+                :class="{ active: weightChartRange === '30' }"
+                @click="weightChartRange = '30'"
+              >
+                30 days
+              </button>
+              <button
+                class="filter-btn"
+                :class="{ active: weightChartRange === '90' }"
+                @click="weightChartRange = '90'"
+              >
+                90 days
+              </button>
+              <button
+                class="filter-btn"
+                :class="{ active: weightChartRange === 'all' }"
+                @click="weightChartRange = 'all'"
+              >
+                All
+              </button>
             </div>
           </div>
-          <div class="workout-duration">
-            <Icon name="mdi:clock-outline" size="16" />
-            {{ dashboard.todayWorkout.durationMinutes }} min
+          <div class="weight-chart">
+            <div class="chart-line">
+              <div
+                v-for="(point, idx) in filteredWeightData"
+                :key="idx"
+                class="chart-point"
+                :style="{ height: getWeightHeight(point.weight) + '%' }"
+                :title="`${point.date}: ${point.weight} lbs`"
+              ></div>
+            </div>
+            <div class="chart-labels">
+              <span v-if="filteredWeightData.length">{{ filteredWeightData[0]?.date }}</span>
+              <span v-if="filteredWeightData.length">{{
+                filteredWeightData[filteredWeightData.length - 1]?.date
+              }}</span>
+            </div>
           </div>
-        </div>
+        </Card>
 
-        <div v-else class="empty-state rest-day">
-          <Icon name="mdi:bed" size="32" />
-          <p>Rest Day</p>
-          <span>Take it easy today!</span>
-        </div>
-      </Card>
+        <!-- Today's Workout -->
+        <Card>
+          <div class="section-header">
+            <h2>Today's Workout - {{ getDayName() }}</h2>
+            <NuxtLink to="/health/plan" class="view-link">View Plan</NuxtLink>
+          </div>
+
+          <div v-if="dashboard?.todayWorkout" class="workout-content">
+            <div class="workout-title">{{ dashboard.todayWorkout.name }}</div>
+            <div class="workout-type">{{ dashboard.todayWorkout.type }}</div>
+            <div class="exercises-list">
+              <div
+                v-for="(ex, idx) in dashboard.todayWorkout.exercises?.slice(0, 3)"
+                :key="idx"
+                class="exercise-item"
+              >
+                {{ ex.name }} - {{ ex.sets }}x{{ ex.reps }}
+              </div>
+              <div v-if="dashboard.todayWorkout.exercises?.length > 3" class="more">
+                +{{ dashboard.todayWorkout.exercises.length - 3 }} more
+              </div>
+            </div>
+            <div class="workout-duration">
+              <Icon name="mdi:clock-outline" size="16" />
+              {{ dashboard.todayWorkout.durationMinutes }} min
+            </div>
+          </div>
+
+          <div v-else class="empty-state rest-day">
+            <Icon name="mdi:bed" size="32" />
+            <p>Rest Day</p>
+            <span>Take it easy today!</span>
+          </div>
+        </Card>
+      </div>
 
       <!-- Quick Actions -->
       <div class="actions-grid">
@@ -687,11 +690,21 @@ onMounted(() => {
   font-size: 0.875rem;
 }
 
+.side-by-side-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
 @media (max-width: 768px) {
   .skeleton-grid,
   .macros-grid,
   .actions-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .side-by-side-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

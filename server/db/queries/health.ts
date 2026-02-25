@@ -206,9 +206,15 @@ export async function createHealthCheckin(
   userId: number,
   checkin: Partial<HealthCheckin>
 ): Promise<HealthCheckin> {
+  // Parse the date and create a local noon timestamp to avoid timezone issues
+  const dateInput = checkin.checkin_date || new Date().toISOString().split('T')[0]
+  // Create date in local timezone by parsing YYYY-MM-DD and appending local time
+  const localDate = new Date(dateInput + 'T12:00:00')
+  const dateStr = localDate.toISOString().split('T')[0]
+
   const result = await pool.query(
     `INSERT INTO health_checkins (user_id, checkin_date, weight, chest, waist, hips, biceps, thighs, notes)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     VALUES ($1, $2::date, $3, $4, $5, $6, $7, $8, $9)
      ON CONFLICT (user_id, checkin_date) DO UPDATE SET
        weight = COALESCE($3, health_checkins.weight),
        chest = COALESCE($4, health_checkins.chest),
@@ -220,7 +226,7 @@ export async function createHealthCheckin(
      RETURNING *`,
     [
       userId,
-      checkin.checkin_date || new Date().toISOString().split('T')[0],
+      dateStr,
       checkin.weight || null,
       checkin.chest || null,
       checkin.waist || null,
@@ -231,6 +237,51 @@ export async function createHealthCheckin(
     ]
   )
   return result.rows[0]
+}
+
+export async function updateHealthCheckin(
+  checkinId: number,
+  userId: number,
+  checkin: Partial<HealthCheckin>
+): Promise<HealthCheckin | null> {
+  // Parse the date and create a local noon timestamp
+  const dateInput = checkin.checkin_date
+  const dateStr = dateInput ? new Date(dateInput + 'T12:00:00').toISOString().split('T')[0] : null
+
+  const result = await pool.query(
+    `UPDATE health_checkins 
+     SET checkin_date = COALESCE($3::date, checkin_date),
+         weight = COALESCE($4, weight),
+         chest = COALESCE($5, chest),
+         waist = COALESCE($6, waist),
+         hips = COALESCE($7, hips),
+         biceps = COALESCE($8, biceps),
+         thighs = COALESCE($9, thighs),
+         notes = COALESCE($10, notes)
+     WHERE id = $1 AND user_id = $2
+     RETURNING *`,
+    [
+      checkinId,
+      userId,
+      dateStr,
+      checkin.weight,
+      checkin.chest,
+      checkin.waist,
+      checkin.hips,
+      checkin.biceps,
+      checkin.thighs,
+      checkin.notes,
+    ]
+  )
+  return result.rows[0] || null
+}
+
+export async function deleteHealthCheckin(checkinId: number, userId: number): Promise<boolean> {
+  const result = await pool.query(
+    `DELETE FROM health_checkins WHERE id = $1 AND user_id = $2 RETURNING id`,
+    [checkinId, userId]
+  )
+  return !!result.rows[0]
 }
 
 export async function getTodayMeals(userId: number, date?: string): Promise<HealthMeal[]> {

@@ -5,7 +5,7 @@ export const formatCurrency = (amount: number): string => {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    maximumFractionDigits: 0,
   }).format(amount)
 }
 
@@ -37,4 +37,52 @@ export const getCategoryIcon = (category: string): string => {
 
 export const getCategoryColor = (category: string): string => {
   return categoryColors[category] || '#6b7280'
+}
+
+export const toISODateString = (dateValue: string | Date | null | undefined): string => {
+  if (!dateValue) return new Date().toISOString().split('T')[0]
+
+  const date = new Date(dateValue)
+  // Extract just the YYYY-MM-DD part to avoid timezone issues
+  const year = date.getUTCFullYear()
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+export const toHTMLDateString = (dateValue: any): string => {
+  // Handle null, undefined, or empty string
+  if (!dateValue) {
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  }
+
+  // Extract just the date part if there's a timestamp
+  const dateOnly = String(dateValue).split('T')[0]
+
+  // If it's already a YYYY-MM-DD string, return it directly
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
+    return dateOnly
+  }
+
+  // Try to parse the date
+  let date: Date
+  try {
+    date = new Date(dateOnly + 'T12:00:00')
+    if (isNaN(date.getTime())) {
+      const today = new Date()
+      return today.toISOString().split('T')[0]
+    }
+  } catch {
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  }
+
+  // Format as YYYY-MM-DD using local time
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+
+  return `${year}-${month}-${day}`
 }

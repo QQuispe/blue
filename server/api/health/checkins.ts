@@ -4,6 +4,19 @@ import { serverLogger } from '~/server/utils/logger'
 import { getHealthCheckins, createHealthCheckin } from '~/server/db/queries/health'
 import type { HealthCheckinInput } from '~/types/health'
 
+const formatDateField = (dateVal: any): string => {
+  if (!dateVal) return ''
+  // Handle different date formats from PostgreSQL
+  if (typeof dateVal === 'object' && dateVal.toISOString) {
+    return dateVal.toISOString().split('T')[0]
+  }
+  const str = String(dateVal)
+  if (str.includes('T')) {
+    return str.split('T')[0]
+  }
+  return str
+}
+
 export default defineEventHandler(async event => {
   const startTime = Date.now()
   const url = getRequestURL(event)
@@ -23,18 +36,24 @@ export default defineEventHandler(async event => {
 
       return {
         statusCode: 200,
-        checkins: checkins.map(c => ({
-          id: c.id,
-          checkinDate: c.checkin_date,
-          weight: c.weight,
-          chest: c.chest,
-          waist: c.waist,
-          hips: c.hips,
-          biceps: c.biceps,
-          thighs: c.thighs,
-          notes: c.notes,
-          createdAt: c.created_at,
-        })),
+        checkins: checkins.map(c => {
+          // Format date as YYYY-MM-DD to avoid timezone issues
+          const dateVal = c.checkin_date
+          const dateStr = formatDateField(c.checkin_date)
+
+          return {
+            id: c.id,
+            checkinDate: dateStr,
+            weight: c.weight,
+            chest: c.chest,
+            waist: c.waist,
+            hips: c.hips,
+            biceps: c.biceps,
+            thighs: c.thighs,
+            notes: c.notes,
+            createdAt: c.created_at,
+          }
+        }),
       }
     }
 
@@ -53,11 +72,14 @@ export default defineEventHandler(async event => {
       const duration = Date.now() - startTime
       serverLogger.api(method, url.pathname, 201, duration, user.id)
 
+      const dateVal = checkin.checkin_date
+      const dateStr = formatDateField(dateVal)
+
       return {
         statusCode: 201,
         checkin: {
           id: checkin.id,
-          checkinDate: checkin.checkin_date,
+          checkinDate: dateStr,
           weight: checkin.weight,
           chest: checkin.chest,
           waist: checkin.waist,

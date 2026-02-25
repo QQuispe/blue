@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
 import Card from '~/components/Card.vue'
 import MacroCard from '~/components/health/MacroCard.vue'
@@ -1085,6 +1085,74 @@ const updateEditMealFood = (index: number, field: string, value: any) => {
   editingMealFoods.value[index][field] = value
 }
 
+const removeFoodFromEditMeal = (index: number) => {
+  editingMealFoods.value.splice(index, 1)
+}
+
+const moveFoodFromEditMeal = async (index: number, newMealType: string, food: any) => {
+  if (!editingMeal.value || !newMealType) return
+
+  try {
+    const targetMeal = meals.value.find(
+      (m: any) => m.mealType === newMealType && m.mealDate === editingMeal.value.mealDate
+    )
+
+    const foodData = {
+      food_name: food.food_name,
+      food_id: food.food_id,
+      servings: food.servings,
+      calories: food.calories,
+      protein: food.protein,
+      carbs: food.carbs,
+      fat: food.fat,
+    }
+
+    if (targetMeal) {
+      await $fetch(`/api/health/meals/${targetMeal.id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        body: {
+          meal_type: targetMeal.mealType,
+          meal_date: targetMeal.mealDate,
+          total_calories: targetMeal.totalCalories + food.calories,
+          total_protein: targetMeal.totalProtein + food.protein,
+          total_carbs: targetMeal.totalCarbs + food.carbs,
+          total_fat: targetMeal.totalFat + food.fat,
+          foods: [...(targetMeal.foods || []), foodData],
+        },
+      })
+    } else {
+      await $fetch('/api/health/meals', {
+        method: 'POST',
+        credentials: 'include',
+        body: {
+          meal_type: newMealType,
+          meal_date: editingMeal.value.mealDate,
+          foods: [foodData],
+        },
+      })
+    }
+
+    editingMealFoods.value.splice(index, 1)
+    $toast.success(`Moved to ${newMealType}`)
+    fetchMeals()
+  } catch (err: any) {
+    console.error('Failed to move food:', err)
+    $toast.error('Failed to move food')
+  }
+}
+
+const handleMoveFoodInEdit = (index: number, event: Event) => {
+  const target = event.target as HTMLSelectElement
+  moveFoodFromEditMeal(index, target.value, editingMealFoods.value[index])
+  showMoveFoodMenu.value = null
+}
+
+const handleMoveFoodButtonClick = (index: number, newMealType: string, food: any) => {
+  moveFoodFromEditMeal(index, newMealType, food)
+  showMoveFoodMenu.value = null
+}
+
 const saveEditedMeal = async () => {
   if (!editingMeal.value) return
 
@@ -1099,11 +1167,10 @@ const saveEditedMeal = async () => {
   )
 
   try {
-    const response = await fetch('/api/health/meals', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const response = await $fetch(`/api/health/meals/${editingMeal.value.id}`, {
+      method: 'PUT',
       credentials: 'include',
-      body: JSON.stringify({
+      body: {
         meal_type: editingMeal.value.mealType,
         meal_date: editingMeal.value.mealDate,
         total_calories: totals.calories,
@@ -1119,12 +1186,8 @@ const saveEditedMeal = async () => {
           carbs: (Number(f.carbs) || 0) * (Number(f.servings) || 1),
           fat: (Number(f.fat) || 0) * (Number(f.servings) || 1),
         })),
-      }),
+      },
     })
-
-    if (!response.ok) {
-      throw new Error('Failed to update meal')
-    }
 
     $toast.success('Meal updated!')
     showEditMealModal.value = false
@@ -1170,6 +1233,128 @@ const deleteFoodFromMeal = async (food: any, mealType: string) => {
     $toast.error('Failed to remove food')
   }
 }
+
+const changeMealType = async (meal: any, newMealType: string) => {
+  try {
+    await $fetch(`/api/health/meals/${meal.id}`, {
+      method: 'PUT',
+      credentials: 'include',
+      body: {
+        meal_type: newMealType,
+        total_calories: meal.totalCalories,
+        total_protein: meal.totalProtein,
+        total_carbs: meal.totalCarbs,
+        total_fat: meal.totalFat,
+        foods:
+          meal.foods?.map((f: any) => ({
+            food_name: f.food_name,
+            food_id: f.food_id,
+            servings: f.servings,
+            calories: f.calories,
+            protein: f.protein,
+            carbs: f.carbs,
+            fat: f.fat,
+          })) || [],
+      },
+    })
+
+    $toast.success(`Moved to ${newMealType}`)
+    fetchMeals()
+  } catch (err: any) {
+    console.error('Error changing meal type:', err)
+    $toast.error('Failed to move meal')
+  }
+}
+
+const moveFoodToMeal = async (food: any, currentMeal: any, newMealType: string) => {
+  try {
+    // Find if there's an existing meal of the target type on this date
+    const targetMeal = meals.value.find(
+      (m: any) => m.mealType === newMealType && m.mealDate === currentMeal.mealDate
+    )
+
+    if (targetMeal) {
+      // Add food to existing meal
+      await $fetch(`/api/health/meals/${targetMeal.id}`, {
+        method: 'PUT',
+        credentials: 'include',
+        body: {
+          meal_type: targetMeal.mealType,
+          meal_date: targetMeal.mealDate,
+          total_calories: targetMeal.totalCalories + food.calories,
+          total_protein: targetMeal.totalProtein + food.protein,
+          total_carbs: targetMeal.totalCarbs + food.carbs,
+          total_fat: targetMeal.totalFat + food.fat,
+          foods: [
+            ...(targetMeal.foods || []),
+            {
+              food_name: food.food_name,
+              food_id: food.food_id,
+              servings: food.servings,
+              calories: food.calories,
+              protein: food.protein,
+              carbs: food.carbs,
+              fat: food.fat,
+            },
+          ],
+        },
+      })
+    } else {
+      // Create new meal with this food
+      await $fetch('/api/health/meals', {
+        method: 'POST',
+        credentials: 'include',
+        body: {
+          meal_type: newMealType,
+          meal_date: currentMeal.mealDate,
+          foods: [
+            {
+              food_name: food.food_name,
+              food_id: food.food_id,
+              servings: food.servings,
+              calories: food.calories,
+              protein: food.protein,
+              carbs: food.carbs,
+              fat: food.fat,
+            },
+          ],
+        },
+      })
+    }
+
+    // Delete food from current meal
+    await $fetch(`/api/health/meal-foods/${food.id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    })
+
+    $toast.success(`Moved to ${newMealType}`)
+    fetchMeals()
+  } catch (err: any) {
+    console.error('Error moving food:', err)
+    $toast.error('Failed to move food')
+  }
+}
+
+const showMoveFoodMenu = ref<number | null>(null)
+
+const handleMoveFood = (food: any, currentMeal: any, event: Event) => {
+  const target = event.target as HTMLSelectElement
+  moveFoodToMeal(food, currentMeal, target.value)
+  showMoveFoodMenu.value = null
+}
+
+const closeMoveFoodMenu = () => {
+  showMoveFoodMenu.value = null
+}
+
+onMounted(() => {
+  document.addEventListener('click', closeMoveFoodMenu)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeMoveFoodMenu)
+})
 </script>
 
 <template>
@@ -1240,9 +1425,7 @@ const deleteFoodFromMeal = async (food: any, mealType: string) => {
       <div v-else class="meals-list">
         <Card v-for="meal in groupedMeals" :key="meal.mealType" class="meal-card">
           <div class="meal-header">
-            <div>
-              <span class="meal-type">{{ meal.mealType }}</span>
-            </div>
+            <h3 class="meal-type-label">{{ meal.mealType }}</h3>
             <div class="meal-actions">
               <button
                 class="copy-btn"
@@ -1265,13 +1448,6 @@ const deleteFoodFromMeal = async (food: any, mealType: string) => {
               <span class="food-name">{{ food.food_name }}</span>
               <span class="food-portion">{{ food.servings }}x</span>
               <span class="food-calories">{{ formatNumber(food.calories) }} cal</span>
-              <button
-                class="remove-food-btn"
-                @click.stop="deleteFoodFromMeal(food, meal.mealType)"
-                title="Remove food"
-              >
-                <Icon name="mdi:close" size="14" />
-              </button>
             </div>
           </div>
 
@@ -2099,15 +2275,6 @@ const deleteFoodFromMeal = async (food: any, mealType: string) => {
 
           <div class="modal-body">
             <div class="form-group">
-              <label>Meal Type</label>
-              <select v-model="editingMeal.mealType">
-                <option v-for="type in mealTypes" :key="type.value" :value="type.value">
-                  {{ type.label }}
-                </option>
-              </select>
-            </div>
-
-            <div class="form-group">
               <label>Foods</label>
               <div class="edit-foods-list">
                 <div v-for="(food, index) in editingMealFoods" :key="index" class="edit-food-item">
@@ -2152,6 +2319,31 @@ const deleteFoodFromMeal = async (food: any, mealType: string) => {
                         Math.round((Number(food.fat) || 0) * (Number(food.servings) || 1))
                       }}g</span
                     >
+                    <button
+                      class="move-food-btn"
+                      @click.stop="showMoveFoodMenu = showMoveFoodMenu === index ? null : index"
+                      title="Move to another meal"
+                    >
+                      <Icon name="mdi:arrow-right" size="14" />
+                    </button>
+                    <div v-if="showMoveFoodMenu === index" class="move-food-dropdown" @click.stop>
+                      <button
+                        v-for="type in mealTypes"
+                        :key="type.value"
+                        class="move-option"
+                        :disabled="type.value === editingMeal.mealType"
+                        @click="handleMoveFoodButtonClick(index, type.value, food)"
+                      >
+                        {{ type.label }}
+                      </button>
+                    </div>
+                    <button
+                      class="remove-food-edit-btn"
+                      @click="removeFoodFromEditMeal(index)"
+                      title="Remove food"
+                    >
+                      <Icon name="mdi:close" size="14" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2366,6 +2558,41 @@ const deleteFoodFromMeal = async (food: any, mealType: string) => {
   margin-right: 12px;
 }
 
+.meal-type-select {
+  display: flex;
+  align-items: center;
+}
+
+.meal-type-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-transform: capitalize;
+  margin-right: 12px;
+}
+
+.meal-type-dropdown {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  text-transform: capitalize;
+  cursor: pointer;
+  outline: none;
+}
+
+.meal-type-dropdown:hover {
+  border-color: var(--color-primary);
+}
+
+.meal-type-dropdown:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
 .meal-time {
   font-size: 0.875rem;
   color: var(--color-text-muted);
@@ -2426,6 +2653,7 @@ const deleteFoodFromMeal = async (food: any, mealType: string) => {
   padding: 8px 12px;
   background: var(--color-bg-elevated);
   border-radius: 6px;
+  position: relative;
 }
 
 .remove-food-btn {
@@ -2452,6 +2680,86 @@ const deleteFoodFromMeal = async (food: any, mealType: string) => {
 .remove-food-btn:hover {
   background: var(--color-error-bg);
   color: var(--color-error);
+}
+
+.move-food-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: 4px;
+  opacity: 0;
+  transition:
+    opacity 0.15s,
+    background 0.15s;
+}
+
+.food-item:hover .move-food-btn {
+  opacity: 1;
+}
+
+.move-food-btn:hover {
+  background: var(--color-primary-bg);
+  color: var(--color-primary);
+}
+
+.food-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.move-food-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 10;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.move-dropdown {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  outline: none;
+}
+
+.move-option {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.move-option:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+}
+
+.move-option:disabled {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.move-dropdown:focus {
+  border-color: var(--color-primary);
 }
 
 .food-name {
@@ -2589,12 +2897,18 @@ const deleteFoodFromMeal = async (food: any, mealType: string) => {
   font-weight: 500;
 }
 
+.edit-food-item .move-food-btn,
+.edit-food-item .remove-food-edit-btn {
+  opacity: 1;
+}
+
 .food-edit-controls {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 0.875rem;
   color: var(--color-text-secondary);
+  position: relative;
 }
 
 .food-edit-controls .portion-input {
@@ -2605,6 +2919,24 @@ const deleteFoodFromMeal = async (food: any, mealType: string) => {
   background: var(--color-bg);
   color: var(--color-text-primary);
   text-align: center;
+}
+
+.remove-food-edit-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+}
+
+.remove-food-edit-btn:hover {
+  color: var(--color-error);
+  background: var(--color-bg-hover);
 }
 
 .search-results {
