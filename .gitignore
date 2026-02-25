@@ -24,4 +24,9 @@ logs
 .env.*
 !.env.example
 
+# Database backups
+db_backups/
+
+# Development notes
+DEVELOPMENT_ISSUES.md
 
