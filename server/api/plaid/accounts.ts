@@ -59,6 +59,13 @@ export default defineEventHandler(async (event): Promise<AccountsSyncResponse> =
     // Decrypt access token
     const accessToken = decrypt(item.plaid_access_token)
 
+    if (!accessToken) {
+      throw createError({
+        statusCode: 500,
+        statusMessage: 'Failed to decrypt access token',
+      })
+    }
+
     // Fetch accounts from Plaid
     const accountsResponse = await plaidClient.accountsGet({
       access_token: accessToken,
@@ -72,14 +79,14 @@ export default defineEventHandler(async (event): Promise<AccountsSyncResponse> =
         item.id,
         account.account_id,
         account.name,
-        account.mask,
-        account.official_name,
-        account.balances.current,
-        account.balances.available,
-        account.balances.iso_currency_code,
-        account.balances.unofficial_currency_code,
-        account.type,
-        account.subtype
+        account.mask || '',
+        account.official_name || '',
+        account.balances.current || 0,
+        account.balances.available || null,
+        account.balances.iso_currency_code || null,
+        account.balances.unofficial_currency_code || null,
+        account.type as 'depository' | 'credit' | 'loan' | 'investment' | 'other',
+        account.subtype || null
       )
       savedAccounts.push(savedAccount)
     }
@@ -94,7 +101,7 @@ export default defineEventHandler(async (event): Promise<AccountsSyncResponse> =
         name: acc.name,
         type: acc.type,
         current_balance: acc.current_balance,
-        available_balance: acc.available_balance,
+        available_balance: acc.available_balance || 0,
       })),
     }
   } catch (error: any) {

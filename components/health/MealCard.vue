@@ -16,7 +16,7 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   edit: [meal: any]
-  delete: []
+  delete: [meal: any]
   copy: [mealType: string]
 }>()
 
@@ -48,7 +48,7 @@ const formatNumber = (num: number) => {
         <button class="action-btn" @click="emit('edit', props.meal)" title="Edit meal">
           <Icon name="mdi:pencil-outline" size="18" />
         </button>
-        <button class="action-btn delete" @click="emit('delete')" title="Delete meal">
+        <button class="action-btn delete" @click="emit('delete', props.meal)" title="Delete meal">
           <Icon name="mdi:delete-outline" size="18" />
         </button>
       </div>

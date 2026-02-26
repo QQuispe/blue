@@ -15,8 +15,8 @@ interface ItemsResponse {
   items?: Array<{
     id: number
     plaid_item_id: string
-    plaid_institution_id: string
-    institution_name: string
+    plaid_institution_id?: string
+    institution_name?: string
     status: string
     error?: any
     created_at: Date
@@ -44,8 +44,9 @@ export default defineEventHandler(async (event): Promise<ItemsResponse | Disconn
     // Handle POST request (disconnect)
     if (method === 'POST') {
       const itemId = getRouterParam(event, 'id')
+      const parsedItemId = Number(itemId)
 
-      if (!itemId) {
+      if (!itemId || isNaN(parsedItemId)) {
         throw createError({
           statusCode: 400,
           statusMessage: 'Item ID required',
@@ -55,7 +56,7 @@ export default defineEventHandler(async (event): Promise<ItemsResponse | Disconn
       serverLogger.info(`Disconnecting item ${itemId} for user ${user.id}`)
 
       // Get the item
-      const item = await getItemById(itemId)
+      const item = await getItemById(parsedItemId)
 
       if (!item) {
         throw createError({
@@ -74,18 +75,20 @@ export default defineEventHandler(async (event): Promise<ItemsResponse | Disconn
 
       try {
         // Try to unlink from Plaid (optional - don't fail if Plaid errors)
-        const accessToken = decrypt(item.plaid_access_token)
-        await plaidClient.itemRemove({
-          access_token: accessToken,
-        })
-        serverLogger.success('Plaid item removed successfully')
+        const accessToken = decrypt(item.plaid_access_token!)
+        if (accessToken) {
+          await plaidClient.itemRemove({
+            access_token: accessToken,
+          })
+          serverLogger.success('Plaid item removed successfully')
+        }
       } catch (plaidError: any) {
         serverLogger.warn('Plaid unlink failed (item may already be removed)')
         // Continue - we still want to delete from our DB
       }
 
       // Delete from our database
-      await deleteItem(itemId)
+      await deleteItem(parsedItemId)
 
       serverLogger.success(`Item ${itemId} disconnected`)
 
@@ -100,7 +103,7 @@ export default defineEventHandler(async (event): Promise<ItemsResponse | Disconn
     const items = await getItemsByUserId(user.id)
 
     // Get accounts to extract institution names
-    const { getAccountsByUserId } = await import('~/server/db/queries/accounts.ts')
+    const { getAccountsByUserId } = await import('~/server/db/queries/accounts')
     const accounts = await getAccountsByUserId(user.id)
 
     // Create a map of item_id to institution_name

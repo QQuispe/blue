@@ -64,7 +64,7 @@ const syncLiabilities = async () => {
     // Refresh bills list
     await fetchBills()
   } catch (err) {
-    logger.error('BillsCard', 'liabilities_sync_failed', err)
+    logger.error('liabilities_sync_failed', { error: err })
     error.value = err instanceof Error ? err.message : 'Failed to sync liabilities'
   } finally {
     isSyncing.value = false
@@ -91,7 +91,7 @@ const fetchBills = async () => {
 
     logger.component('BillsCard', 'fetch_success', { count: bills.value.length })
   } catch (err) {
-    logger.error('BillsCard', 'fetch_bills_failed', err)
+    logger.error('fetch_bills_failed', { error: err })
     error.value = err instanceof Error ? err.message : 'Unknown error'
   } finally {
     isLoading.value = false
@@ -190,7 +190,7 @@ const ignoreSuggestion = async (suggestionId: number) => {
 
     suggestions.value = suggestions.value.filter(s => s.id !== suggestionId)
   } catch (err) {
-    logger.error('BillsCard', 'ignore_suggestion_failed', err)
+    logger.error('ignore_suggestion_failed', { error: err })
   }
 }
 

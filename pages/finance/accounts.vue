@@ -1,4 +1,5 @@
 <script setup lang="ts">
+declare const Plaid: any
 import { ref, onMounted, computed, type Ref } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
 import { getLogger } from '~/utils/logger'
@@ -152,9 +153,7 @@ const fetchData = async () => {
       items.value = itemsData.items || []
     }
 
-    logger.api('GET', '/api/finance/balance', 200, Date.now() - startTime, {
-      accountCount: accounts.value.length,
-    })
+    logger.info('Fetched balance data', { accountCount: accounts.value.length })
   } catch (err) {
     logger.error('AccountManagement fetch failed', {
       error: err.message,
@@ -258,13 +257,13 @@ const getItemForAccount = account => {
 }
 
 // Get last sync status for account
-const getSyncStatus = account => {
+const getSyncStatus = (account: any) => {
   const item = getItemForAccount(account)
   if (!item) return { status: 'unknown', lastSync: null }
 
   // Calculate time since last sync
-  const lastSync = item.last_synced_at ? new Date(item.last_synced_at) : null
-  const now = new Date()
+  const lastSync = item.last_synced_at ? new Date(item.last_synced_at).getTime() : null
+  const now = Date.now()
 
   if (!lastSync) {
     return { status: 'never', lastSync: null }
@@ -365,7 +364,7 @@ const totalAccounts = computed(() => accounts.value.length)
 const totalInstitutions = computed(() => Object.keys(groupedAccounts.value).length)
 
 onMounted(() => {
-  logger.navigation('dashboard', '/finance/accounts', { via: 'router' })
+  logger.info('Navigation to accounts page', { via: 'router' })
   fetchData()
 })
 </script>

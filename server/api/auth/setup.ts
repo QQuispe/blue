@@ -35,7 +35,7 @@ const SESSION_CONFIG = {
   maxAge: 60 * 60 * 24 * 7, // 7 days
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
+  sameSite: 'strict' as const,
 }
 
 // Check if we're in dev mode
@@ -57,10 +57,10 @@ export default defineEventHandler(async (event): Promise<SetupResponse> => {
 
         // Create session for guest user
         const session: SessionData = {
-          userId: guestUser.id,
-          username: guestUser.username,
-          email: guestUser.email,
-          isAdmin: guestUser.is_admin,
+          userId: guestUser.id!,
+          username: guestUser.username!,
+          email: guestUser.email!,
+          isAdmin: guestUser.is_admin!,
           loggedInAt: new Date().toISOString(),
         }
 
@@ -74,10 +74,10 @@ export default defineEventHandler(async (event): Promise<SetupResponse> => {
           guestCreated: true,
           hasUsers: false,
           user: {
-            id: guestUser.id,
-            username: guestUser.username,
-            email: guestUser.email,
-            isAdmin: guestUser.is_admin,
+            id: guestUser.id!,
+            username: guestUser.username!,
+            email: guestUser.email!,
+            isAdmin: guestUser.is_admin!,
           },
         }
       }
