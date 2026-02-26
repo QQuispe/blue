@@ -20,7 +20,7 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-    command: npm run dev
+    command: npm run dev -- --host
 
   db:
     image: postgres:15-alpine
