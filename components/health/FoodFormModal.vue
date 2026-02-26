@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useFoodSearch, type CustomFood } from '~/composables/health/useFoodSearch'
+import BaseModal from './BaseModal.vue'
 
 interface Props {
   show: boolean

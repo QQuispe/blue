@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useMeals, type Meal, type MealFood, mealTypes } from '~/composables/health/useMeals'
+import BaseModal from './BaseModal.vue'
 
 interface Props {
   show: boolean

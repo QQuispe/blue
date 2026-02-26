@@ -16,10 +16,10 @@ const emit = defineEmits<{
 }>()
 
 const sizeClasses = {
-  sm: 'max-w-sm',
-  md: 'max-w-lg',
-  lg: 'max-w-2xl',
-  xl: 'max-w-4xl',
+  sm: 'max-w-[400px]',
+  md: 'max-w-[500px]',
+  lg: 'max-w-[600px]',
+  xl: 'max-w-[700px]',
 }
 
 const handleOverlayClick = (event: MouseEvent) => {
@@ -52,7 +52,7 @@ onUnmounted(() => {
         @click="handleOverlayClick"
         @keydown.escape="closable && emit('close')"
       >
-        <div class="modal-container" :class="sizeClasses[size]" @click.stop>
+        <div class="modal-container" :class="size" @click.stop>
           <div v-if="title || closable" class="modal-header">
             <slot name="header">
               <h2 class="modal-title">{{ title }}</h2>
@@ -97,10 +97,24 @@ onUnmounted(() => {
   border: 1px solid var(--color-border);
   border-radius: 12px;
   width: 100%;
+  max-width: 500px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modal-container.sm {
+  max-width: 400px;
+}
+.modal-container.md {
+  max-width: 500px;
+}
+.modal-container.lg {
+  max-width: 600px;
+}
+.modal-container.xl {
+  max-width: 700px;
 }
 
 .modal-header {

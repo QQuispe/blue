@@ -57,6 +57,21 @@ export const useHealthDate = () => {
     selectedDate.value = date
   }
 
+  const addDays = (dateStr: string, days: number): string => {
+    const date = new Date(dateStr + 'T00:00:00')
+    date.setDate(date.getDate() + days)
+    return getLocalDateString(date)
+  }
+
+  const formatDisplayDate = (dateStr: string): string => {
+    const date = new Date(dateStr + 'T00:00:00')
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    })
+  }
+
   const formatDateForApi = (date: Date = new Date()) => {
     return getLocalDateString(date)
   }
@@ -69,6 +84,8 @@ export const useHealthDate = () => {
     getYesterdayDate,
     getDateNDaysAgo,
     setSelectedDate,
+    addDays,
+    formatDisplayDate,
     formatDateForApi,
   }
 }

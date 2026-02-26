@@ -18,40 +18,40 @@ export const useHealthMacros = () => {
   const { selectedDate } = useHealthDate()
   const { $toast } = useNuxtApp()
 
-  const targetMacros = ref<MacroTargets>({
+  const targetMacros = useState<MacroTargets>('healthTargetMacros', () => ({
     calories: 2000,
     protein: 120,
     carbs: 200,
     fat: 65,
-  })
+  }))
 
-  const hasCustomTargets = ref(false)
-  const activeGoalId = ref<number | null>(null)
-  const isLoadingTargets = ref(false)
-  const isSavingTargets = ref(false)
+  const hasCustomTargets = useState('healthHasCustomTargets', () => false)
+  const activeGoalId = useState<number | null>('healthActiveGoalId', () => null)
+  const isLoadingTargets = useState('healthIsLoadingTargets', () => false)
+  const isSavingTargets = useState('healthIsSavingTargets', () => false)
 
-  const showEditTargetsModal = ref(false)
-  const editTargets = ref<MacroTargets>({
+  const showEditTargetsModal = useState('healthShowEditTargetsModal', () => false)
+  const editTargets = useState<MacroTargets>('healthEditTargets', () => ({
     calories: 2000,
     protein: 120,
     carbs: 200,
     fat: 65,
-  })
+  }))
 
-  const todaysMacros = ref<MacroTotals>({
+  const todaysMacros = useState<MacroTotals>('healthTodaysMacros', () => ({
     calories: 0,
     protein: 0,
     carbs: 0,
     fat: 0,
-  })
+  }))
 
   const setTodaysMacros = (meals: any[]) => {
     todaysMacros.value = meals.reduce(
       (acc, meal) => ({
-        calories: acc.calories + meal.totalCalories,
-        protein: acc.protein + meal.totalProtein,
-        carbs: acc.carbs + meal.totalCarbs,
-        fat: acc.fat + meal.totalFat,
+        calories: acc.calories + (meal.totalCalories || 0),
+        protein: acc.protein + (meal.totalProtein || 0),
+        carbs: acc.carbs + (meal.totalCarbs || 0),
+        fat: acc.fat + (meal.totalFat || 0),
       }),
       { calories: 0, protein: 0, carbs: 0, fat: 0 }
     )

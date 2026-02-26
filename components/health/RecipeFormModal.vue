@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useFoodSearch } from '~/composables/health/useFoodSearch'
 import { useMeals, mealTypes } from '~/composables/health/useMeals'
+import BaseModal from './BaseModal.vue'
 
 interface Props {
   show: boolean

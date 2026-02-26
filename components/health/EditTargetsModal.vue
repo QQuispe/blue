@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useHealthMacros } from '~/composables/health/useHealthMacros'
+import BaseModal from './BaseModal.vue'
 
 const {
   showEditTargetsModal,
