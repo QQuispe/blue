@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
+import BaseModal from '~/components/health/BaseModal.vue'
 import HealthSetupRequired from '~/components/health/HealthSetupRequired.vue'
 import { useHealthDate } from '~/composables/health/useHealthDate'
 import { useHealthMacros } from '~/composables/health/useHealthMacros'
@@ -37,8 +38,15 @@ const checkSetup = async () => {
 }
 
 // Composables
-const { userTimezone, selectedDate, fetchUserTimezone, getLocalDateString, setSelectedDate } =
-  useHealthDate()
+const {
+  userTimezone,
+  selectedDate,
+  fetchUserTimezone,
+  getLocalDateString,
+  setSelectedDate,
+  addDays,
+  formatDisplayDate,
+} = useHealthDate()
 const { targetMacros, fetchTargetMacros, openEditTargets } = useHealthMacros()
 const { meals, groupedMeals, mealTypes, fetchMeals, copyMealFromYesterday, saveMeal, deleteMeal } =
   useMeals()
@@ -84,6 +92,18 @@ const formatDateForInput = (dateStr: string) => {
 }
 
 // Handlers
+const goToPrevDay = () => {
+  const newDate = addDays(selectedDate.value, -1)
+  setSelectedDate(newDate)
+  fetchMeals()
+}
+
+const goToNextDay = () => {
+  const newDate = addDays(selectedDate.value, 1)
+  setSelectedDate(newDate)
+  fetchMeals()
+}
+
 const handleDateChange = (event: Event) => {
   const value = (event.target as HTMLInputElement).value
   setSelectedDate(value)
@@ -210,7 +230,28 @@ onMounted(async () => {
       <!-- Header -->
       <div class="page-header">
         <div class="date-picker">
-          <input type="date" :value="selectedDate" @input="handleDateChange" />
+          <button class="date-nav-btn" @click="goToPrevDay" aria-label="Previous day">
+            <Icon name="mdi:chevron-left" size="20" />
+          </button>
+          <div class="date-display">
+            <button
+              class="calendar-trigger"
+              @click="($refs.dateInput as HTMLInputElement).showPicker?.()"
+            >
+              <Icon name="mdi:calendar" size="18" />
+              <span class="date-text">{{ formatDisplayDate(selectedDate) }}</span>
+            </button>
+            <input
+              ref="dateInput"
+              type="date"
+              :value="selectedDate"
+              @input="handleDateChange"
+              class="hidden-date-input"
+            />
+          </div>
+          <button class="date-nav-btn" @click="goToNextDay" aria-label="Next day">
+            <Icon name="mdi:chevron-right" size="20" />
+          </button>
         </div>
         <div class="header-actions">
           <BaseButton variant="secondary" size="sm" @click="openEditTargets">
@@ -329,18 +370,73 @@ onMounted(async () => {
   gap: 16px;
 }
 
-.date-picker input {
-  padding: 10px 14px;
+.date-picker {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-bg-card);
   border: 1px solid var(--color-border);
   border-radius: 8px;
-  background: var(--color-bg-card);
-  color: var(--color-text-primary);
-  font-size: 0.9375rem;
+  padding: 4px;
 }
 
-.date-picker input:focus {
-  outline: none;
-  border-color: var(--color-accent);
+.date-picker .date-nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.date-picker .date-nav-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.date-picker .date-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  height: 36px;
+}
+
+.date-picker .calendar-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 4px 4px 4px 0;
+}
+
+.date-picker .calendar-trigger:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.date-picker .date-text {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  min-width: 100px;
+}
+
+.date-picker .hidden-date-input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
 }
 
 .header-actions {
