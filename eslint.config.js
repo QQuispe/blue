@@ -5,7 +5,7 @@ import pluginVue from 'eslint-plugin-vue'
 import eslintConfigPrettier from 'eslint-config-prettier'
 
 export default [
-  { ignores: ['.nuxt', 'node_modules', 'dist'] },
+  { ignores: ['.nuxt', 'node_modules', 'dist', '.output', '.git'] },
   { files: ['**/*.{js,mjs,cjs,ts,vue}'] },
   {
     languageOptions: {
