@@ -12,6 +12,9 @@ const isAdmin = computed(() => auth.user.value?.isAdmin || false)
 
 // Password change
 const showPasswordModal = ref(false)
+const showUsernameModal = ref(false)
+const newUsername = ref('')
+const isChangingUsername = ref(false)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const newPassword = ref('')
@@ -186,6 +189,41 @@ const changePassword = async () => {
   }
 }
 
+// Change username
+const changeUsername = async () => {
+  if (newUsername.value.length < 2 || newUsername.value.length > 14) {
+    $toast.error('Username must be between 2 and 14 characters')
+    return
+  }
+
+  try {
+    isChangingUsername.value = true
+
+    const response = await fetch('/api/user/change-username', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ newUsername: newUsername.value }),
+    })
+
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.message || 'Failed to change username')
+    }
+
+    $toast.success('Username changed successfully')
+    if (auth.user.value) {
+      auth.user.value.username = newUsername.value
+    }
+    showUsernameModal.value = false
+    newUsername.value = ''
+  } catch (err) {
+    $toast.error(err instanceof Error ? err.message : 'Failed to change username')
+  } finally {
+    isChangingUsername.value = false
+  }
+}
+
 // Delete account
 const deleteAccount = async () => {
   if (deleteConfirmation.value !== 'DELETE') {
@@ -278,6 +316,15 @@ onMounted(() => {
           </div>
           <div class="separator"></div>
           <div class="card-content">
+            <div class="action-row">
+              <div class="action-info">
+                <span class="action-title">Change Username</span>
+                <span class="action-desc">Update your username (2-14 characters)</span>
+              </div>
+              <BaseButton variant="secondary" size="sm" @click="showUsernameModal = true">
+                Change
+              </BaseButton>
+            </div>
             <div class="action-row">
               <div class="action-info">
                 <span class="action-title">Change Password</span>
@@ -529,6 +576,36 @@ onMounted(() => {
             <BaseButton variant="secondary" @click="showPasswordModal = false">Cancel</BaseButton>
             <BaseButton variant="primary" @click="changePassword" :loading="isChangingPassword">
               Update Password
+            </BaseButton>
+          </div>
+        </div>
+      </div>
+
+      <!-- Username Change Modal -->
+      <div v-if="showUsernameModal" class="modal-overlay" @click="showUsernameModal = false">
+        <div class="modal" @click.stop>
+          <div class="modal-header">
+            <h3>Change Username</h3>
+            <button class="close-btn" @click="showUsernameModal = false">×</button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>New Username</label>
+              <input
+                v-model="newUsername"
+                type="text"
+                placeholder="Enter new username"
+                maxlength="14"
+              />
+              <small class="input-hint"
+                >2-14 characters, letters, numbers, and underscores only</small
+              >
+            </div>
+          </div>
+          <div class="modal-footer">
+            <BaseButton variant="secondary" @click="showUsernameModal = false">Cancel</BaseButton>
+            <BaseButton variant="primary" @click="changeUsername" :loading="isChangingUsername">
+              Update Username
             </BaseButton>
           </div>
         </div>
@@ -956,5 +1033,12 @@ onMounted(() => {
 
 .toggle-password:hover {
   color: var(--color-text-primary);
+}
+
+.input-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-text-muted);
 }
 </style>

@@ -1,7 +1,7 @@
 import { defineEventHandler, readBody, createError } from 'h3'
 import { requireAuth } from '~/server/utils/auth'
 import { pool } from '~/server/db/index'
-import bcrypt from 'bcryptjs'
+import { hashPassword } from '~/server/db/queries/users'
 
 interface ChangePasswordBody {
   newPassword: string
@@ -27,8 +27,7 @@ export default defineEventHandler(async event => {
       })
     }
 
-    const salt = await bcrypt.genSalt(12)
-    const hashedPassword = await bcrypt.hash(newPassword, salt)
+    const hashedPassword = await hashPassword(newPassword)
 
     await pool.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [
       hashedPassword,
