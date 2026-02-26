@@ -154,7 +154,7 @@ export default defineEventHandler(async event => {
 
         for (const ingredient of body.ingredients) {
           if (ingredient.type === 'custom') {
-            const existingFood = await getFoodByName(user.id, ingredient.food_name)
+            const existingFood = await getFoodByName(ingredient.food_name)
 
             if (existingFood) {
               processedIngredients.push({

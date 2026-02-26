@@ -361,16 +361,15 @@ export async function getRecentFoods(userId: number, limit = 10): Promise<any[]>
 
 export async function getCustomFoods(userId: number): Promise<HealthFood[]> {
   const result = await pool.query(
-    `SELECT * FROM health_foods WHERE user_id = $1 AND source = 'custom' ORDER BY name ASC`,
-    [userId]
+    `SELECT * FROM health_foods WHERE source = 'custom' ORDER BY name ASC`
   )
   return result.rows
 }
 
-export async function getFoodByName(userId: number, name: string): Promise<HealthFood | null> {
+export async function getFoodByName(name: string): Promise<HealthFood | null> {
   const result = await pool.query(
-    `SELECT * FROM health_foods WHERE user_id = $1 AND LOWER(name) = LOWER($2) LIMIT 1`,
-    [userId, name]
+    `SELECT * FROM health_foods WHERE LOWER(name) = LOWER($1) LIMIT 1`,
+    [name]
   )
   return result.rows[0] || null
 }
@@ -399,10 +398,14 @@ export async function createCustomFood(
   return result.rows[0]
 }
 
-export async function deleteCustomFood(foodId: number, userId: number): Promise<boolean> {
+export async function deleteCustomFood(
+  foodId: number,
+  userId: number,
+  isAdmin?: boolean
+): Promise<boolean> {
   const result = await pool.query(
-    `DELETE FROM health_foods WHERE id = $1 AND user_id = $2 AND source = 'custom' RETURNING id`,
-    [foodId, userId]
+    `DELETE FROM health_foods WHERE id = $1 AND (user_id = $2 OR $3 = true) AND source = 'custom' RETURNING id`,
+    [foodId, userId, isAdmin || false]
   )
   return result.rows.length > 0
 }
@@ -410,24 +413,26 @@ export async function deleteCustomFood(foodId: number, userId: number): Promise<
 export async function updateCustomFood(
   foodId: number,
   userId: number,
-  food: Partial<HealthFood>
+  food: Partial<HealthFood>,
+  isAdmin?: boolean
 ): Promise<HealthFood | null> {
   const result = await pool.query(
     `UPDATE health_foods 
-     SET name = COALESCE($3, name),
-         brand = $4,
-         serving_size = COALESCE($5, serving_size),
-         serving_unit = $6,
-         calories = COALESCE($7, calories),
-         protein = COALESCE($8, protein),
-         carbs = COALESCE($9, carbs),
-         fat = COALESCE($10, fat),
-         fiber = COALESCE($11, fiber)
-     WHERE id = $1 AND user_id = $2 AND source = 'custom'
+     SET name = COALESCE($4, name),
+         brand = $5,
+         serving_size = COALESCE($6, serving_size),
+         serving_unit = $7,
+         calories = COALESCE($8, calories),
+         protein = COALESCE($9, protein),
+         carbs = COALESCE($10, carbs),
+         fat = COALESCE($11, fat),
+         fiber = COALESCE($12, fiber)
+     WHERE id = $1 AND (user_id = $2 OR $3 = true) AND source = 'custom'
      RETURNING *`,
     [
       foodId,
       userId,
+      isAdmin || false,
       food.name,
       food.brand,
       food.serving_size,
@@ -439,7 +444,7 @@ export async function updateCustomFood(
       food.fiber,
     ]
   )
-  return result.rows[0]
+  return result.rows[0] || null
 }
 
 export async function calculateRecipeMacros(ingredients: any[]) {
@@ -865,8 +870,7 @@ export async function calculateTargetMacros(
 
 export async function getSavedMeals(userId: number) {
   const result = await pool.query(
-    `SELECT * FROM health_saved_meals WHERE user_id = $1 ORDER BY is_favorite DESC, created_at DESC`,
-    [userId]
+    `SELECT * FROM health_saved_meals ORDER BY is_favorite DESC, created_at DESC`
   )
   return result.rows
 }
@@ -905,7 +909,8 @@ export async function createSavedMeal(userId: number, meal: HealthSavedMealInput
 export async function updateSavedMeal(
   id: number,
   userId: number,
-  meal: Partial<HealthSavedMealInput>
+  meal: Partial<HealthSavedMealInput>,
+  isAdmin?: boolean
 ) {
   const fields: string[] = []
   const values: any[] = []
@@ -955,19 +960,22 @@ export async function updateSavedMeal(
   if (fields.length === 0) return null
 
   fields.push(`updated_at = NOW()`)
+
+  const adminCheck = isAdmin ? ' OR $' + (paramCount + 2) + ' = true' : ''
   values.push(id, userId)
+  if (isAdmin) values.push(isAdmin)
 
   const result = await pool.query(
-    `UPDATE health_saved_meals SET ${fields.join(', ')} WHERE id = $${paramCount++} AND user_id = $${paramCount} RETURNING *`,
+    `UPDATE health_saved_meals SET ${fields.join(', ')} WHERE id = $${paramCount++} AND (user_id = $${paramCount}${adminCheck}) RETURNING *`,
     values
   )
   return result.rows[0]
 }
 
-export async function deleteSavedMeal(id: number, userId: number) {
+export async function deleteSavedMeal(id: number, userId: number, isAdmin?: boolean) {
   const result = await pool.query(
-    `DELETE FROM health_saved_meals WHERE id = $1 AND user_id = $2 RETURNING id`,
-    [id, userId]
+    `DELETE FROM health_saved_meals WHERE id = $1 AND (user_id = $2 OR $3 = true) RETURNING id`,
+    [id, userId, isAdmin || false]
   )
   return result.rows[0]
 }

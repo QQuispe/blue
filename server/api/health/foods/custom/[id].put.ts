@@ -24,7 +24,7 @@ export default defineEventHandler(async event => {
 
     const body = await readBody<HealthFoodInput>(event)
 
-    const updated = await updateCustomFood(foodId, user.id, body)
+    const updated = await updateCustomFood(foodId, user.id, body, user.is_admin)
 
     if (!updated) {
       throw createError({ statusCode: 404, statusMessage: 'Food not found' })

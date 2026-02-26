@@ -96,6 +96,7 @@ export interface Measurements {
 
 export interface HealthFood {
   id: number
+  user_id?: number
   name: string
   brand: string | null
   barcode: string | null

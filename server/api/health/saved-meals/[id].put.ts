@@ -36,7 +36,7 @@ export default defineEventHandler(async event => {
 
       for (const ingredient of body.ingredients) {
         if (ingredient.type === 'custom') {
-          const existingFood = await getFoodByName(user.id, ingredient.food_name)
+          const existingFood = await getFoodByName(ingredient.food_name)
 
           if (existingFood) {
             processedIngredients.push({
@@ -85,7 +85,7 @@ export default defineEventHandler(async event => {
       mealData.fat = calculated.fat
     }
 
-    const meal = await updateSavedMeal(mealId, user.id, mealData)
+    const meal = await updateSavedMeal(mealId, user.id, mealData, user.is_admin)
 
     if (!meal) {
       throw createError({ statusCode: 404, statusMessage: 'Saved meal not found' })

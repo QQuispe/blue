@@ -21,7 +21,7 @@ export default defineEventHandler(async event => {
       throw createError({ statusCode: 400, statusMessage: 'Invalid food ID' })
     }
 
-    const deleted = await deleteCustomFood(foodId, user.id)
+    const deleted = await deleteCustomFood(foodId, user.id, user.is_admin)
 
     if (!deleted) {
       throw createError({ statusCode: 404, statusMessage: 'Food not found' })

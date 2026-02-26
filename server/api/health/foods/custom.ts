@@ -26,6 +26,7 @@ export default defineEventHandler(async event => {
         statusCode: 200,
         foods: foods.map(f => ({
           id: f.id,
+          user_id: f.user_id,
           name: f.name,
           brand: f.brand,
           serving_size: Number(f.serving_size) || 100,

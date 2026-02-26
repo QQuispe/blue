@@ -17,6 +17,7 @@ export interface Food {
 
 export interface CustomFood {
   id: number
+  user_id?: number
   name: string
   brand?: string
   calories: number

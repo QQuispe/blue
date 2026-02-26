@@ -1,5 +1,9 @@
 <script setup lang="ts">
 import { useFoodSearch } from '~/composables/health/useFoodSearch'
+import { useAuth } from '~/composables/useAuth'
+import DeleteConfirmModal from './DeleteConfirmModal.vue'
+import FoodFormModal from './FoodFormModal.vue'
+import RecipeFormModal from './RecipeFormModal.vue'
 
 interface Props {
   selectedMealType?: string
@@ -14,6 +18,8 @@ const emit = defineEmits<{
   'open-food-form': []
   'open-recipe-form': []
 }>()
+
+const { user, isAdmin } = useAuth()
 
 const {
   searchQuery,
@@ -31,6 +37,80 @@ const {
   deleteSavedMeal,
   clearSearch,
 } = useFoodSearch()
+
+// Edit/Delete state
+const showEditModal = ref(false)
+const showDeleteModal = ref(false)
+const itemToEdit = ref<any>(null)
+const itemToDelete = ref<{ id: number; type: 'food' | 'recipe' } | null>(null)
+const isDeleting = ref(false)
+const showRecipeEditModal = ref(false)
+const recipeToEdit = ref<any>(null)
+
+const canEdit = (item: any) => {
+  return item.user_id === user.value?.id || isAdmin.value
+}
+
+const handleEdit = (item: any) => {
+  if (item.type === 'recipe') {
+    recipeToEdit.value = item
+    showRecipeEditModal.value = true
+  } else {
+    itemToEdit.value = item
+    showEditModal.value = true
+  }
+}
+
+const handleDelete = (item: any, type: 'food' | 'recipe') => {
+  itemToDelete.value = { id: item.id, type }
+  showDeleteModal.value = true
+}
+
+const confirmDelete = async () => {
+  if (!itemToDelete.value) return
+
+  isDeleting.value = true
+  try {
+    if (itemToDelete.value.type === 'food') {
+      await deleteCustomFood(itemToDelete.value.id)
+      customFoods.value = customFoods.value.filter(f => f.id !== itemToDelete.value?.id)
+    } else {
+      await deleteSavedMeal(itemToDelete.value.id)
+      savedMeals.value = savedMeals.value.filter(m => m.id !== itemToDelete.value?.id)
+    }
+    showDeleteModal.value = false
+    itemToDelete.value = null
+  } catch (err) {
+    console.error('Delete failed:', err)
+  } finally {
+    isDeleting.value = false
+  }
+}
+
+const closeDeleteModal = () => {
+  showDeleteModal.value = false
+  itemToDelete.value = null
+}
+
+const closeEditModal = () => {
+  showEditModal.value = false
+  itemToEdit.value = null
+}
+
+const closeRecipeEditModal = () => {
+  showRecipeEditModal.value = false
+  recipeToEdit.value = null
+}
+
+const handleFoodSaved = () => {
+  closeEditModal()
+  fetchCustomFoods()
+}
+
+const handleRecipeSaved = () => {
+  closeRecipeEditModal()
+  fetchSavedMeals()
+}
 
 const myFoods = computed(() => {
   const custom = customFoods.value.map(f => ({ ...f, type: 'food' }))
@@ -209,6 +289,14 @@ defineExpose({
             <span class="macro">C {{ food.carbs }}g</span>
             <span class="macro">F {{ food.fat }}g</span>
           </div>
+          <div v-if="canEdit(food)" class="food-actions" @click.stop>
+            <button class="action-btn" @click="handleEdit(food)" title="Edit">
+              <Icon name="mdi:pencil-outline" size="16" />
+            </button>
+            <button class="action-btn delete" @click="handleDelete(food, food.type)" title="Delete">
+              <Icon name="mdi:delete-outline" size="16" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -240,6 +328,32 @@ defineExpose({
         Add to {{ selectedMealType }}
       </button>
     </div>
+
+    <!-- Delete Confirmation Modal -->
+    <DeleteConfirmModal
+      :show="showDeleteModal"
+      title="Delete Item"
+      :message="`Are you sure you want to delete '${itemToDelete?.type === 'food' ? customFoods.find(f => f.id === itemToDelete?.id)?.name : savedMeals.find(m => m.id === itemToDelete?.id)?.name}'?`"
+      :is-loading="isDeleting"
+      @confirm="confirmDelete"
+      @cancel="closeDeleteModal"
+    />
+
+    <!-- Edit Food Modal -->
+    <FoodFormModal
+      :show="showEditModal"
+      :food="itemToEdit"
+      @save="handleFoodSaved"
+      @close="closeEditModal"
+    />
+
+    <!-- Edit Recipe Modal -->
+    <RecipeFormModal
+      :show="showRecipeEditModal"
+      :recipe="recipeToEdit"
+      @save="handleRecipeSaved"
+      @close="closeRecipeEditModal"
+    />
   </div>
 </template>
 
@@ -402,6 +516,35 @@ defineExpose({
   gap: 8px;
   font-size: 0.75rem;
   color: var(--color-text-secondary);
+}
+
+.food-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: 8px;
+}
+
+.food-actions .action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.food-actions .action-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.food-actions .action-btn.delete:hover {
+  color: var(--color-error);
 }
 
 .food-macros .macro {
