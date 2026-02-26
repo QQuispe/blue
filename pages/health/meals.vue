@@ -65,7 +65,7 @@ const showAddMealModal = ref(false)
 const showEditMealModal = ref(false)
 const showEditTargetsModalRef = ref<any>(null)
 const showDeleteConfirmModal = ref(false)
-const itemToDelete = ref<{ id: number; type: 'meal' | 'food' } | null>(null)
+const itemToDelete = ref<{ id?: number; ids?: number[]; type: 'meal' | 'food' } | null>(null)
 const editingMeal = ref<Meal | null>(null)
 const selectedMealType = ref('breakfast')
 const selectedFoods = ref<any[]>([])
@@ -110,9 +110,9 @@ const handleDateChange = (event: Event) => {
   fetchMeals()
 }
 
-const openNewMealModal = () => {
+const openNewMealModal = (mealType?: string) => {
   selectedFoods.value = []
-  selectedMealType.value = 'breakfast'
+  selectedMealType.value = mealType || 'breakfast'
   showAddMealModal.value = true
 }
 
@@ -143,7 +143,7 @@ const openEditMeal = (meal: Meal) => {
 }
 
 const handleDeleteMeal = (meal: any) => {
-  itemToDelete.value = { id: meal.id, type: 'meal' }
+  itemToDelete.value = { id: meal.mealIds?.[0], ids: meal.mealIds, type: 'meal' }
   showDeleteConfirmModal.value = true
 }
 
@@ -153,6 +153,7 @@ const handleConfirmDelete = async () => {
   if (itemToDelete.value.type === 'meal') {
     await deleteMeal({
       id: itemToDelete.value.id,
+      mealIds: itemToDelete.value.ids,
       mealType: '',
       mealDate: '',
       totalCalories: 0,
@@ -257,10 +258,6 @@ onMounted(async () => {
           <BaseButton variant="secondary" size="sm" @click="openEditTargets">
             Edit Targets
           </BaseButton>
-          <BaseButton variant="primary" @click="openNewMealModal">
-            <Icon name="mdi:plus" size="18" />
-            Add Meal
-          </BaseButton>
         </div>
       </div>
 
@@ -273,34 +270,20 @@ onMounted(async () => {
           v-for="meal in groupedMeals"
           :key="meal.mealType"
           :meal="meal"
+          @add="mealType => openNewMealModal(mealType)"
           @edit="openEditMeal"
-          @delete="handleDeleteMeal"
           @copy="handleCopyMeal"
         />
-        <div v-if="groupedMeals.length === 0" class="empty-state">
-          <Icon name="mdi:food-off" size="48" />
-          <p>No meals logged for this day</p>
-          <BaseButton variant="primary" @click="openNewMealModal"> Log Your First Meal </BaseButton>
-        </div>
       </div>
     </div>
 
     <!-- Add Meal Modal -->
     <BaseModal
       :show="showAddMealModal"
-      title="Add Meal"
+      :title="`Add to ${mealTypes.find(m => m.value === selectedMealType)?.label || selectedMealType}`"
       size="lg"
       @close="showAddMealModal = false"
     >
-      <div class="meal-type-selector">
-        <label>Meal Type</label>
-        <select v-model="selectedMealType">
-          <option v-for="type in mealTypes" :key="type.value" :value="type.value">
-            {{ type.label }}
-          </option>
-        </select>
-      </div>
-
       <FoodSearchPanel
         :selected-meal-type="selectedMealType"
         @add-food="handleAddFoods"

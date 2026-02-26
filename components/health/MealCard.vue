@@ -16,8 +16,8 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   edit: [meal: any]
-  delete: [meal: any]
   copy: [mealType: string]
+  add: [mealType: string]
 }>()
 
 const { mealTypes } = useMeals()
@@ -38,6 +38,9 @@ const formatNumber = (num: number) => {
     <div class="meal-header">
       <h3 class="meal-type-label">{{ mealLabel }}</h3>
       <div class="meal-actions">
+        <button class="action-btn add" @click="emit('add', props.meal.mealType)" title="Add food">
+          <Icon name="mdi:plus" size="18" />
+        </button>
         <button
           class="action-btn"
           @click="emit('copy', props.meal.mealType)"
@@ -47,9 +50,6 @@ const formatNumber = (num: number) => {
         </button>
         <button class="action-btn" @click="emit('edit', props.meal)" title="Edit meal">
           <Icon name="mdi:pencil-outline" size="18" />
-        </button>
-        <button class="action-btn delete" @click="emit('delete', props.meal)" title="Delete meal">
-          <Icon name="mdi:delete-outline" size="18" />
         </button>
       </div>
     </div>
@@ -117,6 +117,15 @@ const formatNumber = (num: number) => {
 .action-btn:hover {
   background: var(--color-bg-hover);
   color: var(--color-text-primary);
+}
+
+.action-btn.add {
+  color: var(--color-accent);
+}
+
+.action-btn.add:hover {
+  background: var(--color-accent);
+  color: white;
 }
 
 .action-btn.delete:hover {

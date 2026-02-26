@@ -13,7 +13,7 @@ export interface MealFood {
 }
 
 export interface Meal {
-  id: number
+  id?: number
   mealType: string
   mealDate: string
   name?: string
@@ -22,7 +22,6 @@ export interface Meal {
   totalCarbs: number
   totalFat: number
   foods?: MealFood[]
-  mealIds?: number[]
 }
 
 export const mealTypes = [
@@ -57,16 +56,15 @@ export const useMeals = () => {
       }
     }
 
-    return Object.entries(grouped)
-      .filter(([_, meals]) => meals.length > 0)
-      .map(([type, meals]) => ({
-        mealType: type,
-        foods: meals.flatMap(m => m.foods || []),
-        totalCalories: meals.reduce((sum, m) => sum + m.totalCalories, 0),
-        totalProtein: meals.reduce((sum, m) => sum + m.totalProtein, 0),
-        totalCarbs: meals.reduce((sum, m) => sum + m.totalCarbs, 0),
-        totalFat: meals.reduce((sum, m) => sum + m.totalFat, 0),
-      }))
+    return Object.entries(grouped).map(([type, meals]) => ({
+      mealType: type,
+      id: meals[0]?.id,
+      foods: meals.flatMap(m => m.foods || []),
+      totalCalories: meals.reduce((sum, m) => sum + m.totalCalories, 0),
+      totalProtein: meals.reduce((sum, m) => sum + m.totalProtein, 0),
+      totalCarbs: meals.reduce((sum, m) => sum + m.totalCarbs, 0),
+      totalFat: meals.reduce((sum, m) => sum + m.totalFat, 0),
+    }))
   })
 
   const fetchMeals = async () => {
@@ -194,15 +192,11 @@ export const useMeals = () => {
   }
 
   const deleteMeal = async (meal: Meal) => {
-    const idsToDelete = meal.mealIds || [meal.id]
-
     try {
-      for (const id of idsToDelete) {
-        await $fetch(`/api/health/meals/${id}`, {
-          method: 'DELETE',
-          credentials: 'include',
-        })
-      }
+      await $fetch(`/api/health/meals/${meal.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
 
       $toast?.success('Meal deleted')
       fetchMeals()

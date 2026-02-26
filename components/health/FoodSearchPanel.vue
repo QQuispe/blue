@@ -47,6 +47,20 @@ const isDeleting = ref(false)
 const showRecipeEditModal = ref(false)
 const recipeToEdit = ref<any>(null)
 
+// My Foods search
+const myFoodsSearch = ref('')
+
+const filteredMyFoods = computed(() => {
+  if (!myFoodsSearch.value.trim()) {
+    return myFoods.value
+  }
+  const query = myFoodsSearch.value.toLowerCase()
+  return myFoods.value.filter(
+    (item: any) =>
+      item.name?.toLowerCase().includes(query) || item.brand?.toLowerCase().includes(query)
+  )
+})
+
 const canEdit = (item: any) => {
   return item.user_id === user.value?.id || isAdmin.value
 }
@@ -255,6 +269,15 @@ defineExpose({
     <!-- My Foods Tab -->
     <div v-if="activeTab === 'myFoods'" class="tab-content">
       <div class="saved-header">
+        <div class="my-foods-search">
+          <Icon name="mdi:magnify" size="14" class="search-icon" />
+          <input
+            v-model="myFoodsSearch"
+            type="text"
+            placeholder="Search foods & recipes..."
+            class="search-input"
+          />
+        </div>
         <div class="header-buttons">
           <button class="btn btn-sm" @click="emit('open-recipe-form')">
             <Icon name="mdi:plus" size="16" />
@@ -266,13 +289,14 @@ defineExpose({
           </button>
         </div>
       </div>
-      <div v-if="myFoods.length === 0" class="empty-state">
-        <p>No saved foods yet.</p>
+      <div v-if="filteredMyFoods.length === 0" class="empty-state">
+        <p v-if="myFoodsSearch">No foods match your search.</p>
+        <p v-else>No saved foods yet.</p>
         <p class="hint">Add custom foods or save recipes for quick logging.</p>
       </div>
       <div v-else class="foods-list">
         <div
-          v-for="food in myFoods"
+          v-for="food in filteredMyFoods"
           :key="food.id + food.type"
           class="food-item"
           @click="addToSelection(food)"
@@ -393,8 +417,11 @@ defineExpose({
 }
 
 .tab-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .form-group {
@@ -477,6 +504,10 @@ defineExpose({
   display: flex;
   flex-direction: column;
   gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: 4px;
+  flex-shrink: 0;
 }
 
 .food-item {
@@ -563,12 +594,48 @@ defineExpose({
 }
 
 .saved-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
   margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.my-foods-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 30px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  flex: 1;
+}
+
+.my-foods-search .search-icon {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+}
+
+.my-foods-search .search-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.my-foods-search .search-input::placeholder {
+  color: var(--color-text-muted);
 }
 
 .header-buttons {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
 }
 
 .btn {
@@ -611,8 +678,12 @@ defineExpose({
 }
 
 .selected-foods {
+  position: sticky;
+  bottom: 0;
+  background: var(--color-bg);
   border-top: 1px solid var(--color-border);
   padding-top: 16px;
+  margin-top: auto;
 }
 
 .selected-foods h4 {
