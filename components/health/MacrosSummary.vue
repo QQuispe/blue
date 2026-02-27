@@ -4,6 +4,10 @@ import MacroCard from './MacroCard.vue'
 
 const { targetMacros, todaysMacros, remainingMacros, macroProgress } = useHealthMacros()
 
+const emit = defineEmits<{
+  'edit-targets': []
+}>()
+
 const formatNumber = (num: number) => {
   if (num === null || num === undefined || typeof num !== 'number') return '0'
   return num.toFixed(0)
@@ -14,6 +18,10 @@ const formatNumber = (num: number) => {
   <div class="macros-summary">
     <div class="summary-header">
       <h3>Today's Macros</h3>
+      <button class="edit-targets-btn" @click="emit('edit-targets')">Edit Targets</button>
+    </div>
+
+    <div class="summary-calories">
       <span class="remaining">
         {{ formatNumber(remainingMacros.calories) }} cal remaining
         <span class="divider">of {{ formatNumber(targetMacros.calories) }}</span>
@@ -76,6 +84,26 @@ const formatNumber = (num: number) => {
 
 .divider {
   color: var(--color-text-muted);
+}
+
+.edit-targets-btn {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+
+.edit-targets-btn:hover {
+  color: var(--color-accent);
+  background: var(--color-bg-hover);
+}
+
+.summary-calories {
+  margin-bottom: 16px;
 }
 
 .macros-grid {

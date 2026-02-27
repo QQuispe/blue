@@ -16,7 +16,6 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   edit: [meal: any]
-  copy: [mealType: string]
   add: [mealType: string]
 }>()
 
@@ -40,13 +39,6 @@ const formatNumber = (num: number) => {
       <div class="meal-actions">
         <button class="action-btn add" @click="emit('add', props.meal.mealType)" title="Add food">
           <Icon name="mdi:plus" size="18" />
-        </button>
-        <button
-          class="action-btn"
-          @click="emit('copy', props.meal.mealType)"
-          title="Copy from yesterday"
-        >
-          <Icon name="mdi:content-copy" size="18" />
         </button>
         <button class="action-btn" @click="emit('edit', props.meal)" title="Edit meal">
           <Icon name="mdi:pencil-outline" size="18" />

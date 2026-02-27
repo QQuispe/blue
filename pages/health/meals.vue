@@ -48,8 +48,7 @@ const {
   formatDisplayDate,
 } = useHealthDate()
 const { targetMacros, fetchTargetMacros, openEditTargets } = useHealthMacros()
-const { meals, groupedMeals, mealTypes, fetchMeals, copyMealFromYesterday, saveMeal, deleteMeal } =
-  useMeals()
+const { meals, groupedMeals, mealTypes, fetchMeals, saveMeal, deleteMeal } = useMeals()
 const {
   recentFoods,
   customFoods,
@@ -167,10 +166,6 @@ const handleConfirmDelete = async () => {
   itemToDelete.value = null
 }
 
-const handleCopyMeal = async (mealType: string) => {
-  await copyMealFromYesterday(mealType)
-}
-
 const handleFoodSaved = () => {
   fetchCustomFoods()
   showCreateFoodModal.value = false
@@ -254,15 +249,10 @@ onMounted(async () => {
             <Icon name="mdi:chevron-right" size="20" />
           </button>
         </div>
-        <div class="header-actions">
-          <BaseButton variant="secondary" size="sm" @click="openEditTargets">
-            Edit Targets
-          </BaseButton>
-        </div>
       </div>
 
       <!-- Macros Summary -->
-      <MacrosSummary />
+      <MacrosSummary @edit-targets="openEditTargets" />
 
       <!-- Meals List -->
       <div class="meals-list">
@@ -272,7 +262,6 @@ onMounted(async () => {
           :meal="meal"
           @add="mealType => openNewMealModal(mealType)"
           @edit="openEditMeal"
-          @copy="handleCopyMeal"
         />
       </div>
     </div>

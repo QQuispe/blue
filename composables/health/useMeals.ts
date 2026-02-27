@@ -32,7 +32,7 @@ export const mealTypes = [
 ]
 
 export const useMeals = () => {
-  const { selectedDate, getYesterdayDate } = useHealthDate()
+  const { selectedDate } = useHealthDate()
   const { setTodaysMacros } = useHealthMacros()
   const { $toast } = useNuxtApp()
 
@@ -88,42 +88,6 @@ export const useMeals = () => {
     }
   }
 
-  const copyMealFromYesterday = async (mealType: string) => {
-    const yesterday = getYesterdayDate()
-    try {
-      const response = await fetch(`/api/health/meals?date=${yesterday}`, {
-        credentials: 'include',
-      })
-      if (!response.ok) throw new Error('Failed to fetch yesterday meals')
-      const data = await response.json()
-      const yesterdayMeal = data.meals?.find((m: any) => m.mealType === mealType)
-
-      if (!yesterdayMeal) {
-        $toast?.info(`No ${mealType} logged yesterday`)
-        return
-      }
-
-      const newMealResponse = await fetch('/api/health/meals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          meal_type: mealType,
-          meal_date: selectedDate.value,
-          foods: yesterdayMeal.foods,
-        }),
-      })
-
-      if (!newMealResponse.ok) throw new Error('Failed to copy meal')
-
-      $toast?.success(`Copied ${mealType} from yesterday`)
-      fetchMeals()
-    } catch (err) {
-      console.error('Error copying meal:', err)
-      $toast?.error('Failed to copy meal')
-    }
-  }
-
   const saveMeal = async (
     mealType: string,
     foods: MealFood[],
@@ -134,23 +98,65 @@ export const useMeals = () => {
       return { success: false }
     }
 
-    try {
-      const response = await fetch('/api/health/meals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          meal_type: mealType,
-          meal_date: date,
-          foods,
-        }),
-      })
+    // Calculate totals
+    const totals = foods.reduce(
+      (acc, food) => ({
+        calories: acc.calories + (Number(food.calories) || 0) * (Number(food.servings) || 1),
+        protein: acc.protein + (Number(food.protein) || 0) * (Number(food.servings) || 1),
+        carbs: acc.carbs + (Number(food.carbs) || 0) * (Number(food.servings) || 1),
+        fat: acc.fat + (Number(food.fat) || 0) * (Number(food.servings) || 1),
+      }),
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    )
 
-      if (!response.ok) {
-        throw new Error('Failed to save meal')
+    try {
+      // Check if meal already exists for this meal type and date
+      const existingMeal = meals.value.find(
+        m => m.mealType?.toLowerCase() === mealType.toLowerCase() && m.mealDate?.startsWith(date)
+      )
+
+      if (existingMeal?.id) {
+        // Update existing meal
+        const response = await fetch(`/api/health/meals/${existingMeal.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            meal_type: mealType,
+            meal_date: date,
+            total_calories: totals.calories,
+            total_protein: totals.protein,
+            total_carbs: totals.carbs,
+            total_fat: totals.fat,
+            foods,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to update meal')
+        }
+
+        $toast?.success('Meal updated!')
+      } else {
+        // Create new meal
+        const response = await fetch('/api/health/meals', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            meal_type: mealType,
+            meal_date: date,
+            foods,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to save meal')
+        }
+
+        $toast?.success('Meal logged!')
       }
 
-      $toast?.success('Meal logged!')
       fetchMeals()
       return { success: true }
     } catch (err) {
@@ -296,7 +302,6 @@ export const useMeals = () => {
     groupedMeals,
     mealTypes,
     fetchMeals,
-    copyMealFromYesterday,
     saveMeal,
     updateMeal,
     deleteMeal,
