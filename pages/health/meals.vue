@@ -291,10 +291,16 @@ onMounted(async () => {
         @open-recipe-form="showCreateRecipeModal = true"
       />
 
-      <template v-if="selectedFoods.length" #footer>
+      <template #footer>
         <div class="selected-foods-summary">
-          <span>{{ selectedFoods.length }} food(s) selected</span>
-          <BaseButton variant="primary" :loading="isAddingFood" @click="handleSaveMeal">
+          <span v-if="selectedFoods.length">{{ selectedFoods.length }} food(s) selected</span>
+          <span v-else>Select foods to add</span>
+          <BaseButton
+            variant="primary"
+            :loading="isAddingFood"
+            :disabled="selectedFoods.length === 0"
+            @click="handleSaveMeal"
+          >
             Add to {{ selectedMealType }}
           </BaseButton>
         </div>

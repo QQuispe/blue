@@ -134,17 +134,25 @@ const myFoods = computed(() => {
 
 const selectedFoods = ref<any[]>([])
 
+// Emit selected foods to parent whenever they change
+watch(
+  selectedFoods,
+  newVal => {
+    emit('add-food', newVal)
+  },
+  { deep: true }
+)
+
 const addToSelection = (food: any) => {
-  const existing = selectedFoods.value.find(
-    f => f.food_name === food.food_name || f.name === food.name
-  )
+  const foodKey = food.description || food.name || food.food_name
+  const existing = selectedFoods.value.find(f => f.food_name === foodKey)
 
   if (existing) {
     existing.servings = (existing.servings || 1) + 1
   } else {
     selectedFoods.value.push({
-      food_name: food.name || food.food_name,
-      food_id: food.fdcId || food.id,
+      food_name: foodKey,
+      food_id: food.fdcId || food.id || food.food_id,
       servings: 1,
       calories: food.calories || 0,
       protein: food.protein || 0,
@@ -334,8 +342,8 @@ defineExpose({
           <input
             type="number"
             :value="food.servings"
-            min="0.25"
-            step="0.25"
+            min="0"
+            step="1"
             class="portion-input"
             @input="updateServings(index, Number(($event.target as HTMLInputElement).value))"
           />
@@ -348,9 +356,6 @@ defineExpose({
           </button>
         </div>
       </div>
-      <button class="btn btn-primary btn-block" @click="emitSelectedFoods">
-        Add to {{ selectedMealType }}
-      </button>
     </div>
 
     <!-- Delete Confirmation Modal -->
@@ -684,6 +689,8 @@ defineExpose({
   border-top: 1px solid var(--color-border);
   padding-top: 16px;
   margin-top: auto;
+  max-height: 150px;
+  overflow-y: auto;
 }
 
 .selected-foods h4 {
