@@ -116,14 +116,22 @@ const closeRecipeEditModal = () => {
   recipeToEdit.value = null
 }
 
-const handleFoodSaved = () => {
+const handleFoodSaved = (newFood: any) => {
   closeEditModal()
-  initFoods()
+  if (newFood) {
+    customFoods.value = [...customFoods.value, newFood]
+  } else {
+    initFoods()
+  }
 }
 
-const handleRecipeSaved = () => {
+const handleRecipeSaved = (newRecipe: any) => {
   closeRecipeEditModal()
-  initFoods()
+  if (newRecipe) {
+    savedMeals.value = [...savedMeals.value, newRecipe]
+  } else {
+    initFoods()
+  }
 }
 
 const myFoods = computed(() => {
