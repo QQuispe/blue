@@ -3,28 +3,18 @@ import { ref, onMounted, computed } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
 import HealthSetupRequired from '~/components/health/HealthSetupRequired.vue'
 import { useCheckins } from '~/composables/health/useCheckins'
+import { useHealthData } from '~/composables/useHealthData'
 import DeleteConfirmModal from '~/components/health/DeleteConfirmModal.vue'
 import BaseButton from '~/components/BaseButton.vue'
 
 const { $toast } = useNuxtApp()
 
-// Setup check
-const needsSetup = ref(false)
-const isCheckingSetup = ref(true)
-
-const checkSetup = async () => {
-  try {
-    const response = await $fetch('/api/health/setup-status', {
-      credentials: 'include',
-      ignoreResponseError: true,
-    })
-    needsSetup.value = !response?.isComplete
-  } catch {
-    needsSetup.value = true
-  } finally {
-    isCheckingSetup.value = false
-  }
-}
+// Use centralized health data
+const { setupStatus, isReady } = useHealthData()
+const needsSetup = computed(() => {
+  if (!isReady.value) return false
+  return !setupStatus.value?.isComplete
+})
 
 // Composables
 const {
@@ -64,18 +54,18 @@ const formatNumber = (num: any) => {
 
 // Initialize
 onMounted(async () => {
-  await checkSetup()
-  if (!needsSetup.value) {
+  // Wait for plugin initialization
+  await new Promise(resolve => setTimeout(resolve, 0))
+  if (isReady.value && !needsSetup.value) {
     await fetchCheckins()
   }
-  isCheckingSetup.value = false
 })
 </script>
 
 <template>
   <PageLayout title="Check-ins" subtitle="Track your progress over time">
-    <!-- Loading -->
-    <div v-if="isCheckingSetup || isLoading" class="loading-state">
+    <!-- Loading - show while waiting for plugin init or page loading -->
+    <div v-if="!isReady || isLoading" class="loading-state">
       <div class="spinner"></div>
       <p>Loading...</p>
     </div>

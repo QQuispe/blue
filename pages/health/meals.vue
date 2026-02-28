@@ -4,12 +4,11 @@ import PageLayout from '~/components/PageLayout.vue'
 import BaseModal from '~/components/health/BaseModal.vue'
 import HealthSetupRequired from '~/components/health/HealthSetupRequired.vue'
 import { useHealthDate } from '~/composables/health/useHealthDate'
-import { useHealthMacros } from '~/composables/health/useHealthMacros'
 import { useMeals, type Meal } from '~/composables/health/useMeals'
 import { useFoodSearch } from '~/composables/health/useFoodSearch'
+import { useHealthData } from '~/composables/useHealthData'
 import MacrosSummary from '~/components/health/MacrosSummary.vue'
 import MealCard from '~/components/health/MealCard.vue'
-import MealEditModal from '~/components/health/MealEditModal.vue'
 import FoodSearchPanel from '~/components/health/FoodSearchPanel.vue'
 import FoodFormModal from '~/components/health/FoodFormModal.vue'
 import RecipeFormModal from '~/components/health/RecipeFormModal.vue'
@@ -19,53 +18,34 @@ import BaseButton from '~/components/BaseButton.vue'
 
 const { $toast } = useNuxtApp()
 
-// Setup check
-const needsSetup = ref(false)
-const isCheckingSetup = ref(true)
+// Centralized health data (initialized by plugin)
+const {
+  setupStatus,
+  isReady,
+  userSettings,
+  targetMacros,
+  openEditTargets: openEditTargetsModal,
+} = useHealthData()
 
-const checkSetup = async () => {
-  try {
-    const response = await $fetch('/api/health/setup-status', {
-      credentials: 'include',
-      ignoreResponseError: true,
-    })
-    needsSetup.value = !response?.isComplete
-  } catch {
-    needsSetup.value = true
-  } finally {
-    isCheckingSetup.value = false
-  }
-}
+// Derived state from centralized data
+const needsSetup = computed(() => {
+  if (!isReady.value) return false // Show loading instead
+  return !setupStatus.value?.isComplete
+})
+const userTimezone = computed(() => userSettings.value?.timezone || 'America/New_York')
 
 // Composables
-const {
-  userTimezone,
-  selectedDate,
-  fetchUserTimezone,
-  getLocalDateString,
-  setSelectedDate,
-  addDays,
-  formatDisplayDate,
-} = useHealthDate()
-const { targetMacros, fetchTargetMacros, openEditTargets } = useHealthMacros()
+const { selectedDate, getLocalDateString, setSelectedDate, addDays, formatDisplayDate } =
+  useHealthDate()
 const { meals, groupedMeals, mealTypes, fetchMeals, saveMeal, deleteMeal } = useMeals()
-const {
-  recentFoods,
-  customFoods,
-  savedMeals,
-  fetchRecentFoods,
-  fetchCustomFoods,
-  fetchSavedMeals,
-} = useFoodSearch()
+const { recentFoods, customFoods, savedMeals, initFoods } = useFoodSearch()
 
 // Local state
 const isLoading = ref(true)
 const showAddMealModal = ref(false)
-const showEditMealModal = ref(false)
 const showEditTargetsModalRef = ref<any>(null)
 const showDeleteConfirmModal = ref(false)
 const itemToDelete = ref<{ id?: number; ids?: number[]; type: 'meal' | 'food' } | null>(null)
-const editingMeal = ref<Meal | null>(null)
 const selectedMealType = ref('breakfast')
 const selectedFoods = ref<any[]>([])
 const isAddingFood = ref(false)
@@ -90,6 +70,31 @@ const formatDateForInput = (dateStr: string) => {
   return `${year}-${month}-${day}`
 }
 
+// Determine if we're editing an existing meal with foods
+const isEditingExisting = computed(() => {
+  return groupedMeals.value.some(
+    m => m.mealType?.toLowerCase() === selectedMealType.value.toLowerCase() && m.foods?.length > 0
+  )
+})
+
+// Get the existing meal ID for the current meal type
+const existingMealId = computed(() => {
+  const meal = groupedMeals.value.find(
+    m => m.mealType?.toLowerCase() === selectedMealType.value.toLowerCase()
+  )
+  return meal?.id
+})
+
+// Button text based on state
+const addButtonText = computed(() => {
+  if (isEditingExisting.value && selectedFoods.value.length === 0) {
+    return 'Remove All Foods'
+  }
+  const mealLabel =
+    mealTypes.find(m => m.value === selectedMealType.value)?.label || selectedMealType.value
+  return `Add to ${mealLabel}`
+})
+
 // Handlers
 const goToPrevDay = () => {
   const newDate = addDays(selectedDate.value, -1)
@@ -109,9 +114,32 @@ const handleDateChange = (event: Event) => {
   fetchMeals()
 }
 
-const openNewMealModal = (mealType?: string) => {
-  selectedFoods.value = []
+const openNewMealModal = async (mealType?: string) => {
   selectedMealType.value = mealType || 'breakfast'
+
+  // Fetch latest meals first to ensure we have fresh data
+  await fetchMeals()
+
+  // Check if meal already exists for this type and date - pre-populate existing foods
+  const existingMeal = groupedMeals.value.find(
+    m => m.mealType?.toLowerCase() === selectedMealType.value.toLowerCase()
+  )
+
+  if (existingMeal?.foods?.length > 0) {
+    // Load existing foods so user can add more
+    selectedFoods.value = existingMeal.foods.map(f => ({
+      food_name: f.food_name,
+      food_id: f.food_id,
+      servings: f.servings,
+      calories: f.calories,
+      protein: f.protein,
+      carbs: f.carbs,
+      fat: f.fat,
+    }))
+  } else {
+    selectedFoods.value = []
+  }
+
   showAddMealModal.value = true
 }
 
@@ -120,6 +148,31 @@ const handleAddFoods = (foods: any[]) => {
 }
 
 const handleSaveMeal = async () => {
+  // If editing existing meal and no foods selected, delete the meal
+  if (isEditingExisting.value && selectedFoods.value.length === 0) {
+    if (!existingMealId.value) return
+
+    isAddingFood.value = true
+    try {
+      await deleteMeal({
+        id: existingMealId.value,
+        mealType: selectedMealType.value,
+        mealDate: selectedDate.value,
+        totalCalories: 0,
+        totalProtein: 0,
+        totalCarbs: 0,
+        totalFat: 0,
+      })
+      showAddMealModal.value = false
+      selectedFoods.value = []
+      // fetchMeals() called by composable after delete
+      $toast?.success('Meal cleared')
+    } finally {
+      isAddingFood.value = false
+    }
+    return
+  }
+
   if (selectedFoods.value.length === 0) {
     $toast?.error('Add at least one food')
     return
@@ -130,15 +183,10 @@ const handleSaveMeal = async () => {
     await saveMeal(selectedMealType.value, selectedFoods.value)
     showAddMealModal.value = false
     selectedFoods.value = []
-    fetchMeals()
+    // fetchMeals() called by composable after save
   } finally {
     isAddingFood.value = false
   }
-}
-
-const openEditMeal = (meal: Meal) => {
-  editingMeal.value = meal
-  showEditMealModal.value = true
 }
 
 const handleDeleteMeal = (meal: any) => {
@@ -160,6 +208,7 @@ const handleConfirmDelete = async () => {
       totalCarbs: 0,
       totalFat: 0,
     } as any)
+    $toast?.success('Meal deleted')
   }
 
   showDeleteConfirmModal.value = false
@@ -167,19 +216,14 @@ const handleConfirmDelete = async () => {
 }
 
 const handleFoodSaved = () => {
-  fetchCustomFoods()
+  initFoods()
   showCreateFoodModal.value = false
   editingFood.value = null
 }
 
 const handleRecipeSaved = () => {
-  fetchSavedMeals()
+  initFoods()
   showCreateRecipeModal.value = false
-}
-
-const closeEditMealModal = () => {
-  showEditMealModal.value = false
-  editingMeal.value = null
 }
 
 const closeFoodModal = () => {
@@ -194,17 +238,12 @@ const closeDeleteModal = () => {
 
 // Initialize
 onMounted(async () => {
-  await checkSetup()
-  if (!needsSetup.value) {
-    await fetchUserTimezone()
+  // Wait for plugin initialization
+  await new Promise(resolve => setTimeout(resolve, 0))
+
+  if (isReady.value && !needsSetup.value) {
     selectedDate.value = getLocalDateString()
-    await Promise.all([
-      fetchMeals(),
-      fetchTargetMacros(),
-      fetchSavedMeals(),
-      fetchRecentFoods(),
-      fetchCustomFoods(),
-    ])
+    await fetchMeals()
   }
   isLoading.value = false
 })
@@ -212,8 +251,8 @@ onMounted(async () => {
 
 <template>
   <PageLayout title="Meals">
-    <!-- Loading -->
-    <div v-if="isCheckingSetup || isLoading" class="loading-state">
+    <!-- Loading - show while waiting for plugin init or page loading -->
+    <div v-if="!isReady || isLoading" class="loading-state">
       <div class="spinner"></div>
       <p>Loading...</p>
     </div>
@@ -252,7 +291,7 @@ onMounted(async () => {
       </div>
 
       <!-- Macros Summary -->
-      <MacrosSummary @edit-targets="openEditTargets" />
+      <MacrosSummary @edit-targets="openEditTargetsModal" />
 
       <!-- Meals List -->
       <div class="meals-list">
@@ -261,7 +300,6 @@ onMounted(async () => {
           :key="meal.mealType"
           :meal="meal"
           @add="mealType => openNewMealModal(mealType)"
-          @edit="openEditMeal"
         />
       </div>
     </div>
@@ -275,6 +313,7 @@ onMounted(async () => {
     >
       <FoodSearchPanel
         :selected-meal-type="selectedMealType"
+        :existing-foods="selectedFoods"
         @add-food="handleAddFoods"
         @open-food-form="showCreateFoodModal = true"
         @open-recipe-form="showCreateRecipeModal = true"
@@ -287,22 +326,14 @@ onMounted(async () => {
           <BaseButton
             variant="primary"
             :loading="isAddingFood"
-            :disabled="selectedFoods.length === 0"
+            :disabled="selectedFoods.length === 0 && !isEditingExisting"
             @click="handleSaveMeal"
           >
-            Add to {{ selectedMealType }}
+            {{ addButtonText }}
           </BaseButton>
         </div>
       </template>
     </BaseModal>
-
-    <!-- Edit Meal Modal -->
-    <MealEditModal
-      :show="showEditMealModal"
-      :meal="editingMeal"
-      @save="fetchMeals"
-      @close="closeEditMealModal"
-    />
 
     <!-- Food Form Modal -->
     <FoodFormModal

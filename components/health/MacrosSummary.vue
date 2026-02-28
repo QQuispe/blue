@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useHealthMacros } from '~/composables/health/useHealthMacros'
+import { useHealthData } from '~/composables/useHealthData'
 import MacroCard from './MacroCard.vue'
 
-const { targetMacros, todaysMacros, remainingMacros, macroProgress } = useHealthMacros()
+const { targetMacros, todaysMacros, remainingMacros, macroProgress } = useHealthData()
 
 const emit = defineEmits<{
   'edit-targets': []

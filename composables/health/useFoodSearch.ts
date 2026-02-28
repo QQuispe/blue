@@ -30,11 +30,11 @@ export interface CustomFood {
 }
 
 export const useFoodSearch = () => {
+  // Use centralized health data
+  const { recentFoods, customFoods, savedMeals, isFoodsInitialized, initFoods } = useHealthData()
+
   const searchQuery = ref('')
   const searchResults = ref<Food[]>([])
-  const recentFoods = ref<any[]>([])
-  const customFoods = ref<CustomFood[]>([])
-  const savedMeals = ref<any[]>([])
   const isSearching = ref(false)
   const activeTab = ref<'recent' | 'myFoods' | 'search'>('recent')
 
@@ -75,45 +75,7 @@ export const useFoodSearch = () => {
     }, 300)
   }
 
-  const fetchRecentFoods = async () => {
-    try {
-      const response = await fetch('/api/health/foods/recent', {
-        credentials: 'include',
-      })
-      if (!response.ok) return
-      const data = await response.json()
-      recentFoods.value = data.foods || []
-    } catch (err) {
-      console.error('Error fetching recent foods:', err)
-    }
-  }
-
-  const fetchCustomFoods = async () => {
-    try {
-      const response = await fetch('/api/health/foods/custom', {
-        credentials: 'include',
-      })
-      if (!response.ok) return
-      const data = await response.json()
-      customFoods.value = data.foods || []
-    } catch (err) {
-      console.error('Error fetching custom foods:', err)
-    }
-  }
-
-  const fetchSavedMeals = async () => {
-    try {
-      const response = await fetch('/api/health/saved-meals', {
-        credentials: 'include',
-      })
-      if (!response.ok) return
-      const data = await response.json()
-      savedMeals.value = data.meals || []
-    } catch (err) {
-      console.error('Error fetching saved meals:', err)
-    }
-  }
-
+  // Delete functions - update cached state after deletion
   const deleteCustomFood = async (id: number) => {
     try {
       await $fetch(`/api/health/foods/custom/${id}`, {
@@ -151,11 +113,10 @@ export const useFoodSearch = () => {
     savedMeals,
     isSearching,
     activeTab,
+    isFoodsInitialized,
     searchFoods,
     doSearch,
-    fetchRecentFoods,
-    fetchCustomFoods,
-    fetchSavedMeals,
+    initFoods,
     deleteCustomFood,
     deleteSavedMeal,
     clearSearch,

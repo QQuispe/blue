@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useHealthMacros } from '~/composables/health/useHealthMacros'
+import { useHealthData } from '~/composables/useHealthData'
 import BaseModal from './BaseModal.vue'
 
 const {
@@ -9,7 +9,7 @@ const {
   openEditTargets,
   saveTargets,
   closeEditTargetsModal,
-} = useHealthMacros()
+} = useHealthData()
 
 defineExpose({
   show: showEditTargetsModal,

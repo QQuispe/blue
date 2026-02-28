@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useFoodSearch } from '~/composables/health/useFoodSearch'
+import { useHealthData } from '~/composables/useHealthData'
 import { useMeals, mealTypes } from '~/composables/health/useMeals'
 import BaseModal from './BaseModal.vue'
 
@@ -22,7 +23,8 @@ const { $toast } = useNuxtApp()
 const isEditing = computed(() => !!props.recipe)
 const isSaving = ref(false)
 
-const { customFoods, savedMeals, fetchCustomFoods, fetchSavedMeals } = useFoodSearch()
+const { customFoods, savedMeals } = useFoodSearch()
+const { initFoods } = useHealthData()
 
 const form = ref({
   name: '',
@@ -221,8 +223,7 @@ watch(
 )
 
 onMounted(() => {
-  fetchCustomFoods()
-  fetchSavedMeals()
+  initFoods()
 })
 </script>
 

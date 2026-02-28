@@ -3,27 +3,16 @@ import { ref, onMounted, computed } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
 import Card from '~/components/Card.vue'
 import HealthSetupRequired from '~/components/health/HealthSetupRequired.vue'
+import { useHealthData } from '~/composables/useHealthData'
 
 const { $toast } = useNuxtApp()
 
-const needsSetup = ref(false)
-const isCheckingSetup = ref(true)
-
-const checkSetup = async () => {
-  try {
-    const response = await $fetch('/api/health/setup-status', {
-      credentials: 'include',
-      ignoreResponseError: true,
-    })
-    needsSetup.value = !response?.isComplete
-  } catch {
-    needsSetup.value = true
-  } finally {
-    isCheckingSetup.value = false
-  }
-}
-
-checkSetup()
+// Use centralized health data
+const { setupStatus, isReady } = useHealthData()
+const needsSetup = computed(() => {
+  if (!isReady.value) return false
+  return !setupStatus.value?.isComplete
+})
 
 interface MealPlan {
   id: number
@@ -140,7 +129,7 @@ onMounted(() => {
 
 <template>
   <PageLayout title="Your Plans">
-    <HealthSetupRequired v-if="needsSetup && !isCheckingSetup" feature="plans" />
+    <HealthSetupRequired v-if="needsSetup" feature="plans" />
 
     <template v-else>
       <div v-if="isLoading" class="loading">Loading...</div>

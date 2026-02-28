@@ -1,5 +1,5 @@
 import { useHealthDate } from './useHealthDate'
-import { useHealthMacros } from './useHealthMacros'
+import { useHealthData } from '~/composables/useHealthData'
 
 export interface MealFood {
   id?: number
@@ -33,7 +33,7 @@ export const mealTypes = [
 
 export const useMeals = () => {
   const { selectedDate } = useHealthDate()
-  const { setTodaysMacros } = useHealthMacros()
+  const { setTodaysMacros } = useHealthData()
   const { $toast } = useNuxtApp()
 
   const meals = ref<Meal[]>([])
@@ -204,7 +204,6 @@ export const useMeals = () => {
         credentials: 'include',
       })
 
-      $toast?.success('Meal deleted')
       fetchMeals()
     } catch (err) {
       $toast?.error('Failed to delete meal')

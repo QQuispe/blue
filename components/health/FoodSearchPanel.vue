@@ -7,10 +7,12 @@ import RecipeFormModal from './RecipeFormModal.vue'
 
 interface Props {
   selectedMealType?: string
+  existingFoods?: any[]
 }
 
 const props = withDefaults(defineProps<Props>(), {
   selectedMealType: 'breakfast',
+  existingFoods: () => [],
 })
 
 const emit = defineEmits<{
@@ -30,9 +32,7 @@ const {
   isSearching,
   activeTab,
   searchFoods,
-  fetchRecentFoods,
-  fetchCustomFoods,
-  fetchSavedMeals,
+  initFoods,
   deleteCustomFood,
   deleteSavedMeal,
   clearSearch,
@@ -118,12 +118,12 @@ const closeRecipeEditModal = () => {
 
 const handleFoodSaved = () => {
   closeEditModal()
-  fetchCustomFoods()
+  initFoods()
 }
 
 const handleRecipeSaved = () => {
   closeRecipeEditModal()
-  fetchSavedMeals()
+  initFoods()
 }
 
 const myFoods = computed(() => {
@@ -179,10 +179,14 @@ const emitSelectedFoods = () => {
   selectedFoods.value = []
 }
 
-onMounted(() => {
-  fetchRecentFoods()
-  fetchCustomFoods()
-  fetchSavedMeals()
+onMounted(async () => {
+  // Lazy load foods when modal first opens
+  await initFoods()
+
+  // Initialize selected foods from existing foods prop (only on first mount)
+  if (props.existingFoods?.length > 0) {
+    selectedFoods.value = [...props.existingFoods]
+  }
 })
 
 defineExpose({

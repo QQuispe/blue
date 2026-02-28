@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { useHealthData } from '~/composables/useHealthData'
 
 interface MenuItem {
   name: string
@@ -19,23 +20,9 @@ const route = useRoute()
 const username = computed((): string => auth.user.value?.username || 'User')
 const { isCollapsed, toggle } = useSidebar()
 
-const healthSetupComplete = ref(false)
-
-const checkHealthSetup = async () => {
-  try {
-    const response = await $fetch('/api/health/setup-status', {
-      credentials: 'include',
-    })
-    healthSetupComplete.value = response?.isComplete ?? false
-  } catch (e) {
-    console.error('Failed to check health setup:', e)
-    healthSetupComplete.value = false
-  }
-}
-
-onMounted(() => {
-  checkHealthSetup()
-})
+// Use centralized health data
+const { setupStatus } = useHealthData()
+const healthSetupComplete = computed(() => setupStatus.value?.isComplete ?? false)
 
 const financeExpanded = ref(false)
 const financeTempExpanded = ref(false)
