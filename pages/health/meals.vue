@@ -18,10 +18,11 @@ import BaseButton from '~/components/BaseButton.vue'
 
 const { $toast } = useNuxtApp()
 
-// Centralized health data (initialized by plugin)
+// Centralized health data
 const {
   setupStatus,
   isReady,
+  init,
   userSettings,
   targetMacros,
   openEditTargets: openEditTargetsModal,
@@ -229,8 +230,8 @@ const closeDeleteModal = () => {
 
 // Initialize
 onMounted(async () => {
-  // Wait for plugin initialization
-  await new Promise(resolve => setTimeout(resolve, 0))
+  // Initialize health data (lazy - will fetch setupStatus, settings, dashboard)
+  await init()
 
   if (isReady.value && !needsSetup.value) {
     selectedDate.value = getLocalDateString()

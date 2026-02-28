@@ -34,11 +34,14 @@ const filteredWeightData = computed(() => {
 
 const isLoading = ref(true)
 const dashboard = ref<DashboardData | null>(null)
-const { userTimezone } = useHealthData()
+const { userTimezone, init, isReady } = useHealthData()
 const weightChartRange = ref<'30' | '90' | 'all'>('30')
 
-onMounted(() => {
-  fetchDashboard()
+onMounted(async () => {
+  await init()
+  if (isReady.value) {
+    fetchDashboard()
+  }
 })
 
 const { getLocalDateString } = useHealthDate()

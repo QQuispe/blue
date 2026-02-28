@@ -8,7 +8,7 @@ import { useHealthData } from '~/composables/useHealthData'
 const { $toast } = useNuxtApp()
 
 // Use centralized health data
-const { setupStatus, isReady } = useHealthData()
+const { setupStatus, isReady, init } = useHealthData()
 const needsSetup = computed(() => {
   if (!isReady.value) return false
   return !setupStatus.value?.isComplete
@@ -122,8 +122,11 @@ const generateWorkoutPlan = async () => {
   }
 }
 
-onMounted(() => {
-  fetchPlans()
+onMounted(async () => {
+  await init()
+  if (isReady.value) {
+    fetchPlans()
+  }
 })
 </script>
 

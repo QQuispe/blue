@@ -11,7 +11,7 @@ import BaseButton from '~/components/BaseButton.vue'
 const { $toast } = useNuxtApp()
 
 // Use centralized health data
-const { setupStatus, isReady } = useHealthData()
+const { setupStatus, isReady, init } = useHealthData()
 const needsSetup = computed(() => {
   if (!isReady.value) return false
   return !setupStatus.value?.isComplete
@@ -45,8 +45,7 @@ const formatNumber = (num: any) => {
 
 // Initialize
 onMounted(async () => {
-  // Wait for plugin initialization
-  await new Promise(resolve => setTimeout(resolve, 0))
+  await init()
   if (isReady.value && !needsSetup.value) {
     await fetchCheckins()
   }
