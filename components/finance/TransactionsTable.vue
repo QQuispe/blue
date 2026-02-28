@@ -83,21 +83,35 @@ const handlePageSizeChange = (e: Event) => {
     </div>
 
     <div v-else-if="error" class="error-state">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/>
-        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
       </svg>
       <span>{{ error }}</span>
-      <BaseButton variant="primary" size="sm" @click="$emit('refresh')">
-        Retry
-      </BaseButton>
+      <BaseButton variant="primary" size="sm" @click="$emit('refresh')"> Retry </BaseButton>
     </div>
 
     <div v-else-if="transactions.length === 0" class="empty-state">
-      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-        <polyline points="13 2 13 9 20 9"/>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="32"
+        height="32"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
+        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+        <polyline points="13 2 13 9 20 9" />
       </svg>
       <p>No transactions found</p>
       <span>Try adjusting your filters</span>
@@ -107,30 +121,48 @@ const handlePageSizeChange = (e: Event) => {
       <table class="transactions-table">
         <thead>
           <tr>
-            <th 
-              v-for="col in sortableColumns" 
+            <th
+              v-for="col in sortableColumns"
               :key="col.key"
-              :class="['col-' + col.key, { 'sortable': true, 'active': currentSortField === col.key }]"
+              :class="['col-' + col.key, { sortable: true, active: currentSortField === col.key }]"
               @click="handleSort(col.key)"
             >
               {{ col.label }}
               <span class="sort-icon" v-if="currentSortField === col.key">
-                <svg v-if="currentSortDirection === 'asc'" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18 15l-6-6-6 6"/>
+                <svg
+                  v-if="currentSortDirection === 'asc'"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M18 15l-6-6-6 6" />
                 </svg>
-                <svg v-else xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M6 9l6 6 6-6"/>
+                <svg
+                  v-else
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M6 9l6 6 6-6" />
                 </svg>
               </span>
             </th>
           </tr>
         </thead>
         <tbody>
-          <tr 
-            v-for="transaction in transactions" 
+          <tr
+            v-for="transaction in transactions"
             :key="transaction.id"
             class="transaction-row"
-            :class="{ 'pending': transaction.pending }"
+            :class="{ pending: transaction.pending }"
             @click="handleRowClick(transaction)"
           >
             <td class="col-date">
@@ -142,25 +174,40 @@ const handlePageSizeChange = (e: Event) => {
                 <div v-if="transaction.logo_url" class="transaction-logo">
                   <img :src="transaction.logo_url" :alt="transaction.name" />
                 </div>
-                <div v-else class="transaction-icon" :style="{ backgroundColor: getCategoryColor(transaction.categoryPrimary || 'Uncategorized') + '20', color: getCategoryColor(transaction.categoryPrimary || 'Uncategorized') }">
+                <div
+                  v-else
+                  class="transaction-icon"
+                  :style="{
+                    backgroundColor:
+                      getCategoryColor(transaction.categoryPrimary || 'Uncategorized') + '20',
+                    color: getCategoryColor(transaction.categoryPrimary || 'Uncategorized'),
+                  }"
+                >
                   {{ (transaction.name || 'T').charAt(0).toUpperCase() }}
                 </div>
                 <span class="name" :title="transaction.name">{{ transaction.name }}</span>
               </div>
             </td>
             <td class="col-category">
-              <span 
+              <span
                 class="category-badge"
-                :style="{ backgroundColor: getCategoryColor(transaction.categoryPrimary || 'Uncategorized') }"
+                :style="{
+                  backgroundColor: getCategoryColor(transaction.categoryPrimary || 'Uncategorized'),
+                }"
               >
                 {{ transaction.categoryPrimary || 'Uncategorized' }}
               </span>
             </td>
             <td class="col-account">
-              <span class="account-name" :title="transaction.account_name">{{ transaction.account_name }}</span>
+              <span class="account-name" :title="transaction.account_name">{{
+                transaction.account_name
+              }}</span>
             </td>
             <td class="col-amount">
-              <span class="amount" :class="{ 'negative': transaction.amount < 0, 'positive': transaction.amount > 0 }">
+              <span
+                class="amount"
+                :class="{ negative: transaction.amount < 0, positive: transaction.amount > 0 }"
+              >
                 {{ formatAmount(transaction.amount) }}
               </span>
             </td>
@@ -178,27 +225,37 @@ const handlePageSizeChange = (e: Event) => {
           <span class="per-page-label">per page</span>
         </div>
 
-        <button
-          class="page-btn"
-          :disabled="page === 1"
-          @click="handlePageChange(page - 1)"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M15 18l-6-6 6-6"/>
+        <button class="page-btn" :disabled="page === 1" @click="handlePageChange(page - 1)">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M15 18l-6-6 6-6" />
           </svg>
         </button>
-        
-        <span class="page-info">
-          {{ page }} / {{ totalPages }}
-        </span>
-        
+
+        <span class="page-info"> {{ page }} / {{ totalPages }} </span>
+
         <button
           class="page-btn"
           :disabled="page === totalPages"
           @click="handlePageChange(page + 1)"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M9 18l6-6-6-6" />
           </svg>
         </button>
       </div>
@@ -214,7 +271,9 @@ const handlePageSizeChange = (e: Event) => {
   overflow: hidden;
 }
 
-.loading-state, .error-state, .empty-state {
+.loading-state,
+.error-state,
+.empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -224,7 +283,8 @@ const handlePageSizeChange = (e: Event) => {
   color: var(--color-text-secondary);
 }
 
-.error-state svg, .empty-state svg {
+.error-state svg,
+.empty-state svg {
   opacity: 0.5;
 }
 
@@ -300,23 +360,23 @@ const handlePageSizeChange = (e: Event) => {
   opacity: 0.6;
 }
 
-.col-date { 
-  width: 90px; 
+.col-date {
+  width: 90px;
   max-width: 90px;
 }
-.col-name { 
-  width: 1fr; 
+.col-name {
+  width: 1fr;
   min-width: 150px;
 }
-.col-category { 
+.col-category {
   width: max-content;
   min-width: 110px;
 }
-.col-account { 
+.col-account {
   width: max-content;
   min-width: 120px;
 }
-.col-amount { 
+.col-amount {
   width: 120px;
   max-width: 120px;
   text-align: right;

@@ -1,12 +1,9 @@
-import { pool } from '../index.js';
-import type { UserSettings, QueryResult } from '~/types/database.js';
+import { pool } from '../index.js'
+import type { UserSettings, QueryResult } from '~/types/database.js'
 
 export async function getUserSettings(userId: number): Promise<QueryResult<UserSettings>> {
-  const result = await pool.query(
-    `SELECT * FROM user_settings WHERE user_id = $1`,
-    [userId]
-  );
-  return result.rows[0] || null;
+  const result = await pool.query(`SELECT * FROM user_settings WHERE user_id = $1`, [userId])
+  return result.rows[0] || null
 }
 
 export async function createUserSettings(
@@ -32,18 +29,19 @@ export async function createUserSettings(
       settings.timezone || 'America/New_York',
       settings.theme || 'dark',
       settings.notifications_enabled ?? true,
-      settings.budget_alerts_enabled ?? true
+      settings.budget_alerts_enabled ?? true,
     ]
-  );
-  return result.rows[0];
+  )
+  return result.rows[0]
 }
 
 export async function updateUserSettings(
   userId: number,
   settings: Partial<UserSettings>
 ): Promise<QueryResult<UserSettings>> {
-  const { currency, locale, timezone, theme, notifications_enabled, budget_alerts_enabled } = settings;
-  
+  const { currency, locale, timezone, theme, notifications_enabled, budget_alerts_enabled } =
+    settings
+
   const result = await pool.query(
     `UPDATE user_settings
      SET currency = COALESCE($2, currency),
@@ -56,8 +54,8 @@ export async function updateUserSettings(
      WHERE user_id = $1
      RETURNING *`,
     [userId, currency, locale, timezone, theme, notifications_enabled, budget_alerts_enabled]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 export async function updateUserCurrency(
@@ -70,14 +68,11 @@ export async function updateUserCurrency(
      WHERE user_id = $1
      RETURNING *`,
     [userId, currency]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 export async function getUserCurrency(userId: number): Promise<string> {
-  const result = await pool.query(
-    `SELECT currency FROM user_settings WHERE user_id = $1`,
-    [userId]
-  );
-  return result.rows[0]?.currency || 'USD';
+  const result = await pool.query(`SELECT currency FROM user_settings WHERE user_id = $1`, [userId])
+  return result.rows[0]?.currency || 'USD'
 }

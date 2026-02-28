@@ -1,28 +1,28 @@
-import { pool } from '../index.js';
-import type { Transaction, QueryResult, QueryResultArray } from '~/types';
-import type { SyncData, SyncResult } from '~/types';
+import { pool } from '../index.js'
+import type { Transaction, QueryResult, QueryResultArray } from '~/types'
+import type { SyncData, SyncResult } from '~/types'
 
 // Transaction updates type
 interface TransactionUpdates {
-  plaidCategoryId?: string;
-  category?: string;
-  name?: string;
-  amount?: number;
-  date?: string;
-  pending?: boolean;
+  plaidCategoryId?: string
+  category?: string
+  name?: string
+  amount?: number
+  date?: string
+  pending?: boolean
 }
 
 // Transaction with account info (for getTransactionsByUserId)
 interface TransactionWithAccount extends Transaction {
-  account_name: string;
-  account_type: string;
+  account_name: string
+  account_type: string
 }
 
 // Summary result type
 interface TransactionsSummary {
-  transaction_count: number;
-  total_amount: number;
-  active_days: number;
+  transaction_count: number
+  total_amount: number
+  active_days: number
 }
 
 /**
@@ -51,23 +51,29 @@ export async function createTransaction(
     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
     RETURNING id, plaid_transaction_id, name, amount, date, pending, created_at`,
     [
-      accountId, plaidTransactionId, plaidCategoryId, category,
-      type, name, amount, isoCurrencyCode, unofficialCurrencyCode,
-      date, pending, accountOwner
+      accountId,
+      plaidTransactionId,
+      plaidCategoryId,
+      category,
+      type,
+      name,
+      amount,
+      isoCurrencyCode,
+      unofficialCurrencyCode,
+      date,
+      pending,
+      accountOwner,
     ]
-  );
-  return result.rows[0];
+  )
+  return result.rows[0]
 }
 
 /**
  * Get transaction by internal ID
  */
 export async function getTransactionById(id: number): Promise<QueryResult<Transaction>> {
-  const result = await pool.query(
-    `SELECT * FROM transactions WHERE id = $1`,
-    [id]
-  );
-  return result.rows[0] || null;
+  const result = await pool.query(`SELECT * FROM transactions WHERE id = $1`, [id])
+  return result.rows[0] || null
 }
 
 /**
@@ -76,19 +82,18 @@ export async function getTransactionById(id: number): Promise<QueryResult<Transa
 export async function getTransactionByPlaidTransactionId(
   plaidTransactionId: string
 ): Promise<QueryResult<Transaction>> {
-  const result = await pool.query(
-    `SELECT * FROM transactions WHERE plaid_transaction_id = $1`,
-    [plaidTransactionId]
-  );
-  return result.rows[0] || null;
+  const result = await pool.query(`SELECT * FROM transactions WHERE plaid_transaction_id = $1`, [
+    plaidTransactionId,
+  ])
+  return result.rows[0] || null
 }
 
 /**
  * Get all transactions for an account
  */
 export async function getTransactionsByAccountId(
-  accountId: number, 
-  limit: number = 100, 
+  accountId: number,
+  limit: number = 100,
   offset: number = 0
 ): Promise<QueryResultArray<Transaction>> {
   const result = await pool.query(
@@ -97,16 +102,16 @@ export async function getTransactionsByAccountId(
      ORDER BY date DESC, created_at DESC
      LIMIT $2 OFFSET $3`,
     [accountId, limit, offset]
-  );
-  return result.rows;
+  )
+  return result.rows
 }
 
 /**
  * Get all transactions for a user (across all accounts)
  */
 export async function getTransactionsByUserId(
-  userId: number, 
-  limit: number = 100, 
+  userId: number,
+  limit: number = 100,
   offset: number = 0
 ): Promise<QueryResultArray<TransactionWithAccount>> {
   const result = await pool.query(
@@ -118,8 +123,8 @@ export async function getTransactionsByUserId(
      ORDER BY t.date DESC, t.created_at DESC
      LIMIT $2 OFFSET $3`,
     [userId, limit, offset]
-  );
-  return result.rows;
+  )
+  return result.rows
 }
 
 /**
@@ -129,53 +134,53 @@ export async function updateTransaction(
   plaidTransactionId: string,
   updates: TransactionUpdates
 ): Promise<QueryResult<Transaction>> {
-  const fields: string[] = [];
-  const values: (string | number | boolean | null)[] = [];
-  let paramIndex = 1;
+  const fields: string[] = []
+  const values: (string | number | boolean | null)[] = []
+  let paramIndex = 1
 
   if (updates.plaidCategoryId !== undefined) {
-    fields.push(`plaid_category_id = $${paramIndex++}`);
-    values.push(updates.plaidCategoryId);
+    fields.push(`plaid_category_id = $${paramIndex++}`)
+    values.push(updates.plaidCategoryId)
   }
   if (updates.category !== undefined) {
-    fields.push(`category = $${paramIndex++}`);
-    values.push(updates.category);
+    fields.push(`category = $${paramIndex++}`)
+    values.push(updates.category)
   }
   if (updates.name !== undefined) {
-    fields.push(`name = $${paramIndex++}`);
-    values.push(updates.name);
+    fields.push(`name = $${paramIndex++}`)
+    values.push(updates.name)
   }
   if (updates.amount !== undefined) {
-    fields.push(`amount = $${paramIndex++}`);
-    values.push(updates.amount);
+    fields.push(`amount = $${paramIndex++}`)
+    values.push(updates.amount)
   }
   if (updates.date !== undefined) {
-    fields.push(`date = $${paramIndex++}`);
-    values.push(updates.date);
+    fields.push(`date = $${paramIndex++}`)
+    values.push(updates.date)
   }
   if (updates.pending !== undefined) {
-    fields.push(`pending = $${paramIndex++}`);
-    values.push(updates.pending);
+    fields.push(`pending = $${paramIndex++}`)
+    values.push(updates.pending)
   }
 
-  if (fields.length === 0) return null;
+  if (fields.length === 0) return null
 
-  fields.push(`updated_at = CURRENT_TIMESTAMP`);
-  values.push(plaidTransactionId);
+  fields.push(`updated_at = CURRENT_TIMESTAMP`)
+  values.push(plaidTransactionId)
 
   const result = await pool.query(
     `UPDATE transactions SET ${fields.join(', ')}
      WHERE plaid_transaction_id = $${paramIndex}
      RETURNING *`,
     values
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 // Simple deletion result type
 interface DeletedTransaction {
-  id: number;
-  plaid_transaction_id: string;
+  id: number
+  plaid_transaction_id: string
 }
 
 /**
@@ -188,8 +193,8 @@ export async function deleteTransaction(
     `DELETE FROM transactions WHERE plaid_transaction_id = $1
      RETURNING id, plaid_transaction_id`,
     [plaidTransactionId]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 /**
@@ -197,31 +202,31 @@ export async function deleteTransaction(
  * This runs in a database transaction for atomicity
  */
 export async function applyTransactionUpdates(
-  itemId: number, 
+  itemId: number,
   syncData: SyncData
 ): Promise<SyncResult> {
-  const client = await pool.connect();
-  
+  const client = await pool.connect()
+
   try {
-    await client.query('BEGIN');
-    
-    const { added, modified, removed, nextCursor } = syncData;
-    
+    await client.query('BEGIN')
+
+    const { added, modified, removed, nextCursor } = syncData
+
     // 1. INSERT added transactions
     for (const transaction of added) {
       // First, get the internal account_id from the plaid_account_id
       const accountResult = await client.query(
         `SELECT id FROM accounts WHERE plaid_account_id = $1`,
         [transaction.account_id]
-      );
-      
+      )
+
       if (accountResult.rows.length === 0) {
-        console.warn(`Account not found for plaid_account_id: ${transaction.account_id}`);
-        continue;
+        console.warn(`Account not found for plaid_account_id: ${transaction.account_id}`)
+        continue
       }
-      
-      const accountId = accountResult.rows[0].id;
-      
+
+      const accountId = accountResult.rows[0].id
+
       await client.query(
         `INSERT INTO transactions (
           account_id, plaid_transaction_id, plaid_category_id, category,
@@ -237,7 +242,8 @@ export async function applyTransactionUpdates(
           accountId,
           transaction.transaction_id,
           transaction.personal_finance_category?.primary,
-          transaction.personal_finance_category?.detailed || transaction.personal_finance_category?.primary,
+          transaction.personal_finance_category?.detailed ||
+            transaction.personal_finance_category?.primary,
           transaction.payment_channel,
           transaction.name,
           transaction.amount,
@@ -246,11 +252,11 @@ export async function applyTransactionUpdates(
           transaction.date,
           transaction.pending,
           transaction.account_owner,
-          transaction.logo_url
+          transaction.logo_url,
         ]
-      );
+      )
     }
-    
+
     // 2. UPDATE modified transactions
     for (const transaction of modified) {
       await client.query(
@@ -266,48 +272,47 @@ export async function applyTransactionUpdates(
         WHERE plaid_transaction_id = $8`,
         [
           transaction.personal_finance_category?.primary,
-          transaction.personal_finance_category?.detailed || transaction.personal_finance_category?.primary,
+          transaction.personal_finance_category?.detailed ||
+            transaction.personal_finance_category?.primary,
           transaction.name,
           transaction.amount,
           transaction.date,
           transaction.pending,
           transaction.logo_url,
-          transaction.transaction_id
+          transaction.transaction_id,
         ]
-      );
+      )
     }
-    
+
     // 3. DELETE removed transactions
     for (const transaction of removed) {
-      await client.query(
-        `DELETE FROM transactions WHERE plaid_transaction_id = $1`,
-        [transaction.transaction_id]
-      );
+      await client.query(`DELETE FROM transactions WHERE plaid_transaction_id = $1`, [
+        transaction.transaction_id,
+      ])
     }
-    
+
     // 4. UPDATE cursor in items table (CRITICAL - only save after successful processing)
     await client.query(
       `UPDATE items 
        SET transactions_cursor = $1, updated_at = CURRENT_TIMESTAMP 
        WHERE id = $2`,
       [nextCursor, itemId]
-    );
-    
-    await client.query('COMMIT');
-    
+    )
+
+    await client.query('COMMIT')
+
     return {
       added: added.length,
       modified: modified.length,
       removed: removed.length,
-      newCursor: nextCursor || undefined
-    };
-    
+      newCursor: nextCursor || undefined,
+    }
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error applying transaction updates:', error);
-    throw error;
+    await client.query('ROLLBACK')
+    console.error('Error applying transaction updates:', error)
+    throw error
   } finally {
-    client.release();
+    client.release()
   }
 }
 
@@ -315,17 +320,14 @@ export async function applyTransactionUpdates(
  * Get stored cursor for an item
  */
 export async function getTransactionCursor(itemId: number): Promise<string | null> {
-  const result = await pool.query(
-    `SELECT transactions_cursor FROM items WHERE id = $1`,
-    [itemId]
-  );
-  return result.rows[0]?.transactions_cursor || null;
+  const result = await pool.query(`SELECT transactions_cursor FROM items WHERE id = $1`, [itemId])
+  return result.rows[0]?.transactions_cursor || null
 }
 
 // Item with cursor result type
 interface ItemWithCursor {
-  id: number;
-  transactions_cursor: string | null;
+  id: number
+  transactions_cursor: string | null
 }
 
 /**
@@ -337,15 +339,15 @@ export async function getItemByAccessToken(
   const result = await pool.query(
     `SELECT id, transactions_cursor FROM items WHERE plaid_access_token = $1`,
     [accessToken]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 /**
  * Get recent transactions summary for dashboard
  */
 export async function getRecentTransactionsSummary(
-  userId: number, 
+  userId: number,
   days: number = 30
 ): Promise<TransactionsSummary> {
   const result = await pool.query(
@@ -360,26 +362,26 @@ export async function getRecentTransactionsSummary(
        AND t.date >= CURRENT_DATE - INTERVAL '${days} days'
        AND NOT t.pending`,
     [userId]
-  );
-  return result.rows[0];
+  )
+  return result.rows[0]
 }
 
 /**
  * Filter options for transactions
  */
 export interface TransactionFilters {
-  search?: string;
-  accountId?: number;
-  dateFrom?: string;
-  dateTo?: string;
-  minAmount?: number;
-  maxAmount?: number;
-  excludePending?: boolean;
+  search?: string
+  accountId?: number
+  dateFrom?: string
+  dateTo?: string
+  minAmount?: number
+  maxAmount?: number
+  excludePending?: boolean
 }
 
 export interface TransactionSort {
-  field: 'date' | 'amount' | 'name';
-  direction: 'asc' | 'desc';
+  field: 'date' | 'amount' | 'name'
+  direction: 'asc' | 'desc'
 }
 
 /**
@@ -392,54 +394,55 @@ export async function getFilteredTransactions(
   limit: number = 50,
   offset: number = 0
 ): Promise<QueryResultArray<TransactionWithAccount>> {
-  let whereClause = `i.user_id = $1`;
-  const params: (string | number | boolean | null)[] = [userId];
-  let paramIndex = 2;
+  let whereClause = `i.user_id = $1`
+  const params: (string | number | boolean | null)[] = [userId]
+  let paramIndex = 2
 
   if (filters.search) {
-    whereClause += ` AND t.name ILIKE $${paramIndex}`;
-    params.push(`%${filters.search}%`);
-    paramIndex++;
+    whereClause += ` AND t.name ILIKE $${paramIndex}`
+    params.push(`%${filters.search}%`)
+    paramIndex++
   }
 
   if (filters.accountId) {
-    whereClause += ` AND t.account_id = $${paramIndex}`;
-    params.push(filters.accountId);
-    paramIndex++;
+    whereClause += ` AND t.account_id = $${paramIndex}`
+    params.push(filters.accountId)
+    paramIndex++
   }
 
   if (filters.dateFrom) {
-    whereClause += ` AND t.date >= $${paramIndex}`;
-    params.push(filters.dateFrom);
-    paramIndex++;
+    whereClause += ` AND t.date >= $${paramIndex}`
+    params.push(filters.dateFrom)
+    paramIndex++
   }
 
   if (filters.dateTo) {
-    whereClause += ` AND t.date <= $${paramIndex}`;
-    params.push(filters.dateTo);
-    paramIndex++;
+    whereClause += ` AND t.date <= $${paramIndex}`
+    params.push(filters.dateTo)
+    paramIndex++
   }
 
   if (filters.minAmount !== undefined) {
-    whereClause += ` AND ABS(t.amount) >= $${paramIndex}`;
-    params.push(filters.minAmount);
-    paramIndex++;
+    whereClause += ` AND ABS(t.amount) >= $${paramIndex}`
+    params.push(filters.minAmount)
+    paramIndex++
   }
 
   if (filters.maxAmount !== undefined) {
-    whereClause += ` AND ABS(t.amount) <= $${paramIndex}`;
-    params.push(filters.maxAmount);
-    paramIndex++;
+    whereClause += ` AND ABS(t.amount) <= $${paramIndex}`
+    params.push(filters.maxAmount)
+    paramIndex++
   }
 
   if (filters.excludePending !== false) {
-    whereClause += ` AND NOT t.pending`;
+    whereClause += ` AND NOT t.pending`
   }
 
-  const sortField = sort.field === 'amount' ? 'ABS(t.amount)' : sort.field === 'name' ? 't.name' : 't.date';
-  const sortDirection = sort.direction.toUpperCase();
+  const sortField =
+    sort.field === 'amount' ? 'ABS(t.amount)' : sort.field === 'name' ? 't.name' : 't.date'
+  const sortDirection = sort.direction.toUpperCase()
 
-  params.push(limit, offset);
+  params.push(limit, offset)
 
   const result = await pool.query(
     `SELECT t.*, a.name as account_name, a.type as account_type
@@ -450,8 +453,8 @@ export async function getFilteredTransactions(
      ORDER BY ${sortField} ${sortDirection}, t.created_at DESC
      LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`,
     params
-  );
-  return result.rows;
+  )
+  return result.rows
 }
 
 /**
@@ -461,48 +464,48 @@ export async function getFilteredTransactionCount(
   userId: number,
   filters: TransactionFilters
 ): Promise<number> {
-  let whereClause = `i.user_id = $1`;
-  const params: (string | number | boolean | null)[] = [userId];
-  let paramIndex = 2;
+  let whereClause = `i.user_id = $1`
+  const params: (string | number | boolean | null)[] = [userId]
+  let paramIndex = 2
 
   if (filters.search) {
-    whereClause += ` AND t.name ILIKE $${paramIndex}`;
-    params.push(`%${filters.search}%`);
-    paramIndex++;
+    whereClause += ` AND t.name ILIKE $${paramIndex}`
+    params.push(`%${filters.search}%`)
+    paramIndex++
   }
 
   if (filters.accountId) {
-    whereClause += ` AND t.account_id = $${paramIndex}`;
-    params.push(filters.accountId);
-    paramIndex++;
+    whereClause += ` AND t.account_id = $${paramIndex}`
+    params.push(filters.accountId)
+    paramIndex++
   }
 
   if (filters.dateFrom) {
-    whereClause += ` AND t.date >= $${paramIndex}`;
-    params.push(filters.dateFrom);
-    paramIndex++;
+    whereClause += ` AND t.date >= $${paramIndex}`
+    params.push(filters.dateFrom)
+    paramIndex++
   }
 
   if (filters.dateTo) {
-    whereClause += ` AND t.date <= $${paramIndex}`;
-    params.push(filters.dateTo);
-    paramIndex++;
+    whereClause += ` AND t.date <= $${paramIndex}`
+    params.push(filters.dateTo)
+    paramIndex++
   }
 
   if (filters.minAmount !== undefined) {
-    whereClause += ` AND ABS(t.amount) >= $${paramIndex}`;
-    params.push(filters.minAmount);
-    paramIndex++;
+    whereClause += ` AND ABS(t.amount) >= $${paramIndex}`
+    params.push(filters.minAmount)
+    paramIndex++
   }
 
   if (filters.maxAmount !== undefined) {
-    whereClause += ` AND ABS(t.amount) <= $${paramIndex}`;
-    params.push(filters.maxAmount);
-    paramIndex++;
+    whereClause += ` AND ABS(t.amount) <= $${paramIndex}`
+    params.push(filters.maxAmount)
+    paramIndex++
   }
 
   if (filters.excludePending !== false) {
-    whereClause += ` AND NOT t.pending`;
+    whereClause += ` AND NOT t.pending`
   }
 
   const result = await pool.query(
@@ -512,8 +515,8 @@ export async function getFilteredTransactionCount(
      JOIN items i ON a.item_id = i.id
      WHERE ${whereClause}`,
     params
-  );
-  return parseInt(result.rows[0].count);
+  )
+  return parseInt(result.rows[0].count)
 }
 
 /**
@@ -528,8 +531,8 @@ export async function getUserCategories(userId: number): Promise<string[]> {
      WHERE i.user_id = $1 AND category IS NOT NULL
      ORDER BY category`,
     [userId]
-  );
-  return result.rows.map(row => row.category as string);
+  )
+  return result.rows.map(row => row.category as string)
 }
 
 /**
@@ -539,36 +542,36 @@ export async function getFilteredTotalSpend(
   userId: number,
   filters: TransactionFilters
 ): Promise<number> {
-  let whereClause = `i.user_id = $1 AND t.amount < 0`;
-  const params: (string | number | boolean | null)[] = [userId];
-  let paramIndex = 2;
+  let whereClause = `i.user_id = $1 AND t.amount < 0`
+  const params: (string | number | boolean | null)[] = [userId]
+  let paramIndex = 2
 
   if (filters.search) {
-    whereClause += ` AND t.name ILIKE $${paramIndex}`;
-    params.push(`%${filters.search}%`);
-    paramIndex++;
+    whereClause += ` AND t.name ILIKE $${paramIndex}`
+    params.push(`%${filters.search}%`)
+    paramIndex++
   }
 
   if (filters.accountId) {
-    whereClause += ` AND t.account_id = $${paramIndex}`;
-    params.push(filters.accountId);
-    paramIndex++;
+    whereClause += ` AND t.account_id = $${paramIndex}`
+    params.push(filters.accountId)
+    paramIndex++
   }
 
   if (filters.dateFrom) {
-    whereClause += ` AND t.date >= $${paramIndex}`;
-    params.push(filters.dateFrom);
-    paramIndex++;
+    whereClause += ` AND t.date >= $${paramIndex}`
+    params.push(filters.dateFrom)
+    paramIndex++
   }
 
   if (filters.dateTo) {
-    whereClause += ` AND t.date <= $${paramIndex}`;
-    params.push(filters.dateTo);
-    paramIndex++;
+    whereClause += ` AND t.date <= $${paramIndex}`
+    params.push(filters.dateTo)
+    paramIndex++
   }
 
   if (filters.excludePending !== false) {
-    whereClause += ` AND NOT t.pending`;
+    whereClause += ` AND NOT t.pending`
   }
 
   const result = await pool.query(
@@ -578,8 +581,8 @@ export async function getFilteredTotalSpend(
      JOIN items i ON a.item_id = i.id
      WHERE ${whereClause}`,
     params
-  );
-  return parseFloat(result.rows[0].total);
+  )
+  return parseFloat(result.rows[0].total)
 }
 
 /**
@@ -589,36 +592,36 @@ export async function getFilteredCategoryBreakdown(
   userId: number,
   filters: TransactionFilters
 ): Promise<{ category: string; amount: number; count: number }[]> {
-  let whereClause = `i.user_id = $1 AND t.amount < 0`;
-  const params: (string | number | boolean | null)[] = [userId];
-  let paramIndex = 2;
+  let whereClause = `i.user_id = $1 AND t.amount < 0`
+  const params: (string | number | boolean | null)[] = [userId]
+  let paramIndex = 2
 
   if (filters.search) {
-    whereClause += ` AND t.name ILIKE $${paramIndex}`;
-    params.push(`%${filters.search}%`);
-    paramIndex++;
+    whereClause += ` AND t.name ILIKE $${paramIndex}`
+    params.push(`%${filters.search}%`)
+    paramIndex++
   }
 
   if (filters.accountId) {
-    whereClause += ` AND t.account_id = $${paramIndex}`;
-    params.push(filters.accountId);
-    paramIndex++;
+    whereClause += ` AND t.account_id = $${paramIndex}`
+    params.push(filters.accountId)
+    paramIndex++
   }
 
   if (filters.dateFrom) {
-    whereClause += ` AND t.date >= $${paramIndex}`;
-    params.push(filters.dateFrom);
-    paramIndex++;
+    whereClause += ` AND t.date >= $${paramIndex}`
+    params.push(filters.dateFrom)
+    paramIndex++
   }
 
   if (filters.dateTo) {
-    whereClause += ` AND t.date <= $${paramIndex}`;
-    params.push(filters.dateTo);
-    paramIndex++;
+    whereClause += ` AND t.date <= $${paramIndex}`
+    params.push(filters.dateTo)
+    paramIndex++
   }
 
   if (filters.excludePending !== false) {
-    whereClause += ` AND NOT t.pending`;
+    whereClause += ` AND NOT t.pending`
   }
 
   const result = await pool.query(
@@ -633,12 +636,12 @@ export async function getFilteredCategoryBreakdown(
      GROUP BY category
      ORDER BY amount ASC`,
     params
-  );
+  )
   return result.rows.map(row => ({
     category: row.category,
     amount: parseFloat(row.amount),
-    count: parseInt(row.count)
-  }));
+    count: parseInt(row.count),
+  }))
 }
 
 export async function getTransactionMonths(userId: number): Promise<string[]> {
@@ -650,6 +653,6 @@ export async function getTransactionMonths(userId: number): Promise<string[]> {
      WHERE i.user_id = $1
      ORDER BY month DESC`,
     [userId]
-  );
-  return result.rows.map(row => row.month as string);
+  )
+  return result.rows.map(row => row.month as string)
 }

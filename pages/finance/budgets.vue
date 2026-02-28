@@ -431,39 +431,39 @@ const viewBudgetTransactions = async (budget: Budget) => {
             </button>
           </div>
         </div>
-          <div class="budget-body">
-            <div class="budget-amounts">
-              <span class="spent">{{ formatCurrency(budget.spentAmount) }}</span>
-              <span class="divider">/</span>
-              <span class="budget">{{ formatCurrency(budget.budgetAmount) }}</span>
-              <span class="remaining" :class="{ negative: budget.remainingAmount < 0 }">
-                {{ budget.remainingAmount >= 0 ? '+' : ''
-                }}{{ formatCurrency(budget.remainingAmount) }} left
-              </span>
+        <div class="budget-body">
+          <div class="budget-amounts">
+            <span class="spent">{{ formatCurrency(budget.spentAmount) }}</span>
+            <span class="divider">/</span>
+            <span class="budget">{{ formatCurrency(budget.budgetAmount) }}</span>
+            <span class="remaining" :class="{ negative: budget.remainingAmount < 0 }">
+              {{ budget.remainingAmount >= 0 ? '+' : ''
+              }}{{ formatCurrency(budget.remainingAmount) }} left
+            </span>
+          </div>
+          <div class="budget-bar-container">
+            <div class="budget-bar">
+              <div
+                class="budget-bar-fill"
+                :class="getProgressColorClass(budget.percentageUsed)"
+                :style="{ width: `${Math.min(budget.percentageUsed, 100)}%` }"
+              ></div>
             </div>
-            <div class="budget-bar-container">
-              <div class="budget-bar">
-                <div
-                  class="budget-bar-fill"
-                  :class="getProgressColorClass(budget.percentageUsed)"
-                  :style="{ width: `${Math.min(budget.percentageUsed, 100)}%` }"
-                ></div>
-              </div>
-              <div class="budget-stats">
-                <span class="percentage" :class="getProgressColorClass(budget.percentageUsed)">
-                  {{ budget.percentageUsed.toFixed(0) }}%
-                </span>
-                <span class="projection">
-                  Pace:
-                  <span :class="getRiskColorClass(budget.riskLevel)"
-                    >{{ budget.projectedPercentage.toFixed(0) }}%</span
-                  >
-                </span>
-              </div>
+            <div class="budget-stats">
+              <span class="percentage" :class="getProgressColorClass(budget.percentageUsed)">
+                {{ budget.percentageUsed.toFixed(0) }}%
+              </span>
+              <span class="projection">
+                Pace:
+                <span :class="getRiskColorClass(budget.riskLevel)"
+                  >{{ budget.projectedPercentage.toFixed(0) }}%</span
+                >
+              </span>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
     <div v-if="showModal" class="modal-overlay" @click="showModal = false">
       <div class="modal" @click.stop>

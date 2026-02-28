@@ -37,8 +37,8 @@ const handleRegister = async () => {
       body: JSON.stringify({
         username: username.value,
         email: email.value || null,
-        password: password.value
-      })
+        password: password.value,
+      }),
     })
 
     const data = await response.json()
@@ -63,7 +63,7 @@ const handleRegister = async () => {
       <NuxtLink to="/login" class="back-link" title="Back to login">
         <Icon name="mdi:arrow-left" size="20" />
       </NuxtLink>
-      
+
       <h1>Create Account</h1>
       <p class="subtitle">Join Blue Finance</p>
 
@@ -176,7 +176,7 @@ const handleRegister = async () => {
   width: 100%;
   max-width: 400px;
   min-width: 320px;
-  
+
   /* Visual styling */
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
@@ -323,7 +323,9 @@ input:disabled {
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .auth-btn:hover:not(:disabled) {

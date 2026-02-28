@@ -147,7 +147,7 @@ export default defineEventHandler(async event => {
         throw createError({ statusCode: 400, statusMessage: 'Name is required' })
       }
 
-      let mealData = { ...body }
+      const mealData = { ...body }
 
       if (body.ingredients && body.ingredients.length > 0) {
         const processedIngredients = []

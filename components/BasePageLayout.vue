@@ -10,7 +10,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   showBack: true,
-  backTo: '/'
+  backTo: '/',
 })
 
 const backRoute = computed(() => props.backTo)
@@ -25,13 +25,7 @@ const backRoute = computed(() => props.backTo)
       </div>
       <div class="header-actions">
         <slot name="header-actions" />
-        <BaseButton
-          v-if="showBack"
-          variant="secondary"
-          size="sm"
-          :to="backRoute"
-          class="back-btn"
-        >
+        <BaseButton v-if="showBack" variant="secondary" size="sm" :to="backRoute" class="back-btn">
           <Icon name="mdi:arrow-left" size="16" />
           Back
         </BaseButton>

@@ -5,18 +5,18 @@ const { isCollapsed } = useSidebar()
 
 <template>
   <div class="theme-toggle-wrapper">
-    <button 
-      class="theme-toggle" 
+    <button
+      class="theme-toggle"
       @click="toggleMode"
       :title="isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
-      :class="{ 'collapsed': isCollapsed }"
+      :class="{ collapsed: isCollapsed }"
     >
-      <div class="toggle-track" :class="{ 'dark': isDark }">
+      <div class="toggle-track" :class="{ dark: isDark }">
         <div class="toggle-icons">
           <Icon name="mdi:white-balance-sunny" size="14" class="sun-icon" />
           <Icon name="mdi:moon-waning-crescent" size="14" class="moon-icon" />
         </div>
-        <div class="toggle-thumb" :class="{ 'dark': isDark }"></div>
+        <div class="toggle-thumb" :class="{ dark: isDark }"></div>
       </div>
       <span v-show="!isCollapsed" class="toggle-label">
         {{ isDark ? 'Dark Mode' : 'Light Mode' }}

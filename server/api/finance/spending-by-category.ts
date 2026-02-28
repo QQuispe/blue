@@ -1,42 +1,42 @@
-import { defineEventHandler, createError } from 'h3';
-import { requireAuth } from '~/server/utils/auth';
-import { pool } from '~/server/db';
-import { formatCategoryName, getPrimaryCategoryName } from '~/server/utils/categoryMap';
+import { defineEventHandler, createError } from 'h3'
+import { requireAuth } from '~/server/utils/auth'
+import { pool } from '~/server/db'
+import { formatCategoryName, getPrimaryCategoryName } from '~/server/utils/categoryMap'
 
 interface CategorySpending {
-  category: string;
-  categoryPrimary: string;
-  amount: number;
-  transactionCount: number;
-  percentage: string;
+  category: string
+  categoryPrimary: string
+  amount: number
+  transactionCount: number
+  percentage: string
 }
 
 interface SpendingByCategoryResponse {
-  statusCode: number;
-  categories: CategorySpending[];
-  totalSpending: number;
+  statusCode: number
+  categories: CategorySpending[]
+  totalSpending: number
   period: {
-    startDate: string;
-    endDate: string;
-  };
+    startDate: string
+    endDate: string
+  }
 }
 
 // Get date range for last 30 days
 function getLast30DaysRange(): { startDate: string; endDate: string } {
-  const now = new Date();
-  const start = new Date(now);
-  start.setDate(start.getDate() - 30);
+  const now = new Date()
+  const start = new Date(now)
+  start.setDate(start.getDate() - 30)
   return {
     startDate: start.toISOString().split('T')[0],
-    endDate: now.toISOString().split('T')[0]
-  };
+    endDate: now.toISOString().split('T')[0],
+  }
 }
 
 export default defineEventHandler(async (event): Promise<SpendingByCategoryResponse> => {
   try {
-    const user = await requireAuth(event);
-    const { startDate, endDate } = getLast30DaysRange();
-    
+    const user = await requireAuth(event)
+    const { startDate, endDate } = getLast30DaysRange()
+
     // Get spending by category
     const result = await pool.query(
       `SELECT 
@@ -54,32 +54,32 @@ export default defineEventHandler(async (event): Promise<SpendingByCategoryRespo
        GROUP BY COALESCE(NULLIF(t.category, ''), 'Uncategorized')
        ORDER BY total_amount DESC`,
       [user.id, startDate, endDate]
-    );
-    
+    )
+
     // Calculate total spending
-    const totalSpending = result.rows.reduce((sum, row) => sum + parseFloat(row.total_amount), 0);
-    
+    const totalSpending = result.rows.reduce((sum, row) => sum + parseFloat(row.total_amount), 0)
+
     // Format categories with percentages
     const categories = result.rows.map(row => ({
       category: row.category,
       categoryPrimary: getPrimaryCategoryName(row.category),
       amount: parseFloat(row.total_amount),
       transactionCount: parseInt(row.transaction_count),
-      percentage: totalSpending > 0 ? (parseFloat(row.total_amount) / totalSpending * 100).toFixed(1) : '0'
-    }));
-    
+      percentage:
+        totalSpending > 0 ? ((parseFloat(row.total_amount) / totalSpending) * 100).toFixed(1) : '0',
+    }))
+
     return {
       statusCode: 200,
       categories,
       totalSpending,
-      period: { startDate, endDate }
-    };
-    
+      period: { startDate, endDate },
+    }
   } catch (error: any) {
-    console.error('Spending by category error:', error);
+    console.error('Spending by category error:', error)
     throw createError({
       statusCode: error.statusCode || 500,
-      statusMessage: error.statusMessage || 'Failed to fetch spending by category'
-    });
+      statusMessage: error.statusMessage || 'Failed to fetch spending by category',
+    })
   }
-});
+})

@@ -75,11 +75,7 @@ const handleLogin = async () => {
           {{ error }}
         </div>
 
-        <button
-          type="submit"
-          class="auth-btn"
-          :disabled="isLoading || !username || !password"
-        >
+        <button type="submit" class="auth-btn" :disabled="isLoading || !username || !password">
           {{ isLoading ? 'Signing in...' : 'Sign In' }}
         </button>
       </form>
@@ -108,7 +104,7 @@ const handleLogin = async () => {
   width: 100%;
   max-width: 400px;
   min-width: 320px;
-  
+
   /* Visual styling */
   background: var(--color-bg-card);
   border: 1px solid var(--color-border);
@@ -226,7 +222,9 @@ input:disabled {
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .auth-btn:hover:not(:disabled) {

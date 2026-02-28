@@ -1,50 +1,52 @@
-import { pool } from '../index.js';
-import crypto from 'crypto';
-import type { User, QueryResult, QueryResultArray } from '~/types';
+import { pool } from '../index.js'
+import crypto from 'crypto'
+import type { User, QueryResult, QueryResultArray } from '~/types'
 
-const SALT_LENGTH = 32;
-const KEY_LENGTH = 64;
-const ITERATIONS = 100000;
-const DIGEST = 'sha512';
+const SALT_LENGTH = 32
+const KEY_LENGTH = 64
+const ITERATIONS = 100000
+const DIGEST = 'sha512'
 
 /**
  * Hash a password using PBKDF2 (Node native)
  */
 export async function hashPassword(password: string): Promise<string> {
-  const salt = crypto.randomBytes(SALT_LENGTH).toString('hex');
-  const hash = crypto.pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST).toString('hex');
-  return `${salt}:${hash}`;
+  const salt = crypto.randomBytes(SALT_LENGTH).toString('hex')
+  const hash = crypto.pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST).toString('hex')
+  return `${salt}:${hash}`
 }
 
 /**
  * Compare a password with a hash
  */
 export async function comparePassword(password: string, storedHash: string): Promise<boolean> {
-  const [salt, hash] = storedHash.split(':');
-  if (!salt || !hash) return false;
-  
-  const computedHash = crypto.pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST).toString('hex');
-  return computedHash === hash;
+  const [salt, hash] = storedHash.split(':')
+  if (!salt || !hash) return false
+
+  const computedHash = crypto
+    .pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST)
+    .toString('hex')
+  return computedHash === hash
 }
 
 /**
  * Create a new user with password
  */
 export async function createUser(
-  username: string, 
-  email: string | null, 
+  username: string,
+  email: string | null,
   password: string | null
 ): Promise<QueryResult<Partial<User>>> {
-  const passwordHash = password ? await hashPassword(password) : null;
-  
+  const passwordHash = password ? await hashPassword(password) : null
+
   const result = await pool.query(
     `INSERT INTO users (username, email, password_hash) 
      VALUES ($1, $2, $3) 
      ON CONFLICT (username) DO NOTHING 
      RETURNING id, username, email, created_at`,
     [username, email, passwordHash]
-  );
-  return result.rows[0];
+  )
+  return result.rows[0]
 }
 
 /**
@@ -55,19 +57,16 @@ export async function getUserById(id: number): Promise<QueryResult<User>> {
     `SELECT id, username, email, is_active, is_admin, created_at, updated_at 
      FROM users WHERE id = $1`,
     [id]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 /**
  * Get user by ID with password (for auth)
  */
 export async function getUserByIdWithPassword(id: number): Promise<QueryResult<User>> {
-  const result = await pool.query(
-    `SELECT * FROM users WHERE id = $1`,
-    [id]
-  );
-  return result.rows[0] || null;
+  const result = await pool.query(`SELECT * FROM users WHERE id = $1`, [id])
+  return result.rows[0] || null
 }
 
 /**
@@ -78,49 +77,43 @@ export async function getUserByUsername(username: string): Promise<QueryResult<U
     `SELECT id, username, email, is_active, is_admin, created_at, updated_at 
      FROM users WHERE username = $1`,
     [username]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 /**
  * Get user by username with password (for login)
  */
 export async function getUserByUsernameWithPassword(username: string): Promise<User | null> {
-  const result = await pool.query(
-    `SELECT * FROM users WHERE username = $1`,
-    [username]
-  );
-  return result.rows[0] || null;
+  const result = await pool.query(`SELECT * FROM users WHERE username = $1`, [username])
+  return result.rows[0] || null
 }
 
 /**
  * Get user by email with password (for login)
  */
 export async function getUserByEmailWithPassword(email: string): Promise<User | null> {
-  const result = await pool.query(
-    `SELECT * FROM users WHERE email = $1`,
-    [email]
-  );
-  return result.rows[0] || null;
+  const result = await pool.query(`SELECT * FROM users WHERE email = $1`, [email])
+  return result.rows[0] || null
 }
 
 /**
  * Update user's password
  */
 export async function updateUserPassword(
-  userId: number, 
+  userId: number,
   newPassword: string
 ): Promise<QueryResult<Partial<User>>> {
-  const passwordHash = await hashPassword(newPassword);
-  
+  const passwordHash = await hashPassword(newPassword)
+
   const result = await pool.query(
     `UPDATE users 
      SET password_hash = $1, updated_at = CURRENT_TIMESTAMP
      WHERE id = $2
      RETURNING id, username, email, updated_at`,
     [passwordHash, userId]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 /**
@@ -128,15 +121,15 @@ export async function updateUserPassword(
  * Uses atomic INSERT ... ON CONFLICT to handle race conditions
  */
 export async function getOrCreateDefaultUser(): Promise<QueryResult<Partial<User>>> {
-  const username = 'default_user';
-  
+  const username = 'default_user'
+
   // Try to create the user (will return null if already exists due to ON CONFLICT)
-  let user = await createUser(username, null, null);
-  
+  let user = await createUser(username, null, null)
+
   if (!user) {
     // User already exists, fetch it
-    user = await getUserByUsername(username);
+    user = await getUserByUsername(username)
   }
-  
-  return user;
+
+  return user
 }

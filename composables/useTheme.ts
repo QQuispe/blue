@@ -21,7 +21,7 @@ export const useTheme = () => {
 
     const html = document.documentElement
     const currentTheme = html.getAttribute('data-theme') as ColorMode | null
-    
+
     if (currentTheme) {
       mode.value = currentTheme
     } else {
@@ -38,7 +38,7 @@ export const useTheme = () => {
     isInitialized.value = true
 
     // Listen for system theme changes
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
       if (!localStorage.getItem(STORAGE_KEY)) {
         mode.value = e.matches ? 'dark' : 'light'
         applyTheme()
@@ -49,10 +49,10 @@ export const useTheme = () => {
   // Apply theme to document
   const applyTheme = () => {
     if (process.server) return
-    
+
     const html = document.documentElement
     html.setAttribute('data-theme', mode.value)
-    
+
     // Also set color-scheme for native UI elements
     html.style.colorScheme = mode.value
   }
@@ -92,6 +92,6 @@ export const useTheme = () => {
     toggleMode,
     setMode,
     setPreset,
-    initializeTheme
+    initializeTheme,
   }
 }

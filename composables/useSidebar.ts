@@ -9,6 +9,6 @@ export const useSidebar = () => {
 
   return {
     isCollapsed,
-    toggle
+    toggle,
   }
 }

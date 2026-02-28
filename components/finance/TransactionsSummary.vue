@@ -9,7 +9,7 @@ const formatCurrency = (value: number): string => {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
+    maximumFractionDigits: 0,
   }).format(Math.abs(value))
 }
 </script>
@@ -20,9 +20,9 @@ const formatCurrency = (value: number): string => {
       <span class="summary-label">Transactions</span>
       <span class="summary-value">{{ totalCount.toLocaleString() }}</span>
     </div>
-    
+
     <div class="summary-divider"></div>
-    
+
     <div class="summary-item">
       <span class="summary-label">Total Spend</span>
       <span class="summary-value spend">{{ formatCurrency(totalSpend) }}</span>

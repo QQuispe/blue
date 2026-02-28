@@ -14,7 +14,7 @@ export type {
   Session,
   QueryResult,
   QueryResultArray,
-} from './database';
+} from './database'
 
 // Plaid integration types
 export type {
@@ -25,7 +25,7 @@ export type {
   PlaidInstitution,
   SyncData,
   SyncResult,
-} from './plaid';
+} from './plaid'
 
 // API request/response types
 export type {
@@ -45,4 +45,4 @@ export type {
   BudgetsResponse,
   DisconnectItemResponse,
   UserItemsResponse,
-} from './api';
+} from './api'

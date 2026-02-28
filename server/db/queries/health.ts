@@ -562,7 +562,7 @@ export async function deleteMealFood(mealFoodId: number, mealId: number, userId:
       [mealId]
     )
 
-    let totals = { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    const totals = { calories: 0, protein: 0, carbs: 0, fat: 0 }
     for (const food of remainingFoods.rows) {
       totals.calories += Number(food.calories) || 0
       totals.protein += Number(food.protein) || 0

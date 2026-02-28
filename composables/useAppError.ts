@@ -15,7 +15,10 @@ export const useAppError = () => {
   const { logout } = useAuth()
   const router = useRouter()
 
-  const handleError = async (err: unknown, options?: { retry?: () => Promise<void> }): Promise<void> => {
+  const handleError = async (
+    err: unknown,
+    options?: { retry?: () => Promise<void> }
+  ): Promise<void> => {
     const errorData = err as { statusCode?: number; data?: { error_code?: string } }
     const statusCode = errorData?.statusCode
     const errorCode = errorData?.data?.error_code

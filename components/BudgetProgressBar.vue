@@ -1,5 +1,10 @@
 <script setup lang="ts">
-import { formatCurrency, getProgressColorClass, getRiskColorClass, getCategoryIcon } from '~/utils/formatters'
+import {
+  formatCurrency,
+  getProgressColorClass,
+  getRiskColorClass,
+  getCategoryIcon,
+} from '~/utils/formatters'
 
 interface Budget {
   id: number
@@ -23,8 +28,8 @@ const props = defineProps<{
       <div class="budget-category">
         <Icon :name="getCategoryIcon(budget.category)" size="16" class="category-icon" />
         <span class="category-name">{{ budget.category }}</span>
-        <span 
-          v-if="budget.riskLevel && budget.riskLevel !== 'low'" 
+        <span
+          v-if="budget.riskLevel && budget.riskLevel !== 'low'"
           class="risk-indicator"
           :class="getRiskColorClass(budget.riskLevel)"
         >
@@ -38,8 +43,8 @@ const props = defineProps<{
       </div>
     </div>
     <div class="budget-bar">
-      <div 
-        class="budget-bar-fill" 
+      <div
+        class="budget-bar-fill"
         :class="getProgressColorClass(budget.percentageUsed)"
         :style="{ width: `${Math.min(budget.percentageUsed, 100)}%` }"
       ></div>
@@ -49,7 +54,7 @@ const props = defineProps<{
         {{ budget.percentageUsed.toFixed(0) }}%
       </span>
       <span v-if="budget.projectedPercentage !== undefined" class="projection">
-        Pace: 
+        Pace:
         <span :class="getRiskColorClass(budget.riskLevel || 'low')">
           {{ budget.projectedPercentage.toFixed(0) }}%
         </span>

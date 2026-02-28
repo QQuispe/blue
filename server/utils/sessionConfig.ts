@@ -5,7 +5,7 @@ export interface SessionConfig {
 
 export const getSessionConfig = (): SessionConfig => {
   const isDev = process.env.NODE_ENV === 'development'
-  
+
   if (isDev) {
     return {
       inactivityTimeout: parseInt(process.env.SESSION_TIMEOUT_DEV || '0'),

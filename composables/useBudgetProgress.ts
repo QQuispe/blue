@@ -5,7 +5,8 @@ interface Budget {
 
 export function useBudgetProgress() {
   const getDayOfMonth = () => new Date().getDate()
-  const daysInMonth = () => new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
+  const daysInMonth = () =>
+    new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
 
   const getProjectedSpending = (budget: Budget): number => {
     const dayOfMonth = getDayOfMonth()

@@ -8,8 +8,8 @@ export interface CashFlowChartData {
 
 export const useCashFlowChart = () => {
   const createChartData = (data: CashFlowChartData): ChartData<'bar'> => {
-    const floatingData = data.income.map((inc) => [0, inc])
-    const expenseFloating = data.expenses.map((exp) => [-exp, 0])
+    const floatingData = data.income.map(inc => [0, inc])
+    const expenseFloating = data.expenses.map(exp => [-exp, 0])
 
     return {
       labels: data.months,

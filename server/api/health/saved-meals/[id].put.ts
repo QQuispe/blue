@@ -29,7 +29,7 @@ export default defineEventHandler(async event => {
 
     const body = await readBody<any>(event)
 
-    let mealData = { ...body }
+    const mealData = { ...body }
 
     if (body.ingredients && body.ingredients.length > 0) {
       const processedIngredients = []

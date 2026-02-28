@@ -7,17 +7,20 @@ A Nuxt 3 + Vue 3 application with Plaid integration for personal finance managem
 The easiest way to get started is using Docker Compose, which will set up both the app and PostgreSQL database.
 
 ### Prerequisites
+
 - Docker Desktop installed and running
 - Plaid account with API credentials
 
 ### Setup
 
 1. **Copy environment template:**
+
 ```bash
 cp .env.example .env
 ```
 
 2. **Edit `.env` with your Plaid credentials:**
+
 ```
 PLAID_CLIENT_ID=your_plaid_client_id
 PLAID_SECRET=your_plaid_secret
@@ -26,6 +29,7 @@ ENCRYPTION_KEY=your-32-char-encryption-key-here
 ```
 
 3. **Start the application:**
+
 ```bash
 docker-compose up
 ```
@@ -37,6 +41,7 @@ The database will automatically create tables on first run. Data persists in a D
 ### Viewing Database
 
 To inspect the database:
+
 ```bash
 # Connect to PostgreSQL container
 docker-compose exec db psql -U postgres -d mydatabase
@@ -87,11 +92,11 @@ npm run dev
 - **API:** Nitro server routes in `/server/api/` with H3
 - **Database:** PostgreSQL 15 with connection pooling via `pg`
 - **Banking:** Plaid API for account connections and transactions
-- **Security:** 
+- **Security:**
   - Access tokens encrypted with AES-256-GCM
   - Session-based authentication with HTTP-only cookies
   - Row-level security via user_id foreign keys
-- **Performance:** 
+- **Performance:**
   - Database indexes for query optimization (see Performance section)
   - Planned: Client-side caching layer
 
@@ -105,8 +110,9 @@ The application includes database optimizations for production use:
 - **Data Volume:** Designed for 50-100 transactions/month per user with 20+ accounts
 
 ### Current API Response Times
+
 - `/api/user/balance`: ~35ms
-- `/api/user/transactions`: ~45ms  
+- `/api/user/transactions`: ~45ms
 - `/api/user/overview`: ~95ms (slowest, uses complex aggregations)
 - `/api/user/items`: ~10ms
 
@@ -131,6 +137,7 @@ See `server/db/schema.sql` for full index definitions.
 
 **Caching Strategy (Planned):**
 Currently, all data is fetched fresh on each page load. For better performance at scale:
+
 - **Phase 2:** Implement Pinia + localStorage caching with SWR (Stale-While-Revalidate) pattern
 - Cache dashboard data for 5 minutes
 - Cache account metadata for 30 minutes

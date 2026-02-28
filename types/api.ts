@@ -3,31 +3,31 @@
  * Types for all API endpoints
  */
 
-import type { User, Account, Transaction, Budget, NetWorthSnapshot } from './database';
+import type { User, Account, Transaction, Budget, NetWorthSnapshot } from './database'
 
 // ============================================
 // Auth API Types
 // ============================================
 
 export interface RegisterRequest {
-  username: string;
-  password: string;
-  email?: string;
+  username: string
+  password: string
+  email?: string
 }
 
 export interface LoginRequest {
-  username: string;
-  password: string;
+  username: string
+  password: string
 }
 
 export interface AuthResponse {
-  statusCode: number;
-  message: string;
+  statusCode: number
+  message: string
   user?: {
-    id: number;
-    username: string;
-    email?: string;
-  };
+    id: number
+    username: string
+    email?: string
+  }
 }
 
 // ============================================
@@ -35,46 +35,46 @@ export interface AuthResponse {
 // ============================================
 
 export interface ExchangeTokenRequest {
-  publicToken: string;
+  publicToken: string
 }
 
 export interface ExchangeTokenResponse {
-  status: string;
-  itemId: string;
-  internalId: number;
-  institutionId?: string;
-  accountsCreated?: number;
+  status: string
+  itemId: string
+  internalId: number
+  institutionId?: string
+  accountsCreated?: number
 }
 
 export interface SyncAccountsRequest {
-  itemId: string;
+  itemId: string
 }
 
 export interface SyncAccountsResponse {
-  statusCode: number;
-  message: string;
+  statusCode: number
+  message: string
   accounts: {
-    id: number;
-    name: string;
-    type: string;
-    current_balance: number;
-    available_balance?: number;
-  }[];
+    id: number
+    name: string
+    type: string
+    current_balance: number
+    available_balance?: number
+  }[]
 }
 
 export interface SyncTransactionsRequest {
-  itemId: string;
+  itemId: string
 }
 
 export interface SyncTransactionsResponse {
-  statusCode: number;
-  message: string;
+  statusCode: number
+  message: string
   stats: {
-    added: number;
-    modified: number;
-    removed: number;
-    newCursor?: string;
-  };
+    added: number
+    modified: number
+    removed: number
+    newCursor?: string
+  }
 }
 
 // ============================================
@@ -82,78 +82,78 @@ export interface SyncTransactionsResponse {
 // ============================================
 
 export interface BalanceResponse {
-  statusCode: number;
+  statusCode: number
   summary: {
-    totalCurrent: number;
-    totalAvailable: number;
-    accountCount: number;
-    currency: string;
-  };
+    totalCurrent: number
+    totalAvailable: number
+    accountCount: number
+    currency: string
+  }
   accounts: {
-    id: number;
-    name: string;
-    mask?: string;
-    type: string;
-    currentBalance: number;
-    availableBalance?: number;
-    currency: string;
-  }[];
+    id: number
+    name: string
+    mask?: string
+    type: string
+    currentBalance: number
+    availableBalance?: number
+    currency: string
+  }[]
 }
 
 export interface NetWorthResponse {
-  statusCode: number;
+  statusCode: number
   current: {
-    netWorth: number;
-    totalAssets: number;
-    totalLiabilities: number;
-    accountCount: number;
-    currency: string;
-    percentageChange: number;
-  };
+    netWorth: number
+    totalAssets: number
+    totalLiabilities: number
+    accountCount: number
+    currency: string
+    percentageChange: number
+  }
   history: {
-    date: string;
-    netWorth: number;
-    totalAssets: number;
-    totalLiabilities: number;
-  }[];
-  timeframe: string;
+    date: string
+    netWorth: number
+    totalAssets: number
+    totalLiabilities: number
+  }[]
+  timeframe: string
 }
 
 export interface TransactionsResponse {
-  statusCode: number;
-  transactions: (Transaction & { account_name?: string })[];
+  statusCode: number
+  transactions: (Transaction & { account_name?: string })[]
 }
 
 export interface SpendingByCategoryResponse {
-  statusCode: number;
+  statusCode: number
   categories: {
-    category: string;
-    amount: number;
-    transactionCount: number;
-    percentage: string;
-  }[];
-  totalSpending: number;
+    category: string
+    amount: number
+    transactionCount: number
+    percentage: string
+  }[]
+  totalSpending: number
   period: {
-    startDate: string;
-    endDate: string;
-  };
+    startDate: string
+    endDate: string
+  }
 }
 
 export interface BudgetsResponse {
-  statusCode: number;
+  statusCode: number
   budgets: {
-    id: number;
-    category: string;
-    budgetAmount: number;
-    spentAmount: number;
-    remainingAmount: number;
-    percentageUsed: number;
-    period: string;
-  }[];
+    id: number
+    category: string
+    budgetAmount: number
+    spentAmount: number
+    remainingAmount: number
+    percentageUsed: number
+    period: string
+  }[]
   period: {
-    startDate: string;
-    endDate: string;
-  };
+    startDate: string
+    endDate: string
+  }
 }
 
 // ============================================
@@ -161,20 +161,20 @@ export interface BudgetsResponse {
 // ============================================
 
 export interface DisconnectItemResponse {
-  statusCode: number;
-  message: string;
+  statusCode: number
+  message: string
 }
 
 export interface UserItemsResponse {
-  statusCode: number;
+  statusCode: number
   items: {
-    id: number;
-    plaid_item_id: string;
-    institution_name: string;
-    status: string;
-    last_synced_at?: string;
-    created_at: string;
-  }[];
+    id: number
+    plaid_item_id: string
+    institution_name: string
+    status: string
+    last_synced_at?: string
+    created_at: string
+  }[]
 }
 
 // ============================================
@@ -182,13 +182,13 @@ export interface UserItemsResponse {
 // ============================================
 
 export interface CashFlowResponse {
-  months: string[];
-  income: number[];
-  expenses: number[];
+  months: string[]
+  income: number[]
+  expenses: number[]
   totals: {
-    income: number;
-    expenses: number;
-    saved: number;
-    net: number;
-  };
+    income: number
+    expenses: number
+    saved: number
+    net: number
+  }
 }
