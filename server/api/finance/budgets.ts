@@ -128,11 +128,11 @@ export default defineEventHandler(async (event): Promise<BudgetResponse> => {
           }
         }
 
-        const budget = await toggleFavorite(id, isFavorited)
+        const budget = await toggleFavorite(id!, user.id, isFavorited)
         if (!budget) {
           throw createError({
-            statusCode: 404,
-            statusMessage: 'Budget not found',
+            statusCode: 403,
+            statusMessage: 'Budget not found or access denied',
           })
         }
 
@@ -143,12 +143,12 @@ export default defineEventHandler(async (event): Promise<BudgetResponse> => {
         }
       }
 
-      const budget = await updateBudget(id!, body)
+      const budget = await updateBudget(id!, user.id, body)
 
       if (!budget) {
         throw createError({
-          statusCode: 404,
-          statusMessage: 'Budget not found',
+          statusCode: 403,
+          statusMessage: 'Budget not found or access denied',
         })
       }
 
@@ -170,12 +170,12 @@ export default defineEventHandler(async (event): Promise<BudgetResponse> => {
         })
       }
 
-      const budget = await deleteBudget(id!)
+      const budget = await deleteBudget(id!, user.id)
 
       if (!budget) {
         throw createError({
-          statusCode: 404,
-          statusMessage: 'Budget not found',
+          statusCode: 403,
+          statusMessage: 'Budget not found or access denied',
         })
       }
 

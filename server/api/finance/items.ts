@@ -88,7 +88,7 @@ export default defineEventHandler(async (event): Promise<ItemsResponse | Disconn
       }
 
       // Delete from our database
-      await deleteItem(parsedItemId)
+      await deleteItem(parsedItemId, user.id)
 
       serverLogger.success(`Item ${itemId} disconnected`)
 

@@ -61,7 +61,7 @@ export default defineEventHandler(async (event): Promise<DisconnectResponse> => 
     }
 
     // Delete from our database (cascades to accounts and transactions)
-    await deleteItem(item.id)
+    await deleteItem(item.id, user.id)
 
     serverLogger.success(`Item ${itemId} disconnected`)
 
