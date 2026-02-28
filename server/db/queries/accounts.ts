@@ -1,5 +1,5 @@
-import { pool } from '../index.js';
-import type { Account, QueryResult, QueryResultArray } from '~/types';
+import { pool } from '../index.js'
+import type { Account, QueryResult, QueryResultArray } from '~/types'
 
 /**
  * Create a new account
@@ -36,45 +36,55 @@ export async function createAccount(
       updated_at = CURRENT_TIMESTAMP
     RETURNING id, item_id, plaid_account_id, name, current_balance, available_balance, type, created_at`,
     [
-      itemId, plaidAccountId, name, mask, officialName,
-      currentBalance, availableBalance, isoCurrencyCode,
-      unofficialCurrencyCode, type, subtype
+      itemId,
+      plaidAccountId,
+      name,
+      mask,
+      officialName,
+      currentBalance,
+      availableBalance,
+      isoCurrencyCode,
+      unofficialCurrencyCode,
+      type,
+      subtype,
     ]
-  );
-  return result.rows[0];
+  )
+  return result.rows[0]
 }
 
 /**
  * Get account by internal ID
  */
-export async function getAccountById(id: number): Promise<QueryResult<Account>> {
+export async function getAccountById(id: number, userId: number): Promise<QueryResult<Account>> {
   const result = await pool.query(
-    `SELECT * FROM accounts WHERE id = $1`,
-    [id]
-  );
-  return result.rows[0] || null;
+    `SELECT a.* FROM accounts a
+     JOIN items i ON a.item_id = i.id
+     WHERE a.id = $1 AND i.user_id = $2`,
+    [id, userId]
+  )
+  return result.rows[0] || null
 }
 
 /**
  * Get account by Plaid account ID
  */
-export async function getAccountByPlaidAccountId(plaidAccountId: string): Promise<QueryResult<Account>> {
-  const result = await pool.query(
-    `SELECT * FROM accounts WHERE plaid_account_id = $1`,
-    [plaidAccountId]
-  );
-  return result.rows[0] || null;
+export async function getAccountByPlaidAccountId(
+  plaidAccountId: string
+): Promise<QueryResult<Account>> {
+  const result = await pool.query(`SELECT * FROM accounts WHERE plaid_account_id = $1`, [
+    plaidAccountId,
+  ])
+  return result.rows[0] || null
 }
 
 /**
  * Get all accounts for an item
  */
 export async function getAccountsByItemId(itemId: number): Promise<QueryResultArray<Account>> {
-  const result = await pool.query(
-    `SELECT * FROM accounts WHERE item_id = $1 ORDER BY name`,
-    [itemId]
-  );
-  return result.rows;
+  const result = await pool.query(`SELECT * FROM accounts WHERE item_id = $1 ORDER BY name`, [
+    itemId,
+  ])
+  return result.rows
 }
 
 /**
@@ -87,8 +97,8 @@ export async function getAccountsByUserId(userId: number): Promise<QueryResultAr
      WHERE i.user_id = $1
      ORDER BY a.name`,
     [userId]
-  );
-  return result.rows;
+  )
+  return result.rows
 }
 
 /**
@@ -96,37 +106,38 @@ export async function getAccountsByUserId(userId: number): Promise<QueryResultAr
  */
 export async function updateAccountBalances(
   id: number,
+  userId: number,
   currentBalance: number,
   availableBalance: number | null
 ): Promise<QueryResult<Account>> {
   const result = await pool.query(
     `UPDATE accounts 
      SET current_balance = $1, available_balance = $2, updated_at = CURRENT_TIMESTAMP
-     WHERE id = $3
+     WHERE id = $3 AND user_id = $4
      RETURNING *`,
-    [currentBalance, availableBalance, id]
-  );
-  return result.rows[0] || null;
+    [currentBalance, availableBalance, id, userId]
+  )
+  return result.rows[0] || null
 }
 
 /**
  * Delete an account
  */
-export async function deleteAccount(id: number): Promise<{ deleted: boolean }> {
-  await pool.query(
-    `DELETE FROM accounts WHERE id = $1`,
-    [id]
-  );
-  return { deleted: true };
+export async function deleteAccount(id: number, userId: number): Promise<{ deleted: boolean }> {
+  const result = await pool.query(`DELETE FROM accounts WHERE id = $1 AND user_id = $2`, [
+    id,
+    userId,
+  ])
+  return { deleted: result.rowCount !== null && result.rowCount > 0 }
 }
 
 /**
  * Get total balance for a user
  */
 export async function getTotalBalanceForUser(userId: number): Promise<{
-  total_current: number;
-  total_available: number;
-  account_count: number;
+  total_current: number
+  total_available: number
+  account_count: number
 }> {
   const result = await pool.query(
     `SELECT 
@@ -137,6 +148,6 @@ export async function getTotalBalanceForUser(userId: number): Promise<{
      JOIN items i ON a.item_id = i.id
      WHERE i.user_id = $1 AND i.status = 'active'`,
     [userId]
-  );
-  return result.rows[0];
+  )
+  return result.rows[0]
 }

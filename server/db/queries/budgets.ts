@@ -1,22 +1,22 @@
-import { pool } from '../index.js';
-import type { Budget, QueryResult, QueryResultArray } from '~/types';
+import { pool } from '../index.js'
+import type { Budget, QueryResult, QueryResultArray } from '~/types'
 
 interface BudgetWithSpending {
-  id: number;
-  category: string;
-  category_key: string;
-  budget_amount: number;
-  spent_amount: number;
-  remaining_amount: number;
-  percentage_used: number;
-  month: string;
-  is_favorited?: boolean;
+  id: number
+  category: string
+  category_key: string
+  budget_amount: number
+  spent_amount: number
+  remaining_amount: number
+  percentage_used: number
+  month: string
+  is_favorited?: boolean
 }
 
 interface BudgetUpdates {
-  amount?: number;
-  isActive?: boolean;
-  isFavorited?: boolean;
+  amount?: number
+  isActive?: boolean
+  isFavorited?: boolean
 }
 
 function deriveCategoryKey(category: string): string {
@@ -34,20 +34,20 @@ export async function budgetExists(
   month?: string
 ): Promise<QueryResult<Budget>> {
   const categoryKey = deriveCategoryKey(category)
-  const nullMonth = month || null;
+  const nullMonth = month || null
   const result = await pool.query(
     `SELECT * FROM budgets 
      WHERE user_id = $1 AND category_key = $2 AND is_active = true
      AND ($3::text IS NULL OR month = $3)`,
     [userId, categoryKey, nullMonth]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 export async function createBudget(
-  userId: number, 
-  category: string, 
-  amount: number, 
+  userId: number,
+  category: string,
+  amount: number,
   isFavorited: boolean = false,
   month: string = new Date().toISOString().slice(0, 7)
 ): Promise<Budget> {
@@ -62,78 +62,82 @@ export async function createBudget(
        updated_at = CURRENT_TIMESTAMP
      RETURNING *`,
     [userId, category, amount, isFavorited, month, categoryKey]
-  );
-  return result.rows[0];
+  )
+  return result.rows[0]
 }
 
-export async function getBudgetsByUserId(userId: number, month?: string): Promise<QueryResultArray<Budget>> {
-  const nullMonth = month || null;
+export async function getBudgetsByUserId(
+  userId: number,
+  month?: string
+): Promise<QueryResultArray<Budget>> {
+  const nullMonth = month || null
   const result = await pool.query(
     `SELECT * FROM budgets 
      WHERE user_id = $1 AND is_active = true
      AND ($2::text IS NULL OR month = $2)
      ORDER BY category`,
     [userId, nullMonth]
-  );
-  return result.rows;
+  )
+  return result.rows
 }
 
-export async function getBudgetById(id: number): Promise<QueryResult<Budget>> {
-  const result = await pool.query(
-    `SELECT * FROM budgets WHERE id = $1`,
-    [id]
-  );
-  return result.rows[0] || null;
+export async function getBudgetById(id: number, userId: number): Promise<QueryResult<Budget>> {
+  const result = await pool.query(`SELECT * FROM budgets WHERE id = $1 AND user_id = $2`, [
+    id,
+    userId,
+  ])
+  return result.rows[0] || null
 }
 
 export async function updateBudget(
-  id: number, 
+  id: number,
+  userId: number,
   updates: BudgetUpdates
 ): Promise<QueryResult<Budget>> {
-  const { amount, isActive, isFavorited } = updates;
-  
+  const { amount, isActive, isFavorited } = updates
+
   const result = await pool.query(
     `UPDATE budgets 
      SET amount = COALESCE($1, amount),
          is_active = COALESCE($2, is_active),
          is_favorited = COALESCE($3, is_favorited),
          updated_at = CURRENT_TIMESTAMP
-     WHERE id = $4
+     WHERE id = $4 AND user_id = $5
      RETURNING *`,
-    [amount, isActive, isFavorited, id]
-  );
-  return result.rows[0] || null;
+    [amount, isActive, isFavorited, id, userId]
+  )
+  return result.rows[0] || null
 }
 
-export async function deleteBudget(id: number): Promise<QueryResult<Budget>> {
+export async function deleteBudget(id: number, userId: number): Promise<QueryResult<Budget>> {
   const result = await pool.query(
     `UPDATE budgets 
      SET is_active = false, updated_at = CURRENT_TIMESTAMP
-     WHERE id = $1
+     WHERE id = $1 AND user_id = $2
      RETURNING *`,
-    [id]
-  );
-  return result.rows[0] || null;
+    [id, userId]
+  )
+  return result.rows[0] || null
 }
 
 export async function getFavoritedCount(userId: number, month?: string): Promise<number> {
-  const nullMonth = month || null;
+  const nullMonth = month || null
   const result = await pool.query(
     `SELECT COUNT(*) as count FROM budgets 
      WHERE user_id = $1 AND is_favorited = true AND is_active = true
      AND ($2::text IS NULL OR month = $2)`,
     [userId, nullMonth]
-  );
-  return parseInt(result.rows[0]?.count || '0');
+  )
+  return parseInt(result.rows[0]?.count || '0')
 }
 
 export async function getBudgetsWithSpending(
-  userId: number, 
-  startDate: string, 
+  userId: number,
+  startDate: string,
   endDate: string,
   month?: string
 ): Promise<QueryResultArray<BudgetWithSpending>> {
-  const nullMonth = month || null;
+  const nullMonth = month || null
   const result = await pool.query(
     `SELECT 
         b.id,
@@ -162,22 +166,23 @@ export async function getBudgetsWithSpending(
       GROUP BY b.id, b.category, b.category_key, b.amount, b.is_favorited, b.month
       ORDER BY b.is_favorited DESC, percentage_used DESC`,
     [userId, startDate, endDate, nullMonth]
-  );
-  return result.rows;
+  )
+  return result.rows
 }
 
 export async function toggleFavorite(
   id: number,
+  userId: number,
   isFavorited: boolean
 ): Promise<QueryResult<Budget>> {
   const result = await pool.query(
     `UPDATE budgets 
      SET is_favorited = $1, updated_at = CURRENT_TIMESTAMP
-     WHERE id = $2
+     WHERE id = $2 AND user_id = $3
      RETURNING *`,
-    [isFavorited, id]
-  );
-  return result.rows[0] || null;
+    [isFavorited, id, userId]
+  )
+  return result.rows[0] || null
 }
 
 export async function getBudgetMonths(userId: number): Promise<string[]> {
@@ -186,6 +191,6 @@ export async function getBudgetMonths(userId: number): Promise<string[]> {
      WHERE user_id = $1 AND is_active = true
      ORDER BY month DESC`,
     [userId]
-  );
-  return result.rows.map(row => row.month as string);
+  )
+  return result.rows.map(row => row.month as string)
 }

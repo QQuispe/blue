@@ -1,5 +1,5 @@
-import { pool } from '../index.js';
-import type { Item, QueryResult, QueryResultArray } from '~/types';
+import { pool } from '../index.js'
+import type { Item, QueryResult, QueryResultArray } from '~/types'
 
 /**
  * Create a new Plaid item (bank connection)
@@ -17,8 +17,8 @@ export async function createItem(
      VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING id, user_id, plaid_item_id, plaid_institution_id, institution_name, status, transactions_cursor, last_synced_at, error, created_at`,
     [userId, plaidAccessToken, plaidItemId, plaidInstitutionId, institutionName, status, null]
-  );
-  return result.rows[0];
+  )
+  return result.rows[0]
 }
 
 /**
@@ -29,8 +29,8 @@ export async function getItemById(id: number): Promise<QueryResult<Item>> {
     `SELECT id, user_id, plaid_access_token, plaid_item_id, plaid_institution_id, institution_name, status, transactions_cursor, last_synced_at, error, created_at, updated_at
      FROM items WHERE id = $1`,
     [id]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 /**
@@ -41,8 +41,8 @@ export async function getItemByPlaidItemId(plaidItemId: string): Promise<QueryRe
     `SELECT id, user_id, plaid_access_token, plaid_item_id, plaid_institution_id, institution_name, status, transactions_cursor, last_synced_at, error, created_at, updated_at
      FROM items WHERE plaid_item_id = $1`,
     [plaidItemId]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 /**
@@ -53,8 +53,8 @@ export async function getItemByAccessToken(accessToken: string): Promise<QueryRe
     `SELECT id, user_id, plaid_access_token, plaid_item_id, plaid_institution_id, institution_name, status, transactions_cursor, last_synced_at, error, created_at, updated_at
      FROM items WHERE plaid_access_token = $1`,
     [accessToken]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 /**
@@ -65,15 +65,15 @@ export async function getItemsByUserId(userId: number): Promise<QueryResultArray
     `SELECT id, user_id, plaid_item_id, plaid_institution_id, institution_name, status, transactions_cursor, last_synced_at, error, created_at, updated_at
      FROM items WHERE user_id = $1 ORDER BY created_at DESC`,
     [userId]
-  );
-  return result.rows;
+  )
+  return result.rows
 }
 
 /**
  * Update transaction cursor for an item
  */
 export async function updateItemCursor(
-  id: number, 
+  id: number,
   cursor: string | null
 ): Promise<QueryResult<Partial<Item>>> {
   const result = await pool.query(
@@ -81,15 +81,15 @@ export async function updateItemCursor(
      WHERE id = $2
      RETURNING id, transactions_cursor, updated_at`,
     [cursor, id]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 /**
  * Update item status
  */
 export async function updateItemStatus(
-  id: number, 
+  id: number,
   status: Item['status']
 ): Promise<QueryResult<Partial<Item>>> {
   const result = await pool.query(
@@ -97,24 +97,21 @@ export async function updateItemStatus(
      WHERE id = $2
      RETURNING id, status, updated_at`,
     [status, id]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 // Simple deletion result type
 interface DeletionResult {
-  deleted: boolean;
+  deleted: boolean
 }
 
 /**
  * Delete an item (cascades to accounts and transactions)
  */
-export async function deleteItem(id: number): Promise<DeletionResult> {
-  await pool.query(
-    `DELETE FROM items WHERE id = $1`,
-    [id]
-  );
-  return { deleted: true };
+export async function deleteItem(id: number, userId: number): Promise<DeletionResult> {
+  const result = await pool.query(`DELETE FROM items WHERE id = $1 AND user_id = $2`, [id, userId])
+  return { deleted: result.rowCount !== null && result.rowCount > 0 }
 }
 
 /**
@@ -125,15 +122,15 @@ export async function getActiveItems(): Promise<QueryResultArray<Item>> {
     `SELECT id, user_id, plaid_access_token, plaid_item_id, plaid_institution_id, institution_name, transactions_cursor, last_synced_at, error
      FROM items WHERE status = 'active'`,
     []
-  );
-  return result.rows;
+  )
+  return result.rows
 }
 
 /**
  * Update item sync info (cursor, last_synced_at, clear error)
  */
 export async function updateItemSync(
-  id: number, 
+  id: number,
   cursor: string | null
 ): Promise<QueryResult<Partial<Item>>> {
   const result = await pool.query(
@@ -141,15 +138,15 @@ export async function updateItemSync(
      WHERE id = $2
      RETURNING id, transactions_cursor, last_synced_at, error, updated_at`,
     [cursor, id]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
 
 /**
  * Update item error status
  */
 export async function updateItemError(
-  id: number, 
+  id: number,
   errorMessage: string
 ): Promise<QueryResult<Partial<Item>>> {
   const result = await pool.query(
@@ -157,6 +154,6 @@ export async function updateItemError(
      WHERE id = $2
      RETURNING id, error, status, updated_at`,
     [errorMessage, id]
-  );
-  return result.rows[0] || null;
+  )
+  return result.rows[0] || null
 }
