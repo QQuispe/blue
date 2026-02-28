@@ -49,6 +49,30 @@ export async function requireAuth(event: H3Event): Promise<User> {
 }
 
 /**
+ * Assert that a resource belongs to the current user
+ * Throws 403 if ownership check fails
+ */
+export function assertOwnership(
+  resource: { user_id?: number } | null | undefined,
+  userId: number,
+  resourceName: string = 'Resource'
+): void {
+  if (!resource) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: `${resourceName} not found`,
+    })
+  }
+
+  if (resource.user_id !== userId) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: `You do not have permission to access this ${resourceName}`,
+    })
+  }
+}
+
+/**
  * Optional auth - returns user if logged in, null otherwise
  * Does not throw error if not authenticated
  */

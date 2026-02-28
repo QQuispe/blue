@@ -23,10 +23,10 @@ export default defineEventHandler(async event => {
     }
 
     const body = await readBody<Partial<HealthGoalInput>>(event)
-    const goal = await updateHealthGoal(goalId, body)
+    const goal = await updateHealthGoal(goalId, user.id, body)
 
     if (!goal) {
-      throw createError({ statusCode: 404, statusMessage: 'Goal not found' })
+      throw createError({ statusCode: 403, statusMessage: 'Goal not found or access denied' })
     }
 
     const duration = Date.now() - startTime

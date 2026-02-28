@@ -129,11 +129,12 @@ export async function createHealthGoal(
 
 export async function updateHealthGoal(
   goalId: number,
+  userId: number,
   goal: Partial<HealthGoal>
 ): Promise<QueryResult<HealthGoal>> {
   const fields: string[] = []
-  const values: any[] = [goalId]
-  let paramCount = 2
+  const values: any[] = [goalId, userId]
+  let paramCount = 3
 
   if (goal.goal_type !== undefined) {
     fields.push(`goal_type = $${paramCount++}`)
@@ -177,7 +178,7 @@ export async function updateHealthGoal(
   fields.push('updated_at = CURRENT_TIMESTAMP')
 
   const result = await pool.query(
-    `UPDATE health_goals SET ${fields.join(', ')} WHERE id = $1 RETURNING *`,
+    `UPDATE health_goals SET ${fields.join(', ')} WHERE id = $1 AND user_id = $2 RETURNING *`,
     values
   )
   return result.rows[0] || null
