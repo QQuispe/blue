@@ -24,12 +24,13 @@ const emit = defineEmits<{
 }>()
 
 const formatDate = (dateStr: string): string => {
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('en-US', { 
+  if (!dateStr) return ''
+  const date = new Date(dateStr + 'T00:00:00')
+  return date.toLocaleDateString('en-US', {
     weekday: 'long',
-    year: 'numeric', 
-    month: 'long', 
-    day: 'numeric' 
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   })
 }
 
@@ -50,9 +51,13 @@ const handleKeydown = (e: KeyboardEvent) => {
   }
 }
 
-watch(() => props.transaction, () => {
-  // Scaffold: Initialize form fields when transaction changes
-}, { immediate: true })
+watch(
+  () => props.transaction,
+  () => {
+    // Scaffold: Initialize form fields when transaction changes
+  },
+  { immediate: true }
+)
 
 onMounted(() => {
   document.addEventListener('keydown', handleKeydown)
@@ -71,15 +76,23 @@ onUnmounted(() => {
       <div class="panel-header">
         <h2>Transaction Details</h2>
         <button class="close-btn" @click="emit('close')">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M18 6L6 18M6 6l12 12"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
       </div>
 
       <div class="panel-content">
         <div class="amount-section">
-          <span class="amount" :class="{ 'negative': transaction.amount < 0 }">
+          <span class="amount" :class="{ negative: transaction.amount < 0 }">
             {{ formatAmount(transaction.amount) }}
           </span>
           <span v-if="transaction.pending" class="pending-badge">Pending</span>
@@ -92,24 +105,24 @@ onUnmounted(() => {
               <img :src="transaction.logo_url" :alt="transaction.name" />
             </div>
           </div>
-          
+
           <div class="detail-row">
             <span class="detail-label">Merchant</span>
             <span class="detail-value">{{ transaction.name }}</span>
           </div>
-          
+
           <div class="detail-row">
             <span class="detail-label">Merchant</span>
             <span class="detail-value">{{ transaction.name }}</span>
           </div>
-          
+
           <div class="detail-row">
             <span class="detail-label">Category</span>
             <span class="detail-value category">
               {{ formatCategoryName(transaction.category) }}
             </span>
           </div>
-          
+
           <div class="detail-row">
             <span class="detail-label">Account</span>
             <span class="detail-value">{{ transaction.account_name }}</span>
@@ -119,10 +132,8 @@ onUnmounted(() => {
         <!-- Scaffold for editing - to be implemented -->
         <div class="edit-section">
           <h3>Edit Transaction</h3>
-          <p class="edit-note">
-            Editing features coming soon.
-          </p>
-          
+          <p class="edit-note">Editing features coming soon.</p>
+
           <div class="form-group">
             <label>Category</label>
             <input
@@ -133,7 +144,7 @@ onUnmounted(() => {
               class="edit-input"
             />
           </div>
-          
+
           <div class="form-group">
             <label>Notes</label>
             <textarea placeholder="Add notes..." disabled class="edit-textarea"></textarea>
@@ -312,7 +323,9 @@ onUnmounted(() => {
   margin-bottom: 6px;
 }
 
-.edit-select, .edit-input, .edit-textarea {
+.edit-select,
+.edit-input,
+.edit-textarea {
   width: 100%;
   padding: 10px 12px;
   background: var(--color-bg-secondary);
@@ -322,7 +335,9 @@ onUnmounted(() => {
   font-size: 0.875rem;
 }
 
-.edit-select:disabled, .edit-input:disabled, .edit-textarea:disabled {
+.edit-select:disabled,
+.edit-input:disabled,
+.edit-textarea:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
