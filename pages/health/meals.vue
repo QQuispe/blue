@@ -61,15 +61,6 @@ const formatNumber = (num: number) => {
   return num.toFixed(0)
 }
 
-const formatDateForInput = (dateStr: string) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 // Determine if we're editing an existing meal with foods
 const isEditingExisting = computed(() => {
   return groupedMeals.value.some(

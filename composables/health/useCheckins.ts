@@ -1,3 +1,5 @@
+import { toHTMLDateString } from '~/utils/formatters'
+
 export interface Checkin {
   id: number
   checkin_date: string
@@ -49,17 +51,9 @@ export const useCheckins = () => {
   const checkinToDelete = ref<Checkin | null>(null)
   const showDeleteConfirmModal = ref(false)
 
-  const toHTMLDateString = (isoString: string) => {
-    const date = new Date(isoString)
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
   const resetCheckinForm = () => {
     checkinForm.value = {
-      checkin_date: toHTMLDateString(new Date().toISOString()),
+      checkin_date: toHTMLDateString(new Date()),
       weight: null,
       chest: null,
       waist: null,
@@ -72,8 +66,29 @@ export const useCheckins = () => {
     editingCheckinId.value = null
   }
 
-  const openNewCheckinModal = () => {
-    resetCheckinForm()
+  const openNewCheckinModal = async () => {
+    // Ensure checkins are loaded before opening modal
+    if (checkins.value.length === 0) {
+      await fetchCheckins()
+    }
+
+    // Pre-fill with latest checkin data if available
+    if (checkins.value.length > 0) {
+      const latest = checkins.value[0]
+      checkinForm.value = {
+        checkin_date: toHTMLDateString(new Date()),
+        weight: latest.weight,
+        chest: latest.chest,
+        waist: latest.waist,
+        hips: latest.hips,
+        biceps: latest.biceps,
+        thighs: latest.thighs,
+        notes: '',
+      }
+    } else {
+      resetCheckinForm()
+    }
+
     showCheckinModal.value = true
   }
 

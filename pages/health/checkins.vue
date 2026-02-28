@@ -4,6 +4,7 @@ import PageLayout from '~/components/PageLayout.vue'
 import HealthSetupRequired from '~/components/health/HealthSetupRequired.vue'
 import { useCheckins } from '~/composables/health/useCheckins'
 import { useHealthData } from '~/composables/useHealthData'
+import { formatDate } from '~/utils/formatters'
 import DeleteConfirmModal from '~/components/health/DeleteConfirmModal.vue'
 import BaseButton from '~/components/BaseButton.vue'
 
@@ -37,16 +38,6 @@ const {
 } = useCheckins()
 
 // Computed
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return ''
-  const date = new Date(dateStr)
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
-
 const formatNumber = (num: any) => {
   if (num === null || num === undefined || typeof num !== 'number') return '--'
   return num.toFixed(1)

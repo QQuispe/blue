@@ -77,6 +77,8 @@ export const useHealthData = () => {
     }
   }
 
+  const userTimezone = computed(() => userSettings.value?.timezone || 'America/New_York')
+
   // === Computed Macros (from dashboard) ===
   const targetMacros = computed(() => {
     const tm = dashboard.value?.targetMacros
@@ -195,6 +197,7 @@ export const useHealthData = () => {
     setupStatus,
     dashboard,
     userSettings,
+    userTimezone,
     recentFoods,
     customFoods,
     savedMeals,

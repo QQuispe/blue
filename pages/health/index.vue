@@ -4,6 +4,8 @@ import PageLayout from '~/components/PageLayout.vue'
 import Card from '~/components/Card.vue'
 import MacroCard from '~/components/health/MacroCard.vue'
 import QuickStats from '~/components/health/QuickStats.vue'
+import { useHealthData } from '~/composables/useHealthData'
+import { useHealthDate } from '~/composables/health/useHealthDate'
 
 interface DashboardData {
   profile: any
@@ -32,40 +34,14 @@ const filteredWeightData = computed(() => {
 
 const isLoading = ref(true)
 const dashboard = ref<DashboardData | null>(null)
-const userTimezone = ref('America/New_York')
+const { userTimezone } = useHealthData()
 const weightChartRange = ref<'30' | '90' | 'all'>('30')
 
-const fetchUserSettings = async () => {
-  try {
-    const res = await fetch('/api/user/settings', { credentials: 'include' })
-    if (res.ok) {
-      const data = await res.json()
-      userTimezone.value = data.settings?.timezone || 'America/New_York'
-    }
-  } catch (err) {
-    console.error('Failed to fetch settings:', err)
-  }
-}
-
-onMounted(async () => {
-  await fetchUserSettings()
+onMounted(() => {
   fetchDashboard()
 })
 
-const getLocalDateString = () => {
-  const now = new Date()
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: userTimezone.value,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-  const parts = formatter.formatToParts(now)
-  const year = parts.find(p => p.type === 'year')?.value
-  const month = parts.find(p => p.type === 'month')?.value
-  const day = parts.find(p => p.type === 'day')?.value
-  return `${year}-${month}-${day}`
-}
+const { getLocalDateString } = useHealthDate()
 
 const fetchDashboard = async () => {
   try {
