@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import { useFoodSearch } from '~/composables/health/useFoodSearch'
 import { useAuth } from '~/composables/useAuth'
 import DeleteConfirmModal from './DeleteConfirmModal.vue'
@@ -21,6 +22,7 @@ const emit = defineEmits<{
   'open-recipe-form': []
 }>()
 
+const router = useRouter()
 const { user, isAdmin } = useAuth()
 
 const {
@@ -299,11 +301,11 @@ defineExpose({
           />
         </div>
         <div class="header-buttons">
-          <button class="btn btn-sm" @click="emit('open-recipe-form')">
+          <button class="btn btn-sm" @click="router.push('/health/foods')">
             <Icon name="mdi:plus" size="16" />
             Recipe
           </button>
-          <button class="btn btn-sm" @click="emit('open-food-form')">
+          <button class="btn btn-sm" @click="router.push('/health/foods')">
             <Icon name="mdi:plus" size="16" />
             Food
           </button>
@@ -312,7 +314,10 @@ defineExpose({
       <div v-if="filteredMyFoods.length === 0" class="empty-state">
         <p v-if="myFoodsSearch">No foods match your search.</p>
         <p v-else>No saved foods yet.</p>
-        <p class="hint">Add custom foods or save recipes for quick logging.</p>
+        <p class="hint">
+          Add custom foods or save recipes in the
+          <a href="/health/foods" @click.prevent="router.push('/health/foods')">Foods section</a>.
+        </p>
       </div>
       <div v-else class="foods-list">
         <div

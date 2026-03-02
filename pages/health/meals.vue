@@ -10,8 +10,6 @@ import { useHealthData } from '~/composables/useHealthData'
 import MacrosSummary from '~/components/health/MacrosSummary.vue'
 import MealCard from '~/components/health/MealCard.vue'
 import FoodSearchPanel from '~/components/health/FoodSearchPanel.vue'
-import FoodFormModal from '~/components/health/FoodFormModal.vue'
-import RecipeFormModal from '~/components/health/RecipeFormModal.vue'
 import DeleteConfirmModal from '~/components/health/DeleteConfirmModal.vue'
 import EditTargetsModal from '~/components/health/EditTargetsModal.vue'
 import BaseButton from '~/components/BaseButton.vue'
@@ -39,7 +37,7 @@ const userTimezone = computed(() => userSettings.value?.timezone || 'America/New
 const { selectedDate, getLocalDateString, setSelectedDate, addDays, formatDisplayDate } =
   useHealthDate()
 const { meals, groupedMeals, mealTypes, fetchMeals, saveMeal, deleteMeal } = useMeals()
-const { recentFoods, customFoods, savedMeals, initFoods } = useFoodSearch()
+const { recentFoods, initFoods } = useFoodSearch()
 
 // Local state
 const isLoading = ref(true)
@@ -50,11 +48,6 @@ const itemToDelete = ref<{ id?: number; ids?: number[]; type: 'meal' | 'food' } 
 const selectedMealType = ref('breakfast')
 const selectedFoods = ref<any[]>([])
 const isAddingFood = ref(false)
-
-// Search/Form modals
-const showCreateFoodModal = ref(false)
-const showCreateRecipeModal = ref(false)
-const editingFood = ref<any>(null)
 
 // Computed
 const formatNumber = (num: number) => {
@@ -207,30 +200,6 @@ const handleConfirmDelete = async () => {
   itemToDelete.value = null
 }
 
-const handleFoodSaved = (newFood: any) => {
-  if (newFood) {
-    customFoods.value = [...customFoods.value, newFood]
-  } else {
-    initFoods()
-  }
-  showCreateFoodModal.value = false
-  editingFood.value = null
-}
-
-const handleRecipeSaved = (newRecipe: any) => {
-  if (newRecipe) {
-    savedMeals.value = [...savedMeals.value, newRecipe]
-  } else {
-    initFoods()
-  }
-  showCreateRecipeModal.value = false
-}
-
-const closeFoodModal = () => {
-  showCreateFoodModal.value = false
-  editingFood.value = null
-}
-
 const closeDeleteModal = () => {
   showDeleteConfirmModal.value = false
   itemToDelete.value = null
@@ -315,8 +284,6 @@ onMounted(async () => {
         :selected-meal-type="selectedMealType"
         :existing-foods="selectedFoods"
         @add-food="handleAddFoods"
-        @open-food-form="showCreateFoodModal = true"
-        @open-recipe-form="showCreateRecipeModal = true"
       />
 
       <template #footer>
@@ -334,21 +301,6 @@ onMounted(async () => {
         </div>
       </template>
     </BaseModal>
-
-    <!-- Food Form Modal -->
-    <FoodFormModal
-      :show="showCreateFoodModal"
-      :food="editingFood"
-      @save="handleFoodSaved"
-      @close="closeFoodModal"
-    />
-
-    <!-- Recipe Form Modal -->
-    <RecipeFormModal
-      :show="showCreateRecipeModal"
-      @save="handleRecipeSaved"
-      @close="showCreateRecipeModal = false"
-    />
 
     <!-- Delete Confirmation -->
     <DeleteConfirmModal

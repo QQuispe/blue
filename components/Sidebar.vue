@@ -75,6 +75,7 @@ const navGroups = computed<NavGroup[]>(() => {
       items: healthSetupComplete.value
         ? [
             { name: 'Meals', icon: 'mdi:food', path: '/health/meals' },
+            { name: 'Foods', icon: 'mdi:food-apple', path: '/health/foods' },
             { name: 'Plans', icon: 'mdi:dumbbell', path: '/health/plan' },
             { name: 'Check-ins', icon: 'mdi:scale', path: '/health/checkins' },
           ]
