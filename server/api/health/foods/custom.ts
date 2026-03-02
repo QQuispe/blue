@@ -60,6 +60,7 @@ export default defineEventHandler(async event => {
         statusCode: 201,
         food: {
           id: food.id,
+          user_id: food.user_id,
           name: food.name,
           brand: food.brand,
           serving_size: Number(food.serving_size) || 100,

@@ -207,14 +207,22 @@ const handleConfirmDelete = async () => {
   itemToDelete.value = null
 }
 
-const handleFoodSaved = () => {
-  initFoods()
+const handleFoodSaved = (newFood: any) => {
+  if (newFood) {
+    customFoods.value = [...customFoods.value, newFood]
+  } else {
+    initFoods()
+  }
   showCreateFoodModal.value = false
   editingFood.value = null
 }
 
-const handleRecipeSaved = () => {
-  initFoods()
+const handleRecipeSaved = (newRecipe: any) => {
+  if (newRecipe) {
+    savedMeals.value = [...savedMeals.value, newRecipe]
+  } else {
+    initFoods()
+  }
   showCreateRecipeModal.value = false
 }
 
