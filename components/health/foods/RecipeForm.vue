@@ -15,7 +15,6 @@ interface Ingredient {
 
 interface RecipeFormData {
   name: string
-  meal_type: string
   ingredients: Ingredient[]
 }
 
@@ -41,20 +40,146 @@ const { customFoods, savedMeals } = useFoodSearch()
 
 const form = ref<RecipeFormData>({
   name: '',
-  meal_type: 'breakfast',
   ingredients: [],
 })
 
 const ingredientSearch = ref('')
-const searchResults = ref<any[]>([])
 const isSearching = ref(false)
+const editingIngredientIndex = ref<number | null>(null)
+const isSavingIngredient = ref(false)
+const showDropdown = ref(false)
 
-const mealTypes = [
-  { value: 'breakfast', label: 'Breakfast' },
-  { value: 'lunch', label: 'Lunch' },
-  { value: 'dinner', label: 'Dinner' },
-  { value: 'snack', label: 'Snack' },
-]
+// Search only from local custom foods (not USDA)
+const filteredFoods = computed(() => {
+  if (!ingredientSearch.value.trim() || ingredientSearch.value.length < 2) {
+    return [] // Don't show when not searching
+  }
+  const query = ingredientSearch.value.toLowerCase()
+  return customFoods.value
+    .filter(f => f.name?.toLowerCase().includes(query) || f.brand?.toLowerCase().includes(query))
+    .slice(0, 10)
+})
+
+const showAddCustomOption = computed(() => {
+  if (!ingredientSearch.value.trim() || ingredientSearch.value.length < 2) return false
+  const query = ingredientSearch.value.toLowerCase()
+  const hasMatch = customFoods.value.some(f => f.name?.toLowerCase() === query)
+  return !hasMatch
+})
+
+const onSearchFocus = () => {
+  if (
+    ingredientSearch.value.length >= 2 ||
+    filteredFoods.value.length > 0 ||
+    showAddCustomOption.value
+  ) {
+    showDropdown.value = true
+  }
+}
+
+const onSearchBlur = () => {
+  // Delay to allow click on dropdown item
+  setTimeout(() => {
+    showDropdown.value = false
+  }, 200)
+}
+
+const onSearchInput = () => {
+  if (ingredientSearch.value.length >= 2) {
+    showDropdown.value = true
+  } else {
+    showDropdown.value = false
+  }
+}
+
+const addIngredient = (item: any) => {
+  form.value.ingredients.push({
+    food_name: item.name,
+    food_id: item.id,
+    servings: 1,
+    calories: item.calories || 0,
+    protein: item.protein || 0,
+    carbs: item.carbs || 0,
+    fat: item.fat || 0,
+    type: 'food',
+  })
+  ingredientSearch.value = ''
+  showDropdown.value = false
+}
+
+const addAsCustomIngredient = async () => {
+  if (!ingredientSearch.value.trim()) return
+
+  isSavingIngredient.value = true
+
+  try {
+    const payload = {
+      name: ingredientSearch.value,
+      brand: null,
+      serving_size: 100,
+      serving_unit: 'g',
+      calories: 0,
+      protein: 0,
+      carbs: 0,
+      fat: 0,
+    }
+
+    const response = await fetch('/api/health/foods/custom', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to create food')
+    }
+
+    const result = await response.json()
+    const newFood = result.food
+
+    // Add to recipe
+    form.value.ingredients.push({
+      food_name: newFood.name,
+      food_id: newFood.id,
+      servings: 1,
+      calories: newFood.calories || 0,
+      protein: newFood.protein || 0,
+      carbs: newFood.carbs || 0,
+      fat: newFood.fat || 0,
+      type: 'food',
+      isNew: true, // Mark as newly created
+    })
+
+    // Update local custom foods
+    customFoods.value = [...customFoods.value, newFood]
+
+    $toast?.success('Food created and added!')
+    ingredientSearch.value = ''
+    showDropdown.value = false
+  } catch (err) {
+    console.error('Error creating custom food:', err)
+    $toast?.error('Failed to create food')
+  } finally {
+    isSavingIngredient.value = false
+  }
+}
+
+const removeIngredient = (index: number) => {
+  form.value.ingredients.splice(index, 1)
+}
+
+const updateServings = (index: number, value: number) => {
+  form.value.ingredients[index].servings = value
+}
+
+const toggleEditIngredient = (index: number) => {
+  editingIngredientIndex.value = editingIngredientIndex.value === index ? null : index
+}
+
+const updateIngredientDetails = (index: number, field: string, value: any) => {
+  form.value.ingredients[index][field] = value
+}
 
 const calculatedMacros = computed(() => {
   return form.value.ingredients.reduce(
@@ -67,66 +192,6 @@ const calculatedMacros = computed(() => {
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   )
 })
-
-const searchIngredients = async () => {
-  if (!ingredientSearch.value.trim()) {
-    searchResults.value = []
-    return
-  }
-
-  isSearching.value = true
-
-  try {
-    const response = await fetch(
-      `/api/health/foods/search?q=${encodeURIComponent(ingredientSearch.value)}`,
-      { credentials: 'include' }
-    )
-
-    if (response.ok) {
-      const data = await response.json()
-      searchResults.value = data.foods || []
-    }
-  } catch (err) {
-    console.error('Search error:', err)
-  } finally {
-    isSearching.value = false
-  }
-}
-
-const addIngredient = (item: any) => {
-  form.value.ingredients.push({
-    food_name: item.name || item.description,
-    food_id: item.fdcId || item.id,
-    servings: 1,
-    calories: item.calories || 0,
-    protein: item.protein || 0,
-    carbs: item.carbs || 0,
-    fat: item.fat || 0,
-    type: item.has_ingredients ? 'recipe' : 'food',
-  })
-  ingredientSearch.value = ''
-  searchResults.value = []
-}
-
-const addCustomIngredient = () => {
-  form.value.ingredients.push({
-    food_name: 'Custom Ingredient',
-    servings: 1,
-    calories: 0,
-    protein: 0,
-    carbs: 0,
-    fat: 0,
-    type: 'custom',
-  })
-}
-
-const removeIngredient = (index: number) => {
-  form.value.ingredients.splice(index, 1)
-}
-
-const updateServings = (index: number, value: number) => {
-  form.value.ingredients[index].servings = value
-}
 
 const handleSave = async () => {
   if (!form.value.name) {
@@ -144,7 +209,6 @@ const handleSave = async () => {
   try {
     const payload = {
       name: form.value.name,
-      meal_type: form.value.meal_type,
       total_calories: calculatedMacros.value.calories,
       total_protein: calculatedMacros.value.protein,
       total_carbs: calculatedMacros.value.carbs,
@@ -182,8 +246,9 @@ const handleSave = async () => {
       throw new Error('Failed to save recipe')
     }
 
+    const result = await response.json()
     $toast?.success(isEditing.value ? 'Recipe updated!' : 'Recipe created!')
-    emit('save', await response.json())
+    emit('save', result.meal)
   } catch (err) {
     console.error('Error saving recipe:', err)
     $toast?.error('Failed to save recipe')
@@ -193,7 +258,7 @@ const handleSave = async () => {
 }
 
 const handleCancel = () => {
-  form.value = { name: '', meal_type: 'breakfast', ingredients: [] }
+  form.value = { name: '', ingredients: [] }
   emit('cancel')
 }
 
@@ -203,11 +268,10 @@ watch(
     if (newRecipe) {
       form.value = {
         name: newRecipe.name || '',
-        meal_type: newRecipe.meal_type || 'breakfast',
         ingredients: newRecipe.ingredients || [],
       }
     } else {
-      form.value = { name: '', meal_type: 'breakfast', ingredients: [] }
+      form.value = { name: '', ingredients: [] }
     }
   },
   { immediate: true }
@@ -234,15 +298,6 @@ watch(
         />
       </div>
 
-      <div class="form-group">
-        <label>Meal Type</label>
-        <select v-model="form.meal_type" class="form-input">
-          <option v-for="type in mealTypes" :key="type.value" :value="type.value">
-            {{ type.label }}
-          </option>
-        </select>
-      </div>
-
       <div class="form-section">
         <label class="section-label">Ingredients</label>
 
@@ -250,50 +305,148 @@ watch(
           <input
             v-model="ingredientSearch"
             type="text"
-            placeholder="Search foods..."
+            placeholder="Search your foods..."
             class="form-input"
-            @input="searchIngredients"
+            @input="onSearchInput"
+            @focus="onSearchFocus"
+            @blur="onSearchBlur"
           />
-          <div v-if="searchResults.length > 0" class="search-results">
+          <div
+            v-if="showDropdown && (filteredFoods.length > 0 || showAddCustomOption)"
+            class="search-results"
+          >
             <div
-              v-for="result in searchResults"
-              :key="result.fdcId || result.id"
+              v-for="result in filteredFoods"
+              :key="result.id"
               class="search-result-item"
               @click="addIngredient(result)"
             >
-              <span class="result-name">{{ result.name || result.description }}</span>
+              <span class="result-name">{{ result.name }}</span>
+              <span v-if="result.brand" class="result-brand">{{ result.brand }}</span>
               <span class="result-cal">{{ result.calories || 0 }} cal</span>
+            </div>
+            <div
+              v-if="showAddCustomOption"
+              class="search-result-item add-custom"
+              @click="addAsCustomIngredient"
+            >
+              <Icon name="mdi:plus" size="16" />
+              <span class="result-name">Add "{{ ingredientSearch }}" as new food</span>
             </div>
           </div>
         </div>
 
-        <button type="button" class="btn btn-secondary btn-sm" @click="addCustomIngredient">
-          + Add Custom Ingredient
-        </button>
-
         <div v-if="form.ingredients.length > 0" class="ingredients-list">
           <div v-for="(ing, index) in form.ingredients" :key="index" class="ingredient-item">
-            <div class="ingredient-info">
-              <span class="ingredient-name">{{ ing.food_name }}</span>
-              <div class="ingredient-macros">
-                {{ Math.round(ing.calories * ing.servings) }} cal |
-                {{ Math.round(ing.protein * ing.servings) }}g P
+            <div class="ingredient-header" @click="toggleEditIngredient(index)">
+              <div class="ingredient-info">
+                <span class="ingredient-name">{{ ing.food_name }}</span>
+                <div class="ingredient-macros">
+                  <template
+                    v-if="ing.calories > 0 || ing.protein > 0 || ing.carbs > 0 || ing.fat > 0"
+                  >
+                    {{ Math.round(ing.calories * ing.servings) }} cal |
+                    {{ Math.round(ing.protein * ing.servings) }}g P |
+                    {{ Math.round(ing.carbs * ing.servings) }}g C |
+                    {{ Math.round(ing.fat * ing.servings) }}g F
+                  </template>
+                  <span v-else class="macro-hint">Click to edit macros</span>
+                </div>
+              </div>
+              <div class="ingredient-actions">
+                <span class="servings-label">{{ ing.servings }}x</span>
+                <button type="button" class="btn-icon" @click.stop="removeIngredient(index)">
+                  <Icon name="mdi:close" size="16" />
+                </button>
               </div>
             </div>
-            <div class="ingredient-actions">
-              <input
-                type="number"
-                :value="ing.servings"
-                min="0.25"
-                step="0.25"
-                class="servings-input"
-                @input="
-                  e => updateServings(index, parseFloat((e.target as HTMLInputElement).value) || 1)
-                "
-              />
-              <button type="button" class="btn-icon" @click="removeIngredient(index)">
-                <Icon name="mdi:close" size="16" />
-              </button>
+
+            <!-- Inline edit form -->
+            <div v-if="editingIngredientIndex === index" class="ingredient-edit">
+              <div class="edit-row">
+                <div class="edit-field">
+                  <label>Name</label>
+                  <input
+                    :value="ing.food_name"
+                    type="text"
+                    class="form-input"
+                    @input="
+                      e =>
+                        updateIngredientDetails(
+                          index,
+                          'food_name',
+                          (e.target as HTMLInputElement).value
+                        )
+                    "
+                  />
+                </div>
+              </div>
+              <div class="edit-row macros-edit">
+                <div class="edit-field">
+                  <label>Calories</label>
+                  <input
+                    :value="ing.calories"
+                    type="number"
+                    class="form-input"
+                    @input="
+                      e =>
+                        updateIngredientDetails(
+                          index,
+                          'calories',
+                          parseFloat((e.target as HTMLInputElement).value) || 0
+                        )
+                    "
+                  />
+                </div>
+                <div class="edit-field">
+                  <label>Protein</label>
+                  <input
+                    :value="ing.protein"
+                    type="number"
+                    class="form-input"
+                    @input="
+                      e =>
+                        updateIngredientDetails(
+                          index,
+                          'protein',
+                          parseFloat((e.target as HTMLInputElement).value) || 0
+                        )
+                    "
+                  />
+                </div>
+                <div class="edit-field">
+                  <label>Carbs</label>
+                  <input
+                    :value="ing.carbs"
+                    type="number"
+                    class="form-input"
+                    @input="
+                      e =>
+                        updateIngredientDetails(
+                          index,
+                          'carbs',
+                          parseFloat((e.target as HTMLInputElement).value) || 0
+                        )
+                    "
+                  />
+                </div>
+                <div class="edit-field">
+                  <label>Fat</label>
+                  <input
+                    :value="ing.fat"
+                    type="number"
+                    class="form-input"
+                    @input="
+                      e =>
+                        updateIngredientDetails(
+                          index,
+                          'fat',
+                          parseFloat((e.target as HTMLInputElement).value) || 0
+                        )
+                    "
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -344,6 +497,7 @@ watch(
   display: flex;
   flex-direction: column;
   height: 100%;
+  background: var(--color-bg);
 }
 
 .form-header {
@@ -451,6 +605,24 @@ watch(
   color: var(--color-text-muted);
 }
 
+.result-brand {
+  font-size: 0.6875rem;
+  color: var(--color-text-muted);
+  margin-left: 8px;
+}
+
+.search-result-item.add-custom {
+  color: var(--color-accent);
+  font-weight: 500;
+  border-top: 1px solid var(--color-border);
+  margin-top: 4px;
+  padding-top: 12px;
+}
+
+.search-result-item.add-custom .result-name {
+  color: var(--color-accent);
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -499,13 +671,23 @@ watch(
 }
 
 .ingredient-item {
+  background: var(--color-bg-elevated);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.ingredient-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 12px;
-  background: var(--color-bg-elevated);
-  border-radius: 8px;
-  margin-bottom: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ingredient-header:hover {
+  background: var(--color-bg-hover);
 }
 
 .ingredient-info {
@@ -525,9 +707,59 @@ watch(
   margin-top: 2px;
 }
 
+.macro-hint {
+  font-size: 0.6875rem;
+  color: var(--color-accent);
+  font-style: italic;
+}
+
 .ingredient-actions {
   display: flex;
   align-items: center;
+  gap: 8px;
+}
+
+.servings-label {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  padding: 4px 8px;
+  background: var(--color-bg);
+  border-radius: 4px;
+}
+
+.ingredient-edit {
+  padding: 12px;
+  background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+}
+
+.edit-row {
+  margin-bottom: 12px;
+}
+
+.edit-row:last-child {
+  margin-bottom: 0;
+}
+
+.edit-field {
+  margin-bottom: 8px;
+}
+
+.edit-field label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.edit-field .form-input {
+  padding: 8px 10px;
+  font-size: 0.8125rem;
+}
+
+.macros-edit {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
 

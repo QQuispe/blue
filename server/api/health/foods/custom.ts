@@ -1,7 +1,7 @@
 import { defineEventHandler, getRequestURL, getMethod, readBody, createError } from 'h3'
 import { requireAuth } from '~/server/utils/auth'
 import { serverLogger } from '~/server/utils/logger'
-import { getCustomFoods, createCustomFood } from '~/server/db/queries/health'
+import { getCustomFoods, createCustomFood, getFoodsByIds } from '~/server/db/queries/health'
 import type { HealthFoodInput } from '~/types/health'
 
 export default defineEventHandler(async event => {
@@ -40,18 +40,47 @@ export default defineEventHandler(async event => {
       }
     }
 
-    // POST /api/health/foods/custom - create custom food
+    // POST /api/health/foods/custom - create custom food or get by ids
     if (method === 'POST') {
-      const body = await readBody<HealthFoodInput>(event)
+      const body = await readBody<HealthFoodInput | { ids: number[] }>(event)
 
-      if (!body.name) {
+      // POST /api/health/foods/custom with { ids: [...] } - get foods by IDs (including deleted)
+      if (body && 'ids' in body && Array.isArray(body.ids)) {
+        const foods = await getFoodsByIds(body.ids)
+
+        const duration = Date.now() - startTime
+        serverLogger.api(method, path, 200, duration, user.id)
+
+        return {
+          statusCode: 200,
+          foods: foods.map(f => ({
+            id: f.id,
+            user_id: f.user_id,
+            name: f.name,
+            brand: f.brand,
+            serving_size: Number(f.serving_size) || 100,
+            serving_unit: f.serving_unit || 'g',
+            calories: Number(f.calories) || 0,
+            protein: Number(f.protein) || 0,
+            carbs: Number(f.carbs) || 0,
+            fat: Number(f.fat) || 0,
+            fiber: Number(f.fiber) || 0,
+            source: f.source,
+            deleted_at: f.deleted_at,
+          })),
+        }
+      }
+
+      // POST /api/health/foods/custom - create new custom food
+      const foodInput = body as HealthFoodInput
+      if (!foodInput.name) {
         throw createError({
           statusCode: 400,
           statusMessage: 'Name is required',
         })
       }
 
-      const food = await createCustomFood(user.id, body)
+      const food = await createCustomFood(user.id, foodInput)
 
       const duration = Date.now() - startTime
       serverLogger.api(method, path, 201, duration, user.id)

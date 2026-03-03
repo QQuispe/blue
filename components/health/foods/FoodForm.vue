@@ -54,6 +54,20 @@ const servingUnits = [
   { value: 'serving', label: 'serving' },
 ]
 
+const resetForm = () => {
+  form.value = {
+    name: '',
+    brand: '',
+    serving_size: '',
+    serving_unit: 'g',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+    fiber: '',
+  }
+}
+
 watch(
   () => props.food,
   newFood => {
@@ -75,20 +89,6 @@ watch(
   },
   { immediate: true }
 )
-
-const resetForm = () => {
-  form.value = {
-    name: '',
-    brand: '',
-    serving_size: '',
-    serving_unit: 'g',
-    calories: '',
-    protein: '',
-    carbs: '',
-    fat: '',
-    fiber: '',
-  }
-}
 
 const handleSave = async () => {
   if (!form.value.name) {

@@ -362,7 +362,10 @@ export async function getRecentFoods(userId: number, limit = 10): Promise<any[]>
 
 export async function getCustomFoods(userId: number): Promise<HealthFood[]> {
   const result = await pool.query(
-    `SELECT * FROM health_foods WHERE source = 'custom' ORDER BY name ASC`
+    `SELECT * FROM health_foods 
+     WHERE source = 'custom' AND user_id = $1 AND deleted_at IS NULL 
+     ORDER BY name ASC`,
+    [userId]
   )
   return result.rows
 }
@@ -373,6 +376,12 @@ export async function getFoodByName(name: string): Promise<HealthFood | null> {
     [name]
   )
   return result.rows[0] || null
+}
+
+export async function getFoodsByIds(foodIds: number[]): Promise<HealthFood[]> {
+  if (foodIds.length === 0) return []
+  const result = await pool.query(`SELECT * FROM health_foods WHERE id = ANY($1)`, [foodIds])
+  return result.rows
 }
 
 export async function createCustomFood(
@@ -405,7 +414,9 @@ export async function deleteCustomFood(
   isAdmin?: boolean
 ): Promise<boolean> {
   const result = await pool.query(
-    `DELETE FROM health_foods WHERE id = $1 AND (user_id = $2 OR $3 = true) AND source = 'custom' RETURNING id`,
+    `UPDATE health_foods SET deleted_at = NOW() 
+     WHERE id = $1 AND (user_id = $2 OR $3 = true) AND source = 'custom' AND deleted_at IS NULL 
+     RETURNING id`,
     [foodId, userId, isAdmin || false]
   )
   return result.rows.length > 0

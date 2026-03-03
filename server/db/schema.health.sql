@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS health_foods (
     sodium DECIMAL(7,2),
     is_verified BOOLEAN DEFAULT FALSE,
     source VARCHAR(50) DEFAULT 'manual',
+    deleted_at TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

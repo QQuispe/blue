@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue'
 import BaseModal from './BaseModal.vue'
 
 interface Props {
@@ -8,6 +9,9 @@ interface Props {
   confirmText?: string
   cancelText?: string
   isLoading?: boolean
+  showCheckbox?: boolean
+  checkboxLabel?: string
+  checkboxDefault?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -15,12 +19,30 @@ const props = withDefaults(defineProps<Props>(), {
   confirmText: 'Delete',
   cancelText: 'Cancel',
   isLoading: false,
+  showCheckbox: false,
+  checkboxLabel: '',
+  checkboxDefault: true,
 })
 
 const emit = defineEmits<{
-  confirm: []
+  confirm: [alsoDelete: boolean]
   cancel: []
 }>()
+
+const checkboxValue = ref(props.checkboxDefault)
+
+watch(
+  () => props.show,
+  newVal => {
+    if (newVal) {
+      checkboxValue.value = props.checkboxDefault
+    }
+  }
+)
+
+const handleConfirm = () => {
+  emit('confirm', checkboxValue.value)
+}
 </script>
 
 <template>
@@ -30,13 +52,18 @@ const emit = defineEmits<{
         <Icon name="mdi:alert-circle" size="32" />
       </div>
       <p class="message">{{ message }}</p>
+
+      <label v-if="showCheckbox" class="checkbox-label">
+        <input v-model="checkboxValue" type="checkbox" class="checkbox" />
+        <span>{{ checkboxLabel }}</span>
+      </label>
     </div>
 
     <template #footer>
       <button class="btn btn-secondary" :disabled="isLoading" @click="emit('cancel')">
         {{ cancelText }}
       </button>
-      <button class="btn btn-danger" :disabled="isLoading" @click="emit('confirm')">
+      <button class="btn btn-danger" :disabled="isLoading" @click="handleConfirm">
         <span v-if="isLoading" class="spinner"></span>
         {{ confirmText }}
       </button>
@@ -62,6 +89,21 @@ const emit = defineEmits<{
   font-size: 0.9375rem;
   line-height: 1.5;
   margin: 0;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
 }
 
 .btn {

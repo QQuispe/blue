@@ -31,14 +31,15 @@ interface SessionData {
   loggedInAt: string
 }
 
-// Session config
+// Session config - optimized for both development and production
 const SESSION_CONFIG = {
   name: 'blue-session',
   password: process.env.SESSION_SECRET || 'your-session-secret-minimum-32-characters-long',
   maxAge: 60 * 60 * 24 * 7, // 7 days
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict' as const,
+  sameSite: 'lax' as const, // 'lax' works better in development/Docker
+  path: '/', // Ensure cookie is sent on all paths
 }
 
 // Expected errors that don't need stack traces

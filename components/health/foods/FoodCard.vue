@@ -35,6 +35,30 @@ const isRecipe = computed(() => props.item.type === 'recipe')
 const ingredientCount = computed(() => {
   return props.item.ingredients?.length || 0
 })
+
+const displayName = computed(() => {
+  return props.item.name || props.item.food_name || 'Unnamed'
+})
+
+const displayCalories = computed(() => {
+  const val = Number(props.item.calories)
+  return isNaN(val) ? '--' : Math.round(val)
+})
+
+const displayProtein = computed(() => {
+  const val = Number(props.item.protein)
+  return isNaN(val) ? '--' : Math.round(val)
+})
+
+const displayCarbs = computed(() => {
+  const val = Number(props.item.carbs)
+  return isNaN(val) ? '--' : Math.round(val)
+})
+
+const displayFat = computed(() => {
+  const val = Number(props.item.fat)
+  return isNaN(val) ? '--' : Math.round(val)
+})
 </script>
 
 <template>
@@ -47,11 +71,11 @@ const ingredientCount = computed(() => {
     <div class="card-content">
       <div class="card-header">
         <div class="card-title">
-          <span class="name">{{ item.name }}</span>
+          <span class="name">{{ displayName }}</span>
           <span v-if="item.brand" class="brand">{{ item.brand }}</span>
         </div>
         <div class="card-calories">
-          <span class="cal-value">{{ Math.round(item.calories) }}</span>
+          <span class="cal-value">{{ displayCalories }}</span>
           <span class="cal-label">cal</span>
         </div>
       </div>
@@ -59,15 +83,15 @@ const ingredientCount = computed(() => {
       <div class="card-macros">
         <div class="macro protein">
           <Icon name="mdi:arm-flex" size="14" />
-          <span>{{ Math.round(item.protein) }}g</span>
+          <span>{{ displayProtein }}g</span>
         </div>
         <div class="macro carbs">
           <Icon name="mdi:barley" size="14" />
-          <span>{{ Math.round(item.carbs) }}g</span>
+          <span>{{ displayCarbs }}g</span>
         </div>
         <div class="macro fat">
           <Icon name="mdi:water" size="14" />
-          <span>{{ Math.round(item.fat) }}g</span>
+          <span>{{ displayFat }}g</span>
         </div>
       </div>
 

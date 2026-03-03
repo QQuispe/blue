@@ -9,6 +9,7 @@ import FoodsList from '~/components/health/foods/FoodsList.vue'
 import FoodForm from '~/components/health/foods/FoodForm.vue'
 import RecipeForm from '~/components/health/foods/RecipeForm.vue'
 import DeleteConfirmModal from '~/components/health/DeleteConfirmModal.vue'
+import SlideOver from '~/components/shared/SlideOver.vue'
 
 const { $toast } = useNuxtApp()
 
@@ -34,6 +35,7 @@ const editingItem = ref<any>(null)
 const showDeleteModal = ref(false)
 const itemToDelete = ref<any>(null)
 const isDeleting = ref(false)
+const isCheckingAssociated = ref(false)
 
 const filteredFoods = computed(() => {
   let items = customFoods.value
@@ -116,23 +118,61 @@ const handleFoodSaved = (savedFood: any) => {
 }
 
 const handleRecipeSaved = (savedRecipe: any) => {
+  // Convert string values to numbers for proper display
+  const normalizedRecipe = {
+    ...savedRecipe,
+    calories: Number(savedRecipe.calories) || 0,
+    protein: Number(savedRecipe.protein) || 0,
+    carbs: Number(savedRecipe.carbs) || 0,
+    fat: Number(savedRecipe.fat) || 0,
+  }
+
   if (editingItem.value) {
-    const index = savedMeals.value.findIndex(r => r.id === savedRecipe.id)
+    const index = savedMeals.value.findIndex(r => r.id === normalizedRecipe.id)
     if (index !== -1) {
-      savedMeals.value[index] = savedRecipe
+      savedMeals.value[index] = normalizedRecipe
     }
   } else {
-    savedMeals.value = [...savedMeals.value, savedRecipe]
+    savedMeals.value = [...savedMeals.value, normalizedRecipe]
   }
   closeSlideOver()
 }
 
-const handleDelete = (item: any) => {
+const handleDelete = async (item: any) => {
   itemToDelete.value = item
+  isCheckingAssociated.value = true
+  associatedCustomFoodIds.value = []
+
+  // Check if recipe has custom ingredients that were created for it
+  // Note: We check all ingredient food_ids against the database, not customFoods (which filters out deleted)
+  if (item.type === 'recipe' && item.ingredients?.length > 0) {
+    const ingredientFoodIds = item.ingredients
+      .filter((ing: any) => ing.food_id)
+      .map((ing: any) => ing.food_id)
+
+    if (ingredientFoodIds.length > 0) {
+      try {
+        const res: any = await $fetch('/api/health/foods/custom', {
+          method: 'POST',
+          body: { ids: ingredientFoodIds },
+          credentials: 'include',
+        })
+        const foods = res?.foods || []
+        const customFoodIds = foods.filter((f: any) => f.source === 'custom').map((f: any) => f.id)
+        associatedCustomFoodIds.value = customFoodIds
+      } catch {
+        associatedCustomFoodIds.value = []
+      }
+    }
+  }
+
+  isCheckingAssociated.value = false
   showDeleteModal.value = true
 }
 
-const confirmDelete = async () => {
+const associatedCustomFoodIds = ref<number[]>([])
+
+const confirmDelete = async (alsoDeleteIngredients: boolean = false) => {
   if (!itemToDelete.value) return
 
   isDeleting.value = true
@@ -141,11 +181,22 @@ const confirmDelete = async () => {
       await deleteCustomFood(itemToDelete.value.id)
       $toast?.success('Food deleted')
     } else {
+      // Delete the recipe
       await deleteSavedMeal(itemToDelete.value.id)
-      $toast?.success('Recipe deleted')
+
+      // Also delete associated custom foods if user chose to
+      if (alsoDeleteIngredients && associatedCustomFoodIds.value.length > 0) {
+        for (const foodId of associatedCustomFoodIds.value) {
+          await deleteCustomFood(foodId)
+        }
+        $toast?.success(`Recipe and ${associatedCustomFoodIds.value.length} custom food(s) deleted`)
+      } else {
+        $toast?.success('Recipe deleted')
+      }
     }
     showDeleteModal.value = false
     itemToDelete.value = null
+    associatedCustomFoodIds.value = []
   } catch (err) {
     console.error('Delete error:', err)
     $toast?.error('Failed to delete')
@@ -222,40 +273,30 @@ onMounted(async () => {
       />
 
       <!-- Slide-over Panel -->
-      <Teleport to="body">
-        <Transition name="slide-over">
-          <div v-if="showSlideOver" class="slide-over-overlay" @click="closeSlideOver">
-            <div class="slide-over-panel" @click.stop>
-              <div class="slide-over-header">
-                <button class="close-btn" @click="closeSlideOver">
-                  <Icon name="mdi:close" size="24" />
-                </button>
-              </div>
-              <div class="slide-over-content">
-                <FoodForm
-                  v-if="slideOverMode === 'food'"
-                  :food="editingItem"
-                  @save="handleFoodSaved"
-                  @cancel="closeSlideOver"
-                />
-                <RecipeForm
-                  v-else
-                  :recipe="editingItem"
-                  @save="handleRecipeSaved"
-                  @cancel="closeSlideOver"
-                />
-              </div>
-            </div>
-          </div>
-        </Transition>
-      </Teleport>
+      <SlideOver :show="showSlideOver" width="480px" @close="closeSlideOver">
+        <FoodForm
+          v-if="slideOverMode === 'food'"
+          :food="editingItem"
+          @save="handleFoodSaved"
+          @cancel="closeSlideOver"
+        />
+        <RecipeForm
+          v-else
+          :recipe="editingItem"
+          @save="handleRecipeSaved"
+          @cancel="closeSlideOver"
+        />
+      </SlideOver>
 
       <!-- Delete Confirmation -->
       <DeleteConfirmModal
         :show="showDeleteModal"
         title="Delete Item"
         :message="`Are you sure you want to delete '${itemToDelete?.name}'?`"
-        :is-loading="isDeleting"
+        :is-loading="isDeleting || isCheckingAssociated"
+        :show-checkbox="associatedCustomFoodIds.length > 0"
+        :checkbox-label="`Also delete ${associatedCustomFoodIds.length} associated custom food(s)`"
+        :checkbox-default="true"
         @confirm="confirmDelete"
         @cancel="showDeleteModal = false"
       />
@@ -267,84 +308,5 @@ onMounted(async () => {
 .foods-page {
   max-width: 1200px;
   margin: 0 auto;
-}
-
-/* Slide-over Styles */
-.slide-over-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 100;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.slide-over-panel {
-  width: 100%;
-  max-width: 480px;
-  height: 100%;
-  background: var(--color-bg);
-  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.slide-over-header {
-  display: flex;
-  justify-content: flex-end;
-  padding: 16px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.close-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: transparent;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  border-radius: 8px;
-  transition: all 0.15s;
-}
-
-.close-btn:hover {
-  background: var(--color-bg-hover);
-  color: var(--color-text-primary);
-}
-
-.slide-over-content {
-  flex: 1;
-  overflow-y: auto;
-}
-
-/* Slide-over Transitions */
-.slide-over-enter-active,
-.slide-over-leave-active {
-  transition: opacity 0.3s ease;
-}
-
-.slide-over-enter-active .slide-over-panel,
-.slide-over-leave-active .slide-over-panel {
-  transition: transform 0.3s ease;
-}
-
-.slide-over-enter-from,
-.slide-over-leave-to {
-  opacity: 0;
-}
-
-.slide-over-enter-from .slide-over-panel,
-.slide-over-leave-to .slide-over-panel {
-  transform: translateX(100%);
-}
-
-@media (max-width: 640px) {
-  .slide-over-panel {
-    max-width: 100%;
-  }
 }
 </style>

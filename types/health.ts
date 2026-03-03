@@ -111,6 +111,7 @@ export interface HealthFood {
   sodium: number | null
   is_verified: boolean
   source: string
+  deleted_at: Date | null
   created_at: Date
 }
 
