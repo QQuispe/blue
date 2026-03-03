@@ -49,6 +49,11 @@ export const useHealthData = () => {
       if (setupRes?.isComplete) {
         const dashboardRes = await $fetch('/api/health/dashboard', { ignoreResponseError: true })
         dashboard.value = dashboardRes?.dashboard || null
+
+        // Set active goal ID from dashboard
+        if (dashboardRes?.dashboard?.activeGoal) {
+          activeGoalId.value = dashboardRes.dashboard.activeGoal.id
+        }
       }
 
       isInitialized.value = true
