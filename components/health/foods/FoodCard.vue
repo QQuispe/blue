@@ -4,6 +4,7 @@ import { computed } from 'vue'
 interface FoodItem {
   id: number
   name: string
+  food_name?: string
   brand?: string
   calories: number
   protein: number

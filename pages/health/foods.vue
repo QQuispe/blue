@@ -35,7 +35,6 @@ const editingItem = ref<any>(null)
 const showDeleteModal = ref(false)
 const itemToDelete = ref<any>(null)
 const isDeleting = ref(false)
-const isCheckingAssociated = ref(false)
 
 const filteredFoods = computed(() => {
   let items = customFoods.value
@@ -138,41 +137,12 @@ const handleRecipeSaved = (savedRecipe: any) => {
   closeSlideOver()
 }
 
-const handleDelete = async (item: any) => {
+const handleDelete = (item: any) => {
   itemToDelete.value = item
-  isCheckingAssociated.value = true
-  associatedCustomFoodIds.value = []
-
-  // Check if recipe has custom ingredients that were created for it
-  // Note: We check all ingredient food_ids against the database, not customFoods (which filters out deleted)
-  if (item.type === 'recipe' && item.ingredients?.length > 0) {
-    const ingredientFoodIds = item.ingredients
-      .filter((ing: any) => ing.food_id)
-      .map((ing: any) => ing.food_id)
-
-    if (ingredientFoodIds.length > 0) {
-      try {
-        const res: any = await $fetch('/api/health/foods/custom', {
-          method: 'POST',
-          body: { ids: ingredientFoodIds },
-          credentials: 'include',
-        })
-        const foods = res?.foods || []
-        const customFoodIds = foods.filter((f: any) => f.source === 'custom').map((f: any) => f.id)
-        associatedCustomFoodIds.value = customFoodIds
-      } catch {
-        associatedCustomFoodIds.value = []
-      }
-    }
-  }
-
-  isCheckingAssociated.value = false
   showDeleteModal.value = true
 }
 
-const associatedCustomFoodIds = ref<number[]>([])
-
-const confirmDelete = async (alsoDeleteIngredients: boolean = false) => {
+const confirmDelete = async () => {
   if (!itemToDelete.value) return
 
   isDeleting.value = true
@@ -181,22 +151,11 @@ const confirmDelete = async (alsoDeleteIngredients: boolean = false) => {
       await deleteCustomFood(itemToDelete.value.id)
       $toast?.success('Food deleted')
     } else {
-      // Delete the recipe
       await deleteSavedMeal(itemToDelete.value.id)
-
-      // Also delete associated custom foods if user chose to
-      if (alsoDeleteIngredients && associatedCustomFoodIds.value.length > 0) {
-        for (const foodId of associatedCustomFoodIds.value) {
-          await deleteCustomFood(foodId)
-        }
-        $toast?.success(`Recipe and ${associatedCustomFoodIds.value.length} custom food(s) deleted`)
-      } else {
-        $toast?.success('Recipe deleted')
-      }
+      $toast?.success('Recipe deleted')
     }
     showDeleteModal.value = false
     itemToDelete.value = null
-    associatedCustomFoodIds.value = []
   } catch (err) {
     console.error('Delete error:', err)
     $toast?.error('Failed to delete')
@@ -293,10 +252,7 @@ onMounted(async () => {
         :show="showDeleteModal"
         title="Delete Item"
         :message="`Are you sure you want to delete '${itemToDelete?.name}'?`"
-        :is-loading="isDeleting || isCheckingAssociated"
-        :show-checkbox="associatedCustomFoodIds.length > 0"
-        :checkbox-label="`Also delete ${associatedCustomFoodIds.length} associated custom food(s)`"
-        :checkbox-default="true"
+        :is-loading="isDeleting"
         @confirm="confirmDelete"
         @cancel="showDeleteModal = false"
       />

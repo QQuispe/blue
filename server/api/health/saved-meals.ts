@@ -9,8 +9,65 @@ import {
   calculateRecipeMacros,
   getFoodByName,
   createCustomFood,
+  getFoodsByIds,
 } from '~/server/db/queries/health'
 import type { HealthSavedMealInput } from '~/types/health'
+
+interface Ingredient {
+  food_name: string
+  food_id?: number
+  servings: number
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  fiber?: number
+  type?: string
+}
+
+async function enrichIngredientsWithLiveData(ingredients: any[]): Promise<Ingredient[]> {
+  if (!ingredients || ingredients.length === 0) return []
+
+  const foodsToFetchById = ingredients.filter(ing => ing.food_id).map(ing => ing.food_id)
+
+  let foodsMap: Record<number, any> = {}
+  if (foodsToFetchById.length > 0) {
+    const foods = await getFoodsByIds(foodsToFetchById)
+    for (const food of foods) {
+      foodsMap[food.id] = food
+    }
+  }
+
+  return ingredients.map(ing => {
+    if (ing.food_id && foodsMap[ing.food_id]) {
+      const food = foodsMap[ing.food_id]
+      return {
+        food_name: food.name,
+        food_id: ing.food_id,
+        servings: ing.servings || 1,
+        calories: Number(food.calories) || 0,
+        protein: Number(food.protein) || 0,
+        carbs: Number(food.carbs) || 0,
+        fat: Number(food.fat) || 0,
+        fiber: Number(food.fiber) || 0,
+        serving_size: Number(food.serving_size) || 100,
+        serving_unit: food.serving_unit || 'g',
+        type: 'food',
+      }
+    }
+    return {
+      food_name: ing.food_name,
+      food_id: ing.food_id,
+      servings: ing.servings || 1,
+      calories: ing.calories || 0,
+      protein: ing.protein || 0,
+      carbs: ing.carbs || 0,
+      fat: ing.fat || 0,
+      fiber: ing.fiber || 0,
+      type: ing.type || 'food',
+    }
+  })
+}
 
 export default defineEventHandler(async event => {
   const startTime = Date.now()
@@ -27,29 +84,36 @@ export default defineEventHandler(async event => {
     if (method === 'GET' && !path.includes('/saved-meals/')) {
       const meals = await getSavedMeals(user.id)
 
+      const enrichedMeals = await Promise.all(
+        meals.map(async m => {
+          const enrichedIngredients = await enrichIngredientsWithLiveData(m.ingredients)
+          return {
+            id: m.id,
+            user_id: m.user_id,
+            name: m.name,
+            meal_type: m.meal_type,
+            calories: Number(m.calories) || 0,
+            protein: Number(m.protein) || 0,
+            carbs: Number(m.carbs) || 0,
+            fat: Number(m.fat) || 0,
+            fiber: Number(m.fiber) || 0,
+            ingredients: enrichedIngredients,
+            instructions: m.instructions,
+            source: m.source,
+            is_favorite: m.is_favorite,
+            usda_fdc_id: m.usda_fdc_id,
+            created_at: m.created_at,
+            updated_at: m.updated_at,
+          }
+        })
+      )
+
       const duration = Date.now() - startTime
       serverLogger.api(method, url.pathname, 200, duration, user.id)
 
       return {
         statusCode: 200,
-        meals: meals.map(m => ({
-          id: m.id,
-          user_id: m.user_id,
-          name: m.name,
-          meal_type: m.meal_type,
-          calories: Number(m.calories) || 0,
-          protein: Number(m.protein) || 0,
-          carbs: Number(m.carbs) || 0,
-          fat: Number(m.fat) || 0,
-          fiber: Number(m.fiber) || 0,
-          ingredients: m.ingredients,
-          instructions: m.instructions,
-          source: m.source,
-          is_favorite: m.is_favorite,
-          usda_fdc_id: m.usda_fdc_id,
-          created_at: m.created_at,
-          updated_at: m.updated_at,
-        })),
+        meals: enrichedMeals,
       }
     }
 
@@ -68,6 +132,8 @@ export default defineEventHandler(async event => {
         throw createError({ statusCode: 404, statusMessage: 'Meal not found' })
       }
 
+      const enrichedIngredients = await enrichIngredientsWithLiveData(meal.ingredients)
+
       const duration = Date.now() - startTime
       serverLogger.api(method, url.pathname, 200, duration, user.id)
 
@@ -83,7 +149,7 @@ export default defineEventHandler(async event => {
           carbs: Number(meal.carbs) || 0,
           fat: Number(meal.fat) || 0,
           fiber: Number(meal.fiber) || 0,
-          ingredients: meal.ingredients,
+          ingredients: enrichedIngredients,
           instructions: meal.instructions,
           source: meal.source,
           is_favorite: meal.is_favorite,
@@ -113,6 +179,8 @@ export default defineEventHandler(async event => {
         throw createError({ statusCode: 404, statusMessage: 'Meal not found' })
       }
 
+      const enrichedIngredients = await enrichIngredientsWithLiveData(meal.ingredients)
+
       const duration = Date.now() - startTime
       serverLogger.api(method, url.pathname, 200, duration, user.id)
 
@@ -128,7 +196,7 @@ export default defineEventHandler(async event => {
           carbs: Number(meal.carbs) || 0,
           fat: Number(meal.fat) || 0,
           fiber: Number(meal.fiber) || 0,
-          ingredients: meal.ingredients,
+          ingredients: enrichedIngredients,
           instructions: meal.instructions,
           source: meal.source,
           is_favorite: meal.is_favorite,
@@ -153,18 +221,13 @@ export default defineEventHandler(async event => {
         const processedIngredients = []
 
         for (const ingredient of body.ingredients) {
-          if (ingredient.type === 'custom') {
-            const existingFood = await getFoodByName(ingredient.food_name)
+          if (ingredient.type === 'custom' || !ingredient.food_id) {
+            const foodName = ingredient.food_name
+            let existingFood = await getFoodByName(foodName)
 
-            if (existingFood) {
-              processedIngredients.push({
-                ...ingredient,
-                type: 'food',
-                food_id: existingFood.id,
-              })
-            } else {
-              const newFood = await createCustomFood(user.id, {
-                name: ingredient.food_name,
+            if (!existingFood) {
+              existingFood = await createCustomFood(user.id, {
+                name: foodName,
                 serving_size: ingredient.serving_size || 100,
                 serving_unit: ingredient.serving_unit || 'g',
                 calories: ingredient.calories || 0,
@@ -172,15 +235,21 @@ export default defineEventHandler(async event => {
                 carbs: ingredient.carbs || 0,
                 fat: ingredient.fat || 0,
               })
-
-              processedIngredients.push({
-                ...ingredient,
-                type: 'food',
-                food_id: newFood.id,
-              })
             }
+
+            processedIngredients.push({
+              food_name: foodName,
+              food_id: existingFood.id,
+              servings: ingredient.servings || 1,
+              type: 'food',
+            })
           } else {
-            processedIngredients.push(ingredient)
+            processedIngredients.push({
+              food_name: ingredient.food_name,
+              food_id: ingredient.food_id,
+              servings: ingredient.servings || 1,
+              type: 'food',
+            })
           }
         }
 
@@ -193,6 +262,8 @@ export default defineEventHandler(async event => {
       }
 
       const meal = await createSavedMeal(user.id, mealData)
+
+      const enrichedIngredients = await enrichIngredientsWithLiveData(meal.ingredients)
 
       const duration = Date.now() - startTime
       serverLogger.api(method, url.pathname, 201, duration, user.id)
@@ -209,7 +280,7 @@ export default defineEventHandler(async event => {
           carbs: meal.carbs,
           fat: meal.fat,
           fiber: meal.fiber,
-          ingredients: meal.ingredients,
+          ingredients: enrichedIngredients,
           instructions: meal.instructions,
           source: meal.source,
           is_favorite: meal.is_favorite,

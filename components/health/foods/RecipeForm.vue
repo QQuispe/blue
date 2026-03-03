@@ -11,6 +11,7 @@ interface Ingredient {
   carbs: number
   fat: number
   type: 'food' | 'recipe' | 'custom'
+  isNew?: boolean
 }
 
 interface RecipeFormData {
