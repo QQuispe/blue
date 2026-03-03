@@ -430,30 +430,31 @@ export async function updateCustomFood(
 ): Promise<HealthFood | null> {
   const result = await pool.query(
     `UPDATE health_foods 
-     SET name = COALESCE($4, name),
+     SET name = COALESCE(NULLIF($4, ''), name),
          brand = $5,
-         serving_size = COALESCE($6, serving_size),
-         serving_unit = $7,
-         calories = COALESCE($8, calories),
-         protein = COALESCE($9, protein),
-         carbs = COALESCE($10, carbs),
-         fat = COALESCE($11, fat),
-         fiber = COALESCE($12, fiber)
+         serving_size = COALESCE(NULLIF($6, 0), serving_size),
+         serving_unit = COALESCE(NULLIF($7, ''), serving_unit),
+         calories = COALESCE($8, 0),
+         protein = COALESCE($9, 0),
+         carbs = COALESCE($10, 0),
+         fat = COALESCE($11, 0),
+         fiber = COALESCE($12, 0),
+         updated_at = NOW()
      WHERE id = $1 AND (user_id = $2 OR $3 = true) AND source = 'custom'
      RETURNING *`,
     [
       foodId,
       userId,
       isAdmin || false,
-      food.name,
-      food.brand,
-      food.serving_size,
-      food.serving_unit,
-      food.calories,
-      food.protein,
-      food.carbs,
-      food.fat,
-      food.fiber,
+      food.name ?? null,
+      food.brand ?? null,
+      food.serving_size ?? null,
+      food.serving_unit ?? null,
+      food.calories ?? 0,
+      food.protein ?? 0,
+      food.carbs ?? 0,
+      food.fat ?? 0,
+      food.fiber ?? 0,
     ]
   )
   return result.rows[0] || null
