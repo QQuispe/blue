@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useFoodSearch } from '~/composables/health/useFoodSearch'
+import { useEventBus, EVENTS } from '~/composables/useEventBus'
 
 interface Ingredient {
   food_name: string
@@ -33,6 +34,7 @@ const emit = defineEmits<{
 }>()
 
 const { $toast } = useNuxtApp()
+const { emit: emitEvent } = useEventBus()
 
 const isEditing = computed(() => !!props.recipe)
 const isSaving = ref(false)
@@ -222,6 +224,7 @@ const handleSave = async () => {
         protein: ing.protein,
         carbs: ing.carbs,
         fat: ing.fat,
+        type: ing.food_id ? 'food' : 'custom',
       })),
     }
 
@@ -248,6 +251,33 @@ const handleSave = async () => {
     }
 
     const result = await response.json()
+
+    // Emit events for each food that was potentially updated
+    // This triggers reactive cache invalidation across the app
+    if (result.meal?.ingredients) {
+      result.meal.ingredients.forEach((ing: any) => {
+        if (ing.food_id) {
+          emitEvent(EVENTS.FOOD_UPDATED, {
+            foodId: ing.food_id,
+            foodName: ing.food_name,
+            macros: {
+              calories: ing.calories,
+              protein: ing.protein,
+              carbs: ing.carbs,
+              fat: ing.fat,
+              fiber: ing.fiber,
+            },
+          })
+        }
+      })
+    }
+
+    // Also emit recipe event
+    emitEvent(isEditing.value ? EVENTS.RECIPE_UPDATED : EVENTS.RECIPE_CREATED, {
+      recipeId: result.meal.id,
+      recipeName: result.meal.name,
+    })
+
     $toast?.success(isEditing.value ? 'Recipe updated!' : 'Recipe created!')
     emit('save', result.meal)
   } catch (err) {

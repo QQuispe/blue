@@ -422,6 +422,16 @@ export async function deleteCustomFood(
   return result.rows.length > 0
 }
 
+export async function getRecipesUsingFood(foodId: number): Promise<{ id: number; name: string }[]> {
+  const result = await pool.query(
+    `SELECT id, name 
+     FROM health_saved_meals 
+     WHERE ingredients @> jsonb_build_array(jsonb_build_object('food_id', $1::int))`,
+    [foodId]
+  )
+  return result.rows
+}
+
 export async function updateCustomFood(
   foodId: number,
   userId: number,
@@ -438,8 +448,7 @@ export async function updateCustomFood(
          protein = COALESCE($9, 0),
          carbs = COALESCE($10, 0),
          fat = COALESCE($11, 0),
-         fiber = COALESCE($12, 0),
-         updated_at = NOW()
+         fiber = COALESCE($12, 0)
      WHERE id = $1 AND (user_id = $2 OR $3 = true) AND source = 'custom'
      RETURNING *`,
     [
@@ -898,18 +907,13 @@ export async function getSavedMealById(id: number, userId: number) {
 
 export async function createSavedMeal(userId: number, meal: HealthSavedMealInput) {
   const result = await pool.query(
-    `INSERT INTO health_saved_meals (user_id, name, meal_type, calories, protein, carbs, fat, fiber, ingredients, instructions, source, usda_fdc_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    `INSERT INTO health_saved_meals (user_id, name, meal_type, ingredients, instructions, source, usda_fdc_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)
      RETURNING *`,
     [
       userId,
       meal.name,
       meal.meal_type || null,
-      meal.calories || null,
-      meal.protein || null,
-      meal.carbs || null,
-      meal.fat || null,
-      meal.fiber || null,
       meal.ingredients ? JSON.stringify(meal.ingredients) : null,
       meal.instructions || null,
       meal.source || 'custom',
@@ -936,26 +940,6 @@ export async function updateSavedMeal(
   if (meal.meal_type !== undefined) {
     fields.push(`meal_type = $${paramCount++}`)
     values.push(meal.meal_type)
-  }
-  if (meal.calories !== undefined) {
-    fields.push(`calories = $${paramCount++}`)
-    values.push(meal.calories)
-  }
-  if (meal.protein !== undefined) {
-    fields.push(`protein = $${paramCount++}`)
-    values.push(meal.protein)
-  }
-  if (meal.carbs !== undefined) {
-    fields.push(`carbs = $${paramCount++}`)
-    values.push(meal.carbs)
-  }
-  if (meal.fat !== undefined) {
-    fields.push(`fat = $${paramCount++}`)
-    values.push(meal.fat)
-  }
-  if (meal.fiber !== undefined) {
-    fields.push(`fiber = $${paramCount++}`)
-    values.push(meal.fiber)
   }
   if (meal.ingredients !== undefined) {
     fields.push(`ingredients = $${paramCount++}`)

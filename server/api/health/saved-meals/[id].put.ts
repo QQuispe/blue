@@ -3,10 +3,10 @@ import { requireAuth } from '~/server/utils/auth'
 import { serverLogger } from '~/server/utils/logger'
 import {
   updateSavedMeal,
-  calculateRecipeMacros,
   getFoodByName,
   createCustomFood,
   getFoodsByIds,
+  updateCustomFood,
 } from '~/server/db/queries/health'
 
 async function enrichIngredientsWithLiveData(ingredients: any[]): Promise<any[]> {
@@ -51,6 +51,23 @@ async function enrichIngredientsWithLiveData(ingredients: any[]): Promise<any[]>
       type: ing.type || 'food',
     }
   })
+}
+
+// Calculate recipe totals from enriched ingredients
+function calculateRecipeTotals(ingredients: any[]) {
+  return ingredients.reduce(
+    (acc, ing) => {
+      const servings = ing.servings || 1
+      return {
+        calories: acc.calories + (Number(ing.calories) || 0) * servings,
+        protein: acc.protein + (Number(ing.protein) || 0) * servings,
+        carbs: acc.carbs + (Number(ing.carbs) || 0) * servings,
+        fat: acc.fat + (Number(ing.fat) || 0) * servings,
+        fiber: acc.fiber + (Number(ing.fiber) || 0) * servings,
+      }
+    },
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
+  )
 }
 
 export default defineEventHandler(async event => {
@@ -106,6 +123,21 @@ export default defineEventHandler(async event => {
             })
           }
         } else if (ingredient.type === 'food' && ingredient.food_id) {
+          // Single source of truth: Update the actual food in the database
+          // This affects ALL recipes using this food across all users
+          await updateCustomFood(
+            ingredient.food_id,
+            user.id,
+            {
+              calories: ingredient.calories,
+              protein: ingredient.protein,
+              carbs: ingredient.carbs,
+              fat: ingredient.fat,
+              fiber: ingredient.fiber,
+            },
+            user.is_admin
+          )
+
           processedIngredients.push({
             food_name: ingredient.food_name,
             food_id: ingredient.food_id,
@@ -118,11 +150,6 @@ export default defineEventHandler(async event => {
       }
 
       mealData.ingredients = processedIngredients
-      const calculated = await calculateRecipeMacros(processedIngredients)
-      mealData.calories = calculated.calories
-      mealData.protein = calculated.protein
-      mealData.carbs = calculated.carbs
-      mealData.fat = calculated.fat
     }
 
     const meal = await updateSavedMeal(mealId, user.id, mealData, user.is_admin)
@@ -132,6 +159,7 @@ export default defineEventHandler(async event => {
     }
 
     const enrichedIngredients = await enrichIngredientsWithLiveData(meal.ingredients)
+    const totals = calculateRecipeTotals(enrichedIngredients)
 
     const duration = Date.now() - startTime
     serverLogger.api(method, path, 200, duration, user.id)
@@ -143,11 +171,11 @@ export default defineEventHandler(async event => {
         user_id: meal.user_id,
         name: meal.name,
         meal_type: meal.meal_type,
-        calories: Number(meal.calories) || 0,
-        protein: Number(meal.protein) || 0,
-        carbs: Number(meal.carbs) || 0,
-        fat: Number(meal.fat) || 0,
-        fiber: Number(meal.fiber) || 0,
+        calories: totals.calories,
+        protein: totals.protein,
+        carbs: totals.carbs,
+        fat: totals.fat,
+        fiber: totals.fiber,
         ingredients: enrichedIngredients,
         instructions: meal.instructions,
         source: meal.source,

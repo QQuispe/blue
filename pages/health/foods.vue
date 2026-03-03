@@ -13,14 +13,15 @@ import SlideOver from '~/components/shared/SlideOver.vue'
 
 const { $toast } = useNuxtApp()
 
-const { setupStatus, isReady, init } = useHealthData()
+const { setupStatus, isReady, isRecipesRefreshing, init } = useHealthData()
 
 const needsSetup = computed(() => {
   if (!isReady.value) return false
   return !setupStatus.value?.isComplete
 })
 
-const { customFoods, savedMeals, initFoods, deleteCustomFood, deleteSavedMeal } = useFoodSearch()
+const { customFoods, savedMeals, isRefreshing, initFoods, deleteCustomFood, deleteSavedMeal } =
+  useFoodSearch()
 
 const activeTab = ref<'all' | 'foods' | 'recipes'>('all')
 const searchQuery = ref('')
@@ -35,6 +36,7 @@ const editingItem = ref<any>(null)
 const showDeleteModal = ref(false)
 const itemToDelete = ref<any>(null)
 const isDeleting = ref(false)
+const foodInUseRecipes = ref<{ id: number; name: string }[]>([])
 
 const filteredFoods = computed(() => {
   let items = customFoods.value
@@ -148,7 +150,18 @@ const confirmDelete = async () => {
   isDeleting.value = true
   try {
     if (itemToDelete.value.type === 'food') {
-      await deleteCustomFood(itemToDelete.value.id)
+      const result = await deleteCustomFood(itemToDelete.value.id)
+      if (!result.success) {
+        // Check if it's a 409 (ingredient in use)
+        if (result.error?.statusCode === 409) {
+          foodInUseRecipes.value = result.error.data?.recipes || []
+          showDeleteModal.value = false // Close normal delete modal
+          // Show warning - food is in use
+          $toast?.warning(`Cannot delete: ${result.error.data?.message || 'Ingredient in use'}`)
+          return
+        }
+        throw new Error('Failed to delete')
+      }
       $toast?.success('Food deleted')
     } else {
       await deleteSavedMeal(itemToDelete.value.id)
@@ -156,6 +169,7 @@ const confirmDelete = async () => {
     }
     showDeleteModal.value = false
     itemToDelete.value = null
+    foodInUseRecipes.value = []
   } catch (err) {
     console.error('Delete error:', err)
     $toast?.error('Failed to delete')

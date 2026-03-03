@@ -1,6 +1,9 @@
 // Single source of truth for health infrastructure data
 // Lazy-loads foods only when needed (modal opens)
 
+import { ref } from 'vue'
+import { useEventBus, EVENTS } from '~/composables/useEventBus'
+
 export const useHealthData = () => {
   // === Core Infrastructure State ===
   const setupStatus = useState<{ isComplete: boolean } | null>('health:setupStatus', () => null)
@@ -57,8 +60,8 @@ export const useHealthData = () => {
   }
 
   // === Lazy Food Init (called when modal opens) ===
-  const initFoods = async () => {
-    if (isFoodsInitialized.value) return
+  const initFoods = async (force = false) => {
+    if (isFoodsInitialized.value && !force) return
 
     try {
       const [recentRes, customRes, savedRes] = await Promise.all([
@@ -192,6 +195,74 @@ export const useHealthData = () => {
     await init(true)
   }
 
+  // === Reactive Cache Invalidation ===
+  // Listen for food/recipe updates and refresh data
+  const { on } = useEventBus()
+  const isRecipesRefreshing = ref(false)
+
+  // Refetch recipes when foods are updated (single source of truth)
+  on(
+    EVENTS.FOOD_UPDATED,
+    async () => {
+      if (!isRecipesRefreshing.value && isFoodsInitialized.value) {
+        isRecipesRefreshing.value = true
+        try {
+          // Refetch saved meals to get enriched data with updated food values
+          const savedRes = await $fetch<{ meals: any[] }>('/api/health/saved-meals', {
+            ignoreResponseError: true,
+          })
+          savedMeals.value = (savedRes as any)?.meals || []
+        } catch (err) {
+          console.error('[HealthData] Failed to refresh recipes:', err)
+        } finally {
+          isRecipesRefreshing.value = false
+        }
+      }
+    },
+    300
+  ) // 300ms debounce
+
+  // Also refresh when recipes are created/updated
+  on(
+    EVENTS.RECIPE_CREATED,
+    async () => {
+      if (!isRecipesRefreshing.value && isFoodsInitialized.value) {
+        isRecipesRefreshing.value = true
+        try {
+          const savedRes = await $fetch<{ meals: any[] }>('/api/health/saved-meals', {
+            ignoreResponseError: true,
+          })
+          savedMeals.value = (savedRes as any)?.meals || []
+        } catch (err) {
+          console.error('[HealthData] Failed to refresh recipes:', err)
+        } finally {
+          isRecipesRefreshing.value = false
+        }
+      }
+    },
+    300
+  )
+
+  on(
+    EVENTS.RECIPE_UPDATED,
+    async () => {
+      if (!isRecipesRefreshing.value && isFoodsInitialized.value) {
+        isRecipesRefreshing.value = true
+        try {
+          const savedRes = await $fetch<{ meals: any[] }>('/api/health/saved-meals', {
+            ignoreResponseError: true,
+          })
+          savedMeals.value = (savedRes as any)?.meals || []
+        } catch (err) {
+          console.error('[HealthData] Failed to refresh recipes:', err)
+        } finally {
+          isRecipesRefreshing.value = false
+        }
+      }
+    },
+    300
+  )
+
   return {
     // State
     setupStatus,
@@ -211,6 +282,7 @@ export const useHealthData = () => {
     // Guards
     isInitialized,
     isFoodsInitialized,
+    isRecipesRefreshing,
     isReady,
 
     // Edit Targets

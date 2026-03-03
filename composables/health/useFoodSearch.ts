@@ -1,3 +1,5 @@
+import { ref } from 'vue'
+
 export interface Food {
   fdcId?: number
   id?: number
@@ -29,9 +31,48 @@ export interface CustomFood {
   fiber?: number
 }
 
+import { useEventBus, EVENTS } from '~/composables/useEventBus'
+
 export const useFoodSearch = () => {
   // Use centralized health data
   const { recentFoods, customFoods, savedMeals, isFoodsInitialized, initFoods } = useHealthData()
+  const { on } = useEventBus()
+  const isRefreshing = ref(false)
+
+  // Listen for food updated events and refresh cache
+  on(
+    EVENTS.FOOD_UPDATED,
+    async payload => {
+      // Check if this food is in our cache
+      const foodInCache = customFoods.value.find(f => f.id === payload.foodId)
+      if (foodInCache && !isRefreshing.value) {
+        isRefreshing.value = true
+        try {
+          // Refetch all custom foods to get fresh data
+          await initFoods(true) // Force refresh
+        } finally {
+          isRefreshing.value = false
+        }
+      }
+    },
+    300
+  ) // 300ms debounce
+
+  // Also listen for food created events
+  on(
+    EVENTS.FOOD_CREATED,
+    async () => {
+      if (!isRefreshing.value) {
+        isRefreshing.value = true
+        try {
+          await initFoods(true) // Force refresh
+        } finally {
+          isRefreshing.value = false
+        }
+      }
+    },
+    300
+  )
 
   const searchQuery = ref('')
   const searchResults = ref<Food[]>([])
@@ -76,15 +117,17 @@ export const useFoodSearch = () => {
   }
 
   // Delete functions - update cached state after deletion
-  const deleteCustomFood = async (id: number) => {
+  const deleteCustomFood = async (id: number): Promise<{ success: boolean; error?: any }> => {
     try {
       await $fetch(`/api/health/foods/custom/${id}`, {
         method: 'DELETE',
         credentials: 'include',
       })
       customFoods.value = customFoods.value.filter(f => f.id !== id)
-    } catch (err) {
+      return { success: true }
+    } catch (err: any) {
       console.error('Error deleting food:', err)
+      return { success: false, error: err }
     }
   }
 
@@ -112,6 +155,7 @@ export const useFoodSearch = () => {
     customFoods,
     savedMeals,
     isSearching,
+    isRefreshing,
     activeTab,
     isFoodsInitialized,
     searchFoods,

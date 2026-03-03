@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import { useEventBus, EVENTS } from '~/composables/useEventBus'
 
 interface FoodFormData {
   name: string
@@ -27,6 +28,7 @@ const emit = defineEmits<{
 }>()
 
 const { $toast } = useNuxtApp()
+const { emit: emitEvent } = useEventBus()
 
 const isEditing = computed(() => !!props.food)
 const isSaving = ref(false)
@@ -134,6 +136,23 @@ const handleSave = async () => {
     }
 
     const savedFood = await response.json()
+
+    // Emit event for reactive cache invalidation
+    // This triggers updates in all recipes using this food
+    if (savedFood.food) {
+      emitEvent(EVENTS.FOOD_UPDATED, {
+        foodId: savedFood.food.id,
+        foodName: savedFood.food.name,
+        macros: {
+          calories: savedFood.food.calories,
+          protein: savedFood.food.protein,
+          carbs: savedFood.food.carbs,
+          fat: savedFood.food.fat,
+          fiber: savedFood.food.fiber,
+        },
+      })
+    }
+
     $toast?.success(isEditing.value ? 'Food updated!' : 'Food created!')
     emit('save', savedFood.food || payload)
   } catch (err) {

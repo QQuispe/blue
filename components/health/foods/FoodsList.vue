@@ -50,7 +50,7 @@ const emit = defineEmits<{
     <div v-else class="cards-grid">
       <FoodCard
         v-for="item in items"
-        :key="item.id"
+        :key="item.type + '-' + item.id"
         :item="item"
         @edit="emit('edit', $event)"
         @delete="emit('delete', $event)"

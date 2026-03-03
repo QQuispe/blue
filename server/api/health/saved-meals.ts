@@ -6,10 +6,10 @@ import {
   getSavedMealById,
   createSavedMeal,
   toggleSavedMealFavorite,
-  calculateRecipeMacros,
   getFoodByName,
   createCustomFood,
   getFoodsByIds,
+  updateCustomFood,
 } from '~/server/db/queries/health'
 import type { HealthSavedMealInput } from '~/types/health'
 
@@ -69,6 +69,23 @@ async function enrichIngredientsWithLiveData(ingredients: any[]): Promise<Ingred
   })
 }
 
+// Calculate recipe totals from enriched ingredients
+function calculateRecipeTotals(ingredients: Ingredient[]) {
+  return ingredients.reduce(
+    (acc, ing) => {
+      const servings = ing.servings || 1
+      return {
+        calories: acc.calories + (Number(ing.calories) || 0) * servings,
+        protein: acc.protein + (Number(ing.protein) || 0) * servings,
+        carbs: acc.carbs + (Number(ing.carbs) || 0) * servings,
+        fat: acc.fat + (Number(ing.fat) || 0) * servings,
+        fiber: acc.fiber + (Number(ing.fiber) || 0) * servings,
+      }
+    },
+    { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
+  )
+}
+
 export default defineEventHandler(async event => {
   const startTime = Date.now()
   const url = getRequestURL(event)
@@ -87,16 +104,17 @@ export default defineEventHandler(async event => {
       const enrichedMeals = await Promise.all(
         meals.map(async m => {
           const enrichedIngredients = await enrichIngredientsWithLiveData(m.ingredients)
+          const totals = calculateRecipeTotals(enrichedIngredients)
           return {
             id: m.id,
             user_id: m.user_id,
             name: m.name,
             meal_type: m.meal_type,
-            calories: Number(m.calories) || 0,
-            protein: Number(m.protein) || 0,
-            carbs: Number(m.carbs) || 0,
-            fat: Number(m.fat) || 0,
-            fiber: Number(m.fiber) || 0,
+            calories: totals.calories,
+            protein: totals.protein,
+            carbs: totals.carbs,
+            fat: totals.fat,
+            fiber: totals.fiber,
             ingredients: enrichedIngredients,
             instructions: m.instructions,
             source: m.source,
@@ -133,6 +151,7 @@ export default defineEventHandler(async event => {
       }
 
       const enrichedIngredients = await enrichIngredientsWithLiveData(meal.ingredients)
+      const totals = calculateRecipeTotals(enrichedIngredients)
 
       const duration = Date.now() - startTime
       serverLogger.api(method, url.pathname, 200, duration, user.id)
@@ -144,11 +163,11 @@ export default defineEventHandler(async event => {
           user_id: meal.user_id,
           name: meal.name,
           meal_type: meal.meal_type,
-          calories: Number(meal.calories) || 0,
-          protein: Number(meal.protein) || 0,
-          carbs: Number(meal.carbs) || 0,
-          fat: Number(meal.fat) || 0,
-          fiber: Number(meal.fiber) || 0,
+          calories: totals.calories,
+          protein: totals.protein,
+          carbs: totals.carbs,
+          fat: totals.fat,
+          fiber: totals.fiber,
           ingredients: enrichedIngredients,
           instructions: meal.instructions,
           source: meal.source,
@@ -180,6 +199,7 @@ export default defineEventHandler(async event => {
       }
 
       const enrichedIngredients = await enrichIngredientsWithLiveData(meal.ingredients)
+      const totals = calculateRecipeTotals(enrichedIngredients)
 
       const duration = Date.now() - startTime
       serverLogger.api(method, url.pathname, 200, duration, user.id)
@@ -191,11 +211,11 @@ export default defineEventHandler(async event => {
           user_id: meal.user_id,
           name: meal.name,
           meal_type: meal.meal_type,
-          calories: Number(meal.calories) || 0,
-          protein: Number(meal.protein) || 0,
-          carbs: Number(meal.carbs) || 0,
-          fat: Number(meal.fat) || 0,
-          fiber: Number(meal.fiber) || 0,
+          calories: totals.calories,
+          protein: totals.protein,
+          carbs: totals.carbs,
+          fat: totals.fat,
+          fiber: totals.fiber,
           ingredients: enrichedIngredients,
           instructions: meal.instructions,
           source: meal.source,
@@ -244,6 +264,21 @@ export default defineEventHandler(async event => {
               type: 'food',
             })
           } else {
+            // Single source of truth: Update the actual food in the database
+            // This affects ALL recipes using this food across all users
+            await updateCustomFood(
+              ingredient.food_id,
+              user.id,
+              {
+                calories: ingredient.calories,
+                protein: ingredient.protein,
+                carbs: ingredient.carbs,
+                fat: ingredient.fat,
+                fiber: ingredient.fiber,
+              },
+              user.is_admin
+            )
+
             processedIngredients.push({
               food_name: ingredient.food_name,
               food_id: ingredient.food_id,
@@ -254,16 +289,12 @@ export default defineEventHandler(async event => {
         }
 
         mealData.ingredients = processedIngredients
-        const calculated = await calculateRecipeMacros(processedIngredients)
-        mealData.calories = calculated.calories
-        mealData.protein = calculated.protein
-        mealData.carbs = calculated.carbs
-        mealData.fat = calculated.fat
       }
 
       const meal = await createSavedMeal(user.id, mealData)
 
       const enrichedIngredients = await enrichIngredientsWithLiveData(meal.ingredients)
+      const totals = calculateRecipeTotals(enrichedIngredients)
 
       const duration = Date.now() - startTime
       serverLogger.api(method, url.pathname, 201, duration, user.id)
@@ -275,11 +306,11 @@ export default defineEventHandler(async event => {
           user_id: meal.user_id,
           name: meal.name,
           meal_type: meal.meal_type,
-          calories: meal.calories,
-          protein: meal.protein,
-          carbs: meal.carbs,
-          fat: meal.fat,
-          fiber: meal.fiber,
+          calories: totals.calories,
+          protein: totals.protein,
+          carbs: totals.carbs,
+          fat: totals.fat,
+          fiber: totals.fiber,
           ingredients: enrichedIngredients,
           instructions: meal.instructions,
           source: meal.source,
