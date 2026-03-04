@@ -51,17 +51,17 @@ const displayCalories = computed(() => {
 
 const displayProtein = computed(() => {
   const val = Number(props.item.protein)
-  return isNaN(val) ? '--' : Math.round(val)
+  return isNaN(val) ? '--' : val.toFixed(1).replace(/\.0$/, '')
 })
 
 const displayCarbs = computed(() => {
   const val = Number(props.item.carbs)
-  return isNaN(val) ? '--' : Math.round(val)
+  return isNaN(val) ? '--' : val.toFixed(1).replace(/\.0$/, '')
 })
 
 const displayFat = computed(() => {
   const val = Number(props.item.fat)
-  return isNaN(val) ? '--' : Math.round(val)
+  return isNaN(val) ? '--' : val.toFixed(1).replace(/\.0$/, '')
 })
 
 // Check if current user owns this item (or is admin)

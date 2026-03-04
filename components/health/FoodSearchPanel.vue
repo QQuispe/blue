@@ -360,7 +360,7 @@ defineExpose({
             type="number"
             :value="food.servings"
             min="0"
-            step="1"
+            step="0.001"
             class="portion-input"
             @input="updateServings(index, Number(($event.target as HTMLInputElement).value))"
           />

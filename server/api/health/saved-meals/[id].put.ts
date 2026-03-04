@@ -6,7 +6,6 @@ import {
   getFoodByName,
   createCustomFood,
   getFoodsByIds,
-  updateCustomFood,
 } from '~/server/db/queries/health'
 
 async function enrichIngredientsWithLiveData(ingredients: any[]): Promise<any[]> {
@@ -123,21 +122,12 @@ export default defineEventHandler(async event => {
             })
           }
         } else if (ingredient.type === 'food' && ingredient.food_id) {
-          // Single source of truth: Update the actual food in the database
-          // This affects ALL recipes using this food across all users
-          await updateCustomFood(
-            ingredient.food_id,
-            user.id,
-            {
-              calories: parseFloat(ingredient.calories) || 0,
-              protein: parseFloat(ingredient.protein) || 0,
-              carbs: parseFloat(ingredient.carbs) || 0,
-              fat: parseFloat(ingredient.fat) || 0,
-              fiber: parseFloat(ingredient.fiber) || 0,
-            },
-            user.is_admin
-          )
-
+          // Don't update the source food's nutrition values here
+          // Food nutrition should only be updated via the food edit form
+          // This maintains the single source of truth pattern properly:
+          // - Edit food → Updates food base values in DB
+          // - Edit recipe → Only updates recipe (which foods and portions)
+          // - Recipes automatically get updated food values via enrichIngredientsWithLiveData()
           processedIngredients.push({
             food_name: ingredient.food_name,
             food_id: ingredient.food_id,
