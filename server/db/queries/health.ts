@@ -360,12 +360,11 @@ export async function getRecentFoods(userId: number, limit = 10): Promise<any[]>
   return result.rows
 }
 
-export async function getCustomFoods(userId: number): Promise<HealthFood[]> {
+export async function getCustomFoods(): Promise<HealthFood[]> {
   const result = await pool.query(
     `SELECT * FROM health_foods 
-     WHERE source = 'custom' AND user_id = $1 AND deleted_at IS NULL 
-     ORDER BY name ASC`,
-    [userId]
+     WHERE source = 'custom' AND deleted_at IS NULL 
+     ORDER BY name ASC`
   )
   return result.rows
 }

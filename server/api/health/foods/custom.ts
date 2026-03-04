@@ -15,9 +15,9 @@ export default defineEventHandler(async event => {
   try {
     const user = await requireAuth(event)
 
-    // GET /api/health/foods/custom - list custom foods
+    // GET /api/health/foods/custom - list custom foods (shared across all users)
     if (method === 'GET') {
-      const foods = await getCustomFoods(user.id)
+      const foods = await getCustomFoods()
 
       const duration = Date.now() - startTime
       serverLogger.api(method, path, 200, duration, user.id)

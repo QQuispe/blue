@@ -14,6 +14,7 @@ interface FoodItem {
   serving_unit: string
   type: 'food' | 'recipe'
   ingredients?: any[]
+  user_id?: number
 }
 
 interface Props {
@@ -30,6 +31,8 @@ const emit = defineEmits<{
   delete: [item: FoodItem]
   duplicate: [item: FoodItem]
 }>()
+
+const auth = useAuth()
 
 const isRecipe = computed(() => props.item.type === 'recipe')
 
@@ -59,6 +62,13 @@ const displayCarbs = computed(() => {
 const displayFat = computed(() => {
   const val = Number(props.item.fat)
   return isNaN(val) ? '--' : Math.round(val)
+})
+
+// Check if current user owns this item (or is admin)
+const canEdit = computed(() => {
+  if (!auth.isAuthenticated.value) return false
+  if (props.item.user_id === undefined) return true // For backward compatibility
+  return props.item.user_id === auth.user.value?.id || auth.user.value?.isAdmin
 })
 </script>
 
@@ -113,10 +123,22 @@ const displayFat = computed(() => {
       <button class="action-btn" title="Duplicate" @click="emit('duplicate', item)">
         <Icon name="mdi:content-copy" size="18" />
       </button>
-      <button class="action-btn" title="Edit" @click="emit('edit', item)">
+      <button
+        class="action-btn"
+        :class="{ disabled: !canEdit }"
+        :disabled="!canEdit"
+        :title="canEdit ? 'Edit' : 'You can only edit your own foods'"
+        @click="canEdit && emit('edit', item)"
+      >
         <Icon name="mdi:pencil" size="18" />
       </button>
-      <button class="action-btn delete" title="Delete" @click="emit('delete', item)">
+      <button
+        class="action-btn delete"
+        :class="{ disabled: !canEdit }"
+        :disabled="!canEdit"
+        :title="canEdit ? 'Delete' : 'You can only delete your own foods'"
+        @click="canEdit && emit('delete', item)"
+      >
         <Icon name="mdi:delete-outline" size="18" />
       </button>
     </div>
@@ -297,6 +319,21 @@ const displayFat = computed(() => {
 
 .action-btn.delete:hover {
   color: var(--color-error);
+}
+
+/* Disabled button styles */
+.action-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.action-btn.disabled:hover {
+  color: var(--color-text-muted);
+  background: transparent;
+}
+
+.action-btn.delete.disabled:hover {
+  color: var(--color-text-muted);
 }
 
 @media (max-width: 640px) {
