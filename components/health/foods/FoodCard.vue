@@ -72,6 +72,11 @@ const displayFat = computed(() => {
     <div class="card-content">
       <div class="card-header">
         <div class="card-title">
+          <!-- Mobile inline icon -->
+          <span class="mobile-icon">
+            <Icon v-if="isRecipe" name="mdi:chef-hat" size="18" />
+            <Icon v-else name="mdi:food-apple" size="18" />
+          </span>
           <span class="name">{{ displayName }}</span>
           <span v-if="item.brand" class="brand">{{ item.brand }}</span>
         </div>
@@ -161,6 +166,11 @@ const displayFat = computed(() => {
   flex: 1;
   padding: 14px 16px;
   min-width: 0;
+}
+
+/* Hide mobile icon by default (desktop) */
+.mobile-icon {
+  display: none;
 }
 
 .card-header {
@@ -291,16 +301,92 @@ const displayFat = computed(() => {
 
 @media (max-width: 640px) {
   .food-card {
-    flex-wrap: wrap;
+    flex-direction: column;
+    padding: 12px;
+    gap: 8px;
   }
 
   .card-icon {
-    width: 48px;
-    height: 48px;
+    display: none; /* Hide the large left icon on mobile */
   }
 
   .card-content {
-    flex: 1 1 calc(100% - 48px);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0;
+  }
+
+  .card-title {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* Mobile inline icon styling */
+  .mobile-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-accent);
+    flex-shrink: 0;
+  }
+
+  .is-recipe .mobile-icon {
+    color: #3b82f6;
+  }
+
+  .name {
+    font-size: 0.875rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .brand {
+    display: none; /* Hide brand on mobile to save space */
+  }
+
+  .card-calories {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .cal-value {
+    font-size: 0.9375rem;
+  }
+
+  .cal-label {
+    font-size: 0.625rem;
+  }
+
+  .card-macros {
+    gap: 8px;
+    margin-bottom: 0;
+  }
+
+  .macro {
+    font-size: 0.6875rem;
+    padding: 2px 6px;
+    gap: 2px;
+  }
+
+  .macro :deep(svg) {
+    width: 12px;
+    height: 12px;
+  }
+
+  .card-footer {
+    font-size: 0.625rem;
+    gap: 8px;
   }
 
   .card-actions {
@@ -308,11 +394,13 @@ const displayFat = computed(() => {
     width: 100%;
     border-left: none;
     border-top: 1px solid var(--color-border);
+    padding-top: 8px;
+    margin-top: 4px;
   }
 
   .action-btn {
     flex: 1;
-    padding: 10px;
+    padding: 8px;
   }
 }
 </style>
