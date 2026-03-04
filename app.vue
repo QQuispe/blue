@@ -3,6 +3,7 @@ const { isCollapsed } = useSidebar()
 const auth = useAuth()
 const { initializeTheme } = useTheme()
 const route = useRoute()
+const { isMobile } = useMobile()
 
 useHead({
   script: [
@@ -26,12 +27,9 @@ const isAuthPage = computed(() => ['/login', '/register'].includes(route.path))
 
 const showSidebar = computed(() => {
   if (isAuthPage.value) return false
+  if (isMobile.value) return false // Hide sidebar on mobile
   if (auth.isAuthenticated) return true
   return true
-})
-
-onMounted(() => {
-  initializeTheme()
 })
 </script>
 
@@ -44,6 +42,7 @@ onMounted(() => {
         'sidebar-collapsed': showSidebar && isCollapsed,
         'sidebar-visible': showSidebar,
         'auth-layout': isAuthPage,
+        'mobile-layout': isMobile && !isAuthPage,
       }"
     >
       <HeaderNav v-if="!isAuthPage" />
@@ -51,6 +50,10 @@ onMounted(() => {
         <NuxtPage />
       </main>
     </div>
+
+    <!-- Mobile Navigation -->
+    <MobileBottomNav v-if="isMobile && !isAuthPage" />
+    <MobileMenu v-if="isMobile && !isAuthPage" />
   </div>
 </template>
 
@@ -89,9 +92,28 @@ onMounted(() => {
   width: 100%;
 }
 
+/* Mobile Layout Styles */
+.main-layout.mobile-layout {
+  margin-left: 0 !important;
+}
+
+.main-layout.mobile-layout .main-content {
+  padding-bottom: 64px; /* Space for bottom nav */
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .main-layout.mobile-layout .main-content {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+}
+
 @media (max-width: 768px) {
   .main-layout.sidebar-visible {
-    margin-left: 75px;
+    margin-left: 0 !important; /* Hide sidebar completely on mobile */
+  }
+
+  .main-layout:not(.auth-layout) {
+    margin-left: 0 !important;
   }
 }
 </style>
