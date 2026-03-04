@@ -10,6 +10,7 @@ services:
     ports:
       - '3009:3000'
     environment:
+      - NODE_ENV=production
       - DATABASE_URI=${DATABASE_URI}
       - PLAID_CLIENT_ID=${PLAID_CLIENT_ID}
       - PLAID_SECRET=${PLAID_SECRET}
