@@ -18,6 +18,16 @@ let cachedUser: any = null
  * To make a page public, add it to the PUBLIC_PAGES array below.
  */
 export default defineNuxtRouteMiddleware(async to => {
+  // Skip static assets and internal paths - these should never trigger auth checks
+  if (
+    to.path.startsWith('/_nuxt/') ||
+    to.path.startsWith('/api/') ||
+    to.path === '/favicon.ico' ||
+    to.path === '/robots.txt'
+  ) {
+    return
+  }
+
   // Check if current route is public
   if (PUBLIC_PAGES.includes(to.path)) {
     return // Allow access
