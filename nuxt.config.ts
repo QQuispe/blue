@@ -48,6 +48,14 @@ export default defineNuxtConfig({
     experimental: {
       wasm: true,
     },
+    // Explicitly configure public assets to ensure correct path resolution in production
+    publicAssets: [
+      {
+        dir: '.output/public',
+        baseURL: '/',
+        maxAge: 60 * 60 * 24 * 365, // 1 year cache for static assets
+      },
+    ],
   },
 
   // Runtime config for session secrets
