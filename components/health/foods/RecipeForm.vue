@@ -184,6 +184,12 @@ const updateIngredientDetails = (index: number, field: string, value: any) => {
   form.value.ingredients[index][field] = value
 }
 
+const updateIngredientServings = (index: number, servings: number) => {
+  if (form.value.ingredients[index]) {
+    form.value.ingredients[index].servings = Math.max(0.1, servings)
+  }
+}
+
 const calculatedMacros = computed(() => {
   return form.value.ingredients.reduce(
     (acc, ing) => ({
@@ -385,7 +391,22 @@ watch(
                 </div>
               </div>
               <div class="ingredient-actions">
-                <span class="servings-label">{{ ing.servings }}x</span>
+                <div class="servings-control">
+                  <input
+                    :value="ing.servings"
+                    type="number"
+                    class="form-input servings-input"
+                    @input="
+                      e =>
+                        updateIngredientServings(
+                          index,
+                          parseFloat((e.target as HTMLInputElement).value) || 1
+                        )
+                    "
+                    @click.stop
+                  />
+                  <span class="servings-suffix">x</span>
+                </div>
                 <button type="button" class="btn-icon" @click.stop="removeIngredient(index)">
                   <Icon name="mdi:close" size="16" />
                 </button>
@@ -750,12 +771,31 @@ watch(
   gap: 8px;
 }
 
-.servings-label {
+.servings-control {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.servings-input {
+  width: 50px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+.servings-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.servings-suffix {
   font-size: 0.8125rem;
   color: var(--color-text-muted);
-  padding: 4px 8px;
-  background: var(--color-bg);
-  border-radius: 4px;
 }
 
 .ingredient-edit {
@@ -792,17 +832,6 @@ watch(
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
-}
-
-.servings-input {
-  width: 60px;
-  padding: 6px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  background: var(--color-bg);
-  color: var(--color-text-primary);
-  font-size: 0.8125rem;
-  text-align: center;
 }
 
 .servings-input:focus {

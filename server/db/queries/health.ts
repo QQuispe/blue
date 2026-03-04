@@ -995,18 +995,13 @@ export async function toggleSavedMealFavorite(id: number, userId: number) {
   }
 
   const result = await pool.query(
-    `INSERT INTO health_saved_meals (user_id, name, meal_type, calories, protein, carbs, fat, fiber, ingredients, instructions, source, is_favorite)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, true)
+    `INSERT INTO health_saved_meals (user_id, name, meal_type, ingredients, instructions, source, is_favorite)
+     VALUES ($1, $2, $3, $4, $5, $6, true)
      RETURNING *`,
     [
       userId,
       meal.name + ' (Favorite)',
       meal.meal_type,
-      meal.calories,
-      meal.protein,
-      meal.carbs,
-      meal.fat,
-      meal.fiber,
       meal.ingredients,
       meal.instructions,
       meal.source,

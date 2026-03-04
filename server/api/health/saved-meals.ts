@@ -270,11 +270,11 @@ export default defineEventHandler(async event => {
               ingredient.food_id,
               user.id,
               {
-                calories: ingredient.calories,
-                protein: ingredient.protein,
-                carbs: ingredient.carbs,
-                fat: ingredient.fat,
-                fiber: ingredient.fiber,
+                calories: parseFloat(ingredient.calories) || 0,
+                protein: parseFloat(ingredient.protein) || 0,
+                carbs: parseFloat(ingredient.carbs) || 0,
+                fat: parseFloat(ingredient.fat) || 0,
+                fiber: parseFloat(ingredient.fiber) || 0,
               },
               user.is_admin
             )

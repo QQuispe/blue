@@ -35,7 +35,7 @@ export default defineEventHandler(async event => {
     )
 
     const recipesResult = await pool.query(
-      `SELECT id, name, meal_type, calories, protein, carbs, fat, ingredients
+      `SELECT id, name, meal_type, ingredients
        FROM health_saved_meals 
        WHERE user_id = $1 AND name ILIKE $2
        ORDER BY name ASC
@@ -65,10 +65,10 @@ export default defineEventHandler(async event => {
         id: r.id,
         name: r.name,
         meal_type: r.meal_type,
-        calories: Number(r.calories) || 0,
-        protein: Number(r.protein) || 0,
-        carbs: Number(r.carbs) || 0,
-        fat: Number(r.fat) || 0,
+        calories: 0, // Calculated from ingredients
+        protein: 0,
+        carbs: 0,
+        fat: 0,
         has_ingredients: !!(r.ingredients && r.ingredients.length > 0),
       })),
     }
