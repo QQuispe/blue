@@ -1,8 +1,10 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 // https://nuxt.com/docs/api/configuration/nuxt-config
+// Only enable devtools when explicitly in dev mode
+const enableDevtools = process.env.DEV_MODE === 'true'
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
-  devtools: { enabled: process.env.DEV_MODE === 'true' || process.env.NODE_ENV === 'development' },
+  devtools: { enabled: enableDevtools },
 
   modules: ['@nuxt/icon'],
 
@@ -55,6 +57,7 @@ export default defineNuxtConfig({
     // Public config available on client-side
     public: {
       logLevel: process.env.LOG_LEVEL || 'info',
+      devMode: process.env.DEV_MODE === 'true', // Expose dev mode to client
     },
   },
 })
