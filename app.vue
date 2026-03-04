@@ -51,9 +51,11 @@ const showSidebar = computed(() => {
       </main>
     </div>
 
-    <!-- Mobile Navigation -->
-    <MobileBottomNav v-if="isMobile && !isAuthPage" />
-    <MobileMenu v-if="isMobile && !isAuthPage" />
+    <!-- Mobile Navigation - ClientOnly to prevent hydration mismatches -->
+    <ClientOnly>
+      <MobileBottomNav v-if="isMobile && !isAuthPage" />
+      <MobileMenu v-if="isMobile && !isAuthPage" />
+    </ClientOnly>
   </div>
 </template>
 

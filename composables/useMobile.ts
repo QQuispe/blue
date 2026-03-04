@@ -13,28 +13,38 @@ export const useMobile = () => {
   )
 
   const checkMobile = () => {
-    isMobile.value = window.innerWidth < MOBILE_BREAKPOINT
+    if (import.meta.client) {
+      isMobile.value = window.innerWidth < MOBILE_BREAKPOINT
+    }
   }
 
   const openMobileMenu = (menu: 'finance' | 'health' | 'settings') => {
-    activeMenu.value = menu
-    isMobileMenuOpen.value = true
-    document.body.style.overflow = 'hidden' // Prevent background scrolling
+    if (import.meta.client) {
+      activeMenu.value = menu
+      isMobileMenuOpen.value = true
+      document.body.style.overflow = 'hidden' // Prevent background scrolling
+    }
   }
 
   const closeMobileMenu = () => {
-    isMobileMenuOpen.value = false
-    activeMenu.value = null
-    document.body.style.overflow = ''
+    if (import.meta.client) {
+      isMobileMenuOpen.value = false
+      activeMenu.value = null
+      document.body.style.overflow = ''
+    }
   }
 
   onMounted(() => {
     checkMobile()
-    window.addEventListener('resize', checkMobile)
+    if (import.meta.client) {
+      window.addEventListener('resize', checkMobile)
+    }
   })
 
   onUnmounted(() => {
-    window.removeEventListener('resize', checkMobile)
+    if (import.meta.client) {
+      window.removeEventListener('resize', checkMobile)
+    }
   })
 
   return {
