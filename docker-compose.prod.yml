@@ -1,14 +1,28 @@
 # Production Docker Compose
 # Usage: docker compose -f docker-compose.prod.yml up -d --build
-# Features: Optimized build, no volume mounts, production mode
+# Features: Optimized build, Nginx reverse proxy, no volume mounts, production mode
 
 services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - '80:80' # HTTP — change to '443:443' when you add HTTPS later
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - app_output:/app/.output/public:ro # shared volume for static files
+    depends_on:
+      - app
+    restart: unless-stopped
+
   app:
     build:
       context: .
       dockerfile: Dockerfile.prod
-    ports:
-      - '3009:3000'
+    # No ports exposed to host — only Nginx can reach it
+    expose:
+      - '3000'
+    volumes:
+      - app_output:/app/.output/public # Nginx reads from here
     environment:
       - NODE_ENV=production
       - DATABASE_URI=${DATABASE_URI}
@@ -22,7 +36,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    # No volume mounts in production - uses built image only
     restart: unless-stopped
 
   db:
@@ -46,3 +59,4 @@ services:
 
 volumes:
   postgres_data:
+  app_output: # shared between app and nginx for static file serving

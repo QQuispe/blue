@@ -1,36 +1,20 @@
 # Production Dockerfile
-# Multi-stage build for smaller, optimized production image
-
-# Build stage
 FROM node:20-bookworm AS builder
 
 WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
 RUN npm install
-
-# Copy source and build
 COPY . .
 RUN npm run build
 
-# Production stage
+# Production stage — .output is self-contained, nothing else needed
 FROM node:20-bookworm-slim
 
 WORKDIR /app
-
-# Set production environment - required for Nitro to serve static assets correctly
 ENV NODE_ENV=production
 
-# Copy only necessary files from builder
+# .output is fully self-contained
 COPY --from=builder /app/.output ./.output
-COPY --from=builder /app/package*.json ./
 
-# Install only production dependencies
-RUN npm install --production
-
-# Expose port
 EXPOSE 3000
-
-# Start the production server
 CMD ["node", ".output/server/index.mjs"]
