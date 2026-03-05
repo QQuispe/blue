@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { useMeals, type Meal, type MealFood, mealTypes } from '~/composables/health/useMeals'
+import { useMacroFormatting } from '~/composables/useMacroFormatting'
 import BaseModal from './BaseModal.vue'
+
+const { formatCalories, formatMacro } = useMacroFormatting()
 
 interface Props {
   show: boolean
@@ -148,13 +151,18 @@ watch(
           />
           <span>x</span>
           <span
-            >{{ Math.round((Number(food.calories) || 0) * (Number(food.servings) || 1)) }} cal</span
+            >{{
+              formatCalories((Number(food.calories) || 0) * (Number(food.servings) || 1))
+            }}
+            cal</span
           >
           <span
-            >P {{ Math.round((Number(food.protein) || 0) * (Number(food.servings) || 1)) }}g</span
+            >P {{ formatMacro((Number(food.protein) || 0) * (Number(food.servings) || 1)) }}g</span
           >
-          <span>C {{ Math.round((Number(food.carbs) || 0) * (Number(food.servings) || 1)) }}g</span>
-          <span>F {{ Math.round((Number(food.fat) || 0) * (Number(food.servings) || 1)) }}g</span>
+          <span
+            >C {{ formatMacro((Number(food.carbs) || 0) * (Number(food.servings) || 1)) }}g</span
+          >
+          <span>F {{ formatMacro((Number(food.fat) || 0) * (Number(food.servings) || 1)) }}g</span>
 
           <button
             class="move-food-btn"

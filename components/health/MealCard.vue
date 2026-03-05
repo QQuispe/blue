@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { useMeals } from '~/composables/health/useMeals'
+import { useMacroFormatting } from '~/composables/useMacroFormatting'
+
+const { formatCalories, formatMacro } = useMacroFormatting()
 
 interface Props {
   meal: {
@@ -24,11 +27,6 @@ const mealLabel = computed(() => {
   const found = mealTypes.find(m => m.value === props.meal.mealType)
   return found?.label || props.meal.mealType
 })
-
-const formatNumber = (num: number) => {
-  if (num === null || num === undefined || typeof num !== 'number') return '0'
-  return num.toFixed(0)
-}
 </script>
 
 <template>
@@ -46,16 +44,16 @@ const formatNumber = (num: number) => {
       <div v-for="food in meal.foods" :key="food.id" class="food-item">
         <span class="food-name">{{ food.food_name }}</span>
         <span class="food-portion">{{ food.servings }}x</span>
-        <span class="food-calories">{{ formatNumber(food.calories) }} cal</span>
+        <span class="food-calories">{{ formatCalories(food.calories) }} cal</span>
       </div>
       <div v-if="!meal.foods?.length" class="empty-foods">No foods logged</div>
     </div>
 
     <div class="meal-totals">
-      <span>{{ formatNumber(meal.totalCalories) }} cal</span>
-      <span>P: {{ formatNumber(meal.totalProtein) }}g</span>
-      <span>C: {{ formatNumber(meal.totalCarbs) }}g</span>
-      <span>F: {{ formatNumber(meal.totalFat) }}g</span>
+      <span>{{ formatCalories(meal.totalCalories) }} cal</span>
+      <span>P: {{ formatMacro(meal.totalProtein) }}g</span>
+      <span>C: {{ formatMacro(meal.totalCarbs) }}g</span>
+      <span>F: {{ formatMacro(meal.totalFat) }}g</span>
     </div>
   </div>
 </template>

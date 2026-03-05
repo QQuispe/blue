@@ -2,7 +2,7 @@
   <div class="macro-card">
     <div class="macro-header">
       <span class="macro-label">{{ label }}</span>
-      <span class="macro-value">{{ current }} / {{ target }}{{ unit }}</span>
+      <span class="macro-value">{{ formattedCurrent }} / {{ formattedTarget }}{{ unit }}</span>
     </div>
     <ProgressBar :percentage="percentage" :color="color">
       <template #label v-if="showPercentage">
@@ -15,6 +15,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import ProgressBar from '~/components/ProgressBar.vue'
+import { useMacroFormatting } from '~/composables/useMacroFormatting'
+
+const { formatCalories, formatMacro } = useMacroFormatting()
 
 interface Props {
   label: string
@@ -34,6 +37,16 @@ const props = withDefaults(defineProps<Props>(), {
 const percentage = computed(() => {
   if (props.target === 0) return 0
   return Math.min((props.current / props.target) * 100, 100)
+})
+
+const isCalories = computed(() => props.label.toLowerCase() === 'calories')
+
+const formattedCurrent = computed(() => {
+  return isCalories.value ? formatCalories(props.current) : formatMacro(props.current)
+})
+
+const formattedTarget = computed(() => {
+  return isCalories.value ? formatCalories(props.target) : formatMacro(props.target)
 })
 </script>
 

@@ -1,17 +1,14 @@
 <script setup lang="ts">
 import { useHealthData } from '~/composables/useHealthData'
+import { useMacroFormatting } from '~/composables/useMacroFormatting'
 import MacroCard from './MacroCard.vue'
 
 const { targetMacros, todaysMacros, remainingMacros, macroProgress } = useHealthData()
+const { formatCalories } = useMacroFormatting()
 
 const emit = defineEmits<{
   'edit-targets': []
 }>()
-
-const formatNumber = (num: number) => {
-  if (num === null || num === undefined || typeof num !== 'number') return '0'
-  return num.toFixed(0)
-}
 </script>
 
 <template>
@@ -23,8 +20,8 @@ const formatNumber = (num: number) => {
 
     <div class="summary-calories">
       <span class="remaining">
-        {{ formatNumber(remainingMacros.calories) }} cal remaining
-        <span class="divider">of {{ formatNumber(targetMacros.calories) }}</span>
+        {{ formatCalories(remainingMacros.calories) }} cal remaining
+        <span class="divider">of {{ formatCalories(targetMacros.calories) }}</span>
       </span>
     </div>
 

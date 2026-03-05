@@ -2,9 +2,12 @@
 import { useRouter } from 'vue-router'
 import { useFoodSearch } from '~/composables/health/useFoodSearch'
 import { useAuth } from '~/composables/useAuth'
+import { useMacroFormatting } from '~/composables/useMacroFormatting'
 import DeleteConfirmModal from './DeleteConfirmModal.vue'
 import FoodFormModal from './FoodFormModal.vue'
 import RecipeFormModal from './RecipeFormModal.vue'
+
+const { formatCalories, formatMacro } = useMacroFormatting()
 
 interface Props {
   selectedMealType?: string
@@ -250,10 +253,10 @@ defineExpose({
               >
             </div>
             <div class="result-macros">
-              <span class="result-cal">{{ food.calories }} cal</span>
-              <span class="result-macro">P {{ food.protein }}g</span>
-              <span class="result-macro">C {{ food.carbs }}g</span>
-              <span class="result-macro">F {{ food.fat }}g</span>
+              <span class="result-cal">{{ formatCalories(food.calories) }} cal</span>
+              <span class="result-macro">P {{ formatMacro(food.protein) }}g</span>
+              <span class="result-macro">C {{ formatMacro(food.carbs) }}g</span>
+              <span class="result-macro">F {{ formatMacro(food.fat) }}g</span>
             </div>
           </div>
         </div>
@@ -279,10 +282,10 @@ defineExpose({
             <span class="food-meta">{{ food.meal_type }}</span>
           </div>
           <div class="food-macros">
-            <span>{{ food.calories }} cal</span>
-            <span class="macro">P {{ food.protein }}g</span>
-            <span class="macro">C {{ food.carbs }}g</span>
-            <span class="macro">F {{ food.fat }}g</span>
+            <span>{{ formatCalories(food.calories) }} cal</span>
+            <span class="macro">P {{ formatMacro(food.protein) }}g</span>
+            <span class="macro">C {{ formatMacro(food.carbs) }}g</span>
+            <span class="macro">F {{ formatMacro(food.fat) }}g</span>
           </div>
         </div>
       </div>
@@ -333,10 +336,10 @@ defineExpose({
             </span>
           </div>
           <div class="food-macros">
-            <span>{{ food.calories }} cal</span>
-            <span class="macro">P {{ food.protein }}g</span>
-            <span class="macro">C {{ food.carbs }}g</span>
-            <span class="macro">F {{ food.fat }}g</span>
+            <span>{{ formatCalories(food.calories) }} cal</span>
+            <span class="macro">P {{ formatMacro(food.protein) }}g</span>
+            <span class="macro">C {{ formatMacro(food.carbs) }}g</span>
+            <span class="macro">F {{ formatMacro(food.fat) }}g</span>
           </div>
           <div v-if="canEdit(food)" class="food-actions" @click.stop>
             <button class="action-btn" @click="handleEdit(food)" title="Edit">
@@ -366,7 +369,7 @@ defineExpose({
           />
           <span>x</span>
           <span class="calories">
-            {{ Math.round((food.calories || 0) * (food.servings || 1)) }} cal
+            {{ formatCalories((food.calories || 0) * (food.servings || 1)) }} cal
           </span>
           <button class="remove-btn" @click="removeFromSelection(index)">
             <Icon name="mdi:close" size="14" />

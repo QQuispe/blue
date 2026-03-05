@@ -2,6 +2,9 @@
 import { ref, watch, computed } from 'vue'
 import { useFoodSearch } from '~/composables/health/useFoodSearch'
 import { useEventBus, EVENTS } from '~/composables/useEventBus'
+import { useMacroFormatting } from '~/composables/useMacroFormatting'
+
+const { formatCalories, formatMacro } = useMacroFormatting()
 
 interface Ingredient {
   food_name: string
@@ -382,10 +385,10 @@ watch(
                   <template
                     v-if="ing.calories > 0 || ing.protein > 0 || ing.carbs > 0 || ing.fat > 0"
                   >
-                    {{ Math.round(ing.calories * ing.servings) }} cal |
-                    {{ Math.round(ing.protein * ing.servings) }}g P |
-                    {{ Math.round(ing.carbs * ing.servings) }}g C |
-                    {{ Math.round(ing.fat * ing.servings) }}g F
+                    {{ formatCalories(ing.calories * ing.servings) }} cal |
+                    {{ formatMacro(ing.protein * ing.servings) }}g P |
+                    {{ formatMacro(ing.carbs * ing.servings) }}g C |
+                    {{ formatMacro(ing.fat * ing.servings) }}g F
                   </template>
                   <span v-else class="macro-hint">Click to edit macros</span>
                 </div>
@@ -510,19 +513,19 @@ watch(
 
       <div class="macros-summary">
         <div class="macro-badge">
-          <span class="macro-value">{{ Math.round(calculatedMacros.calories) }}</span>
+          <span class="macro-value">{{ formatCalories(calculatedMacros.calories) }}</span>
           <span class="macro-label">calories</span>
         </div>
         <div class="macro-badge protein">
-          <span class="macro-value">{{ Math.round(calculatedMacros.protein) }}g</span>
+          <span class="macro-value">{{ formatMacro(calculatedMacros.protein) }}g</span>
           <span class="macro-label">protein</span>
         </div>
         <div class="macro-badge carbs">
-          <span class="macro-value">{{ Math.round(calculatedMacros.carbs) }}g</span>
+          <span class="macro-value">{{ formatMacro(calculatedMacros.carbs) }}g</span>
           <span class="macro-label">carbs</span>
         </div>
         <div class="macro-badge fat">
-          <span class="macro-value">{{ Math.round(calculatedMacros.fat) }}g</span>
+          <span class="macro-value">{{ formatMacro(calculatedMacros.fat) }}g</span>
           <span class="macro-label">fat</span>
         </div>
       </div>
