@@ -51,6 +51,11 @@ export default defineNuxtConfig({
     },
   },
 
+  // Disable app manifest to avoid /_nuxt/builds/meta/ errors
+  experimental: {
+    appManifest: false,
+  },
+
   // Runtime config for session secrets
   runtimeConfig: {
     sessionSecret: process.env.SESSION_SECRET || 'your-session-secret-minimum-32-characters-long',
