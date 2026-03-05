@@ -25,6 +25,7 @@ services:
       - app_output:/app/.output/public # Nginx reads from here
     environment:
       - NODE_ENV=production
+      - HTTPS_ENABLED=false # set to 'true' when you add HTTPS/TLS
       - DATABASE_URI=${DATABASE_URI}
       - PLAID_CLIENT_ID=${PLAID_CLIENT_ID}
       - PLAID_SECRET=${PLAID_SECRET}

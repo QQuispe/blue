@@ -34,7 +34,7 @@ const SESSION_CONFIG = {
   password: process.env.SESSION_SECRET || 'your-session-secret-minimum-32-characters-long',
   maxAge: 60 * 60 * 24 * 7, // 7 days
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
+  secure: process.env.HTTPS_ENABLED === 'true',
   sameSite: 'strict' as const,
 }
 
