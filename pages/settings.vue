@@ -271,6 +271,7 @@ onMounted(() => {
 <template>
   <BasePageLayout title="Settings" :show-back="false">
     <template #header-actions>
+      <ThemeToggle compact class="header-theme-toggle" />
       <BaseButton variant="secondary" size="sm" @click="handleLogout">
         <Icon name="mdi:logout" size="16" />
         Logout
@@ -419,11 +420,6 @@ onMounted(() => {
                   {{ tz.label }}
                 </option>
               </select>
-            </div>
-            <!-- Theme Toggle for Mobile -->
-            <div class="info-row theme-row">
-              <span class="label">Theme</span>
-              <ThemeToggle />
             </div>
             <div class="save-row">
               <BaseButton
@@ -769,21 +765,6 @@ onMounted(() => {
 
 .info-row:last-child {
   border-bottom: none;
-}
-
-.theme-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.theme-row :deep(.theme-toggle-wrapper) {
-  padding: 0;
-}
-
-.theme-row :deep(.theme-toggle) {
-  padding: 4px 8px;
-  width: auto;
 }
 
 .save-row {

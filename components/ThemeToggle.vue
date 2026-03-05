@@ -1,6 +1,18 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+
 const { isDark, toggleMode } = useTheme()
 const { isCollapsed } = useSidebar()
+
+interface Props {
+  compact?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  compact: false,
+})
+
+const showLabel = computed(() => !props.compact && !isCollapsed.value)
 </script>
 
 <template>
@@ -18,7 +30,7 @@ const { isCollapsed } = useSidebar()
         </div>
         <div class="toggle-thumb" :class="{ dark: isDark }"></div>
       </div>
-      <span v-show="!isCollapsed" class="toggle-label">
+      <span v-show="showLabel" class="toggle-label">
         {{ isDark ? 'Dark Mode' : 'Light Mode' }}
       </span>
     </button>

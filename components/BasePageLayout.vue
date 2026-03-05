@@ -78,6 +78,14 @@ const backRoute = computed(() => props.backTo)
   gap: 12px;
 }
 
+.header-actions :deep(.theme-toggle-wrapper) {
+  padding: 0;
+}
+
+.header-actions :deep(.theme-toggle) {
+  padding: 4px;
+}
+
 .back-btn {
   display: inline-flex;
   align-items: center;
