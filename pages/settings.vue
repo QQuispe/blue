@@ -1,9 +1,20 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, type Ref } from 'vue'
 import BaseButton from '~/components/BaseButton.vue'
+import ThemeToggle from '~/components/ThemeToggle.vue'
 
 const auth = useAuth()
 const { $toast } = useNuxtApp()
+
+// Logout handler
+const handleLogout = async () => {
+  try {
+    await auth.logout()
+    $toast.success('Logged out successfully')
+  } catch (err) {
+    $toast.error('Failed to logout')
+  }
+}
 
 // Profile data
 const username = computed(() => auth.user.value?.username || '')
@@ -259,6 +270,12 @@ onMounted(() => {
 
 <template>
   <BasePageLayout title="Settings" :show-back="false">
+    <template #header-actions>
+      <BaseButton variant="secondary" size="sm" @click="handleLogout">
+        <Icon name="mdi:logout" size="16" />
+        Logout
+      </BaseButton>
+    </template>
     <div class="settings-content">
       <div class="settings-grid">
         <!-- Profile Section -->
@@ -402,6 +419,11 @@ onMounted(() => {
                   {{ tz.label }}
                 </option>
               </select>
+            </div>
+            <!-- Theme Toggle for Mobile -->
+            <div class="info-row theme-row">
+              <span class="label">Theme</span>
+              <ThemeToggle />
             </div>
             <div class="save-row">
               <BaseButton
@@ -747,6 +769,21 @@ onMounted(() => {
 
 .info-row:last-child {
   border-bottom: none;
+}
+
+.theme-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.theme-row :deep(.theme-toggle-wrapper) {
+  padding: 0;
+}
+
+.theme-row :deep(.theme-toggle) {
+  padding: 4px 8px;
+  width: auto;
 }
 
 .save-row {

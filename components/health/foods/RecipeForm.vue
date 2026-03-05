@@ -183,10 +183,6 @@ const toggleEditIngredient = (index: number) => {
   editingIngredientIndex.value = editingIngredientIndex.value === index ? null : index
 }
 
-const updateIngredientDetails = (index: number, field: string, value: any) => {
-  form.value.ingredients[index][field] = value
-}
-
 const updateIngredientServings = (index: number, servings: number) => {
   if (form.value.ingredients[index]) {
     form.value.ingredients[index].servings = Math.max(0.1, servings)
@@ -390,7 +386,7 @@ watch(
                     {{ formatMacro(ing.carbs * ing.servings) }}g C |
                     {{ formatMacro(ing.fat * ing.servings) }}g F
                   </template>
-                  <span v-else class="macro-hint">Click to edit macros</span>
+                  <span v-else class="macro-hint">Click to view macros</span>
                 </div>
               </div>
               <div class="ingredient-actions">
@@ -416,92 +412,44 @@ watch(
               </div>
             </div>
 
-            <!-- Inline edit form -->
+            <!-- Inline edit form - Name only (macros are read-only) -->
             <div v-if="editingIngredientIndex === index" class="ingredient-edit">
               <div class="edit-row">
-                <div class="edit-field">
-                  <label>Name</label>
+                <div class="edit-field name-field">
+                  <label>Name (read-only from food)</label>
                   <input
                     :value="ing.food_name"
                     type="text"
                     class="form-input"
-                    @input="
-                      e =>
-                        updateIngredientDetails(
-                          index,
-                          'food_name',
-                          (e.target as HTMLInputElement).value
-                        )
-                    "
+                    disabled
+                    title="Edit the food itself to change the name"
                   />
                 </div>
               </div>
-              <div class="edit-row macros-edit">
-                <div class="edit-field">
+              <div class="edit-row macros-display">
+                <div class="macro-display-item">
                   <label>Calories</label>
-                  <input
-                    :value="ing.calories"
-                    type="number"
-                    class="form-input"
-                    @input="
-                      e =>
-                        updateIngredientDetails(
-                          index,
-                          'calories',
-                          parseFloat((e.target as HTMLInputElement).value) || 0
-                        )
-                    "
-                  />
+                  <span class="macro-value"
+                    >{{ formatCalories(ing.calories * ing.servings) }} cal</span
+                  >
                 </div>
-                <div class="edit-field">
+                <div class="macro-display-item">
                   <label>Protein</label>
-                  <input
-                    :value="ing.protein"
-                    type="number"
-                    class="form-input"
-                    @input="
-                      e =>
-                        updateIngredientDetails(
-                          index,
-                          'protein',
-                          parseFloat((e.target as HTMLInputElement).value) || 0
-                        )
-                    "
-                  />
+                  <span class="macro-value">{{ formatMacro(ing.protein * ing.servings) }}g</span>
                 </div>
-                <div class="edit-field">
+                <div class="macro-display-item">
                   <label>Carbs</label>
-                  <input
-                    :value="ing.carbs"
-                    type="number"
-                    class="form-input"
-                    @input="
-                      e =>
-                        updateIngredientDetails(
-                          index,
-                          'carbs',
-                          parseFloat((e.target as HTMLInputElement).value) || 0
-                        )
-                    "
-                  />
+                  <span class="macro-value">{{ formatMacro(ing.carbs * ing.servings) }}g</span>
                 </div>
-                <div class="edit-field">
+                <div class="macro-display-item">
                   <label>Fat</label>
-                  <input
-                    :value="ing.fat"
-                    type="number"
-                    class="form-input"
-                    @input="
-                      e =>
-                        updateIngredientDetails(
-                          index,
-                          'fat',
-                          parseFloat((e.target as HTMLInputElement).value) || 0
-                        )
-                    "
-                  />
+                  <span class="macro-value">{{ formatMacro(ing.fat * ing.servings) }}g</span>
                 </div>
               </div>
+              <p class="edit-hint">
+                <Icon name="mdi:information-outline" size="14" />
+                To change macros, edit the food itself. Portions can be adjusted above.
+              </p>
             </div>
           </div>
         </div>
@@ -835,6 +783,53 @@ watch(
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
+}
+
+/* New styles for read-only macro display */
+.macros-display {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 8px;
+  background: var(--color-bg-card);
+  border-radius: 4px;
+  margin-top: 8px;
+}
+
+.macro-display-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.macro-display-item label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+
+.macro-display-item .macro-value {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.name-field input:disabled {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.edit-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 8px;
+  background: var(--color-info-bg);
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: var(--color-text-secondary);
 }
 
 .servings-input:focus {
