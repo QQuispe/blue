@@ -169,6 +169,11 @@ export const useBarcodeScanner = () => {
     stopScanning()
   })
 
+  // Check support immediately on composable init
+  if (typeof window !== 'undefined') {
+    checkSupport()
+  }
+
   return {
     state: readonly(state),
     startScanning,
