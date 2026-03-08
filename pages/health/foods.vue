@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
 import HealthSetupRequired from '~/components/health/HealthSetupRequired.vue'
-import { useHealthData } from '~/composables/useHealthData'
+import { useHealthData } from '~/composables/health/useHealthData'
 import { useFoodSearch } from '~/composables/health/useFoodSearch'
 import FoodsHeader from '~/components/health/foods/FoodsHeader.vue'
 import FoodsList from '~/components/health/foods/FoodsList.vue'

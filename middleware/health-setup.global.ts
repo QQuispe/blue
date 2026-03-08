@@ -1,4 +1,12 @@
 import { defineNuxtRouteMiddleware } from '#app'
+import type { ApiSuccess } from '~/types/api/common'
+
+interface SetupStatusData {
+  isSetup: boolean
+  hasProfile: boolean
+  hasGoals: boolean
+  message: string
+}
 
 const HEALTH_PUBLIC_PAGES = ['/health/setup']
 
@@ -28,12 +36,12 @@ export default defineNuxtRouteMiddleware(async to => {
   }
 
   try {
-    const response = await $fetch('/api/health/setup-status', {
+    const response = await $fetch<ApiSuccess<SetupStatusData>>('/api/v1/health/setup-status', {
       credentials: 'include',
       ignoreResponseError: true,
     })
 
-    setupComplete = response?.isComplete ?? false
+    setupComplete = response?.data?.isSetup ?? false
     lastVerified = now
   } catch {
     setupComplete = false

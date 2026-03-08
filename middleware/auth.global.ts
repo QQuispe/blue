@@ -1,4 +1,5 @@
 import { defineNuxtRouteMiddleware, navigateTo } from '#app'
+import { useAuth } from '~/composables/auth/useAuth'
 
 const PUBLIC_PAGES = ['/login', '/register']
 

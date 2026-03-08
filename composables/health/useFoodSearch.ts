@@ -31,7 +31,7 @@ export interface CustomFood {
   fiber?: number
 }
 
-import { useEventBus, EVENTS } from '~/composables/useEventBus'
+import { useEventBus, EVENTS } from '~/composables/ui/useEventBus'
 
 export const useFoodSearch = () => {
   // Use centralized health data

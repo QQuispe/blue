@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useMeals, type Meal, type MealFood, mealTypes } from '~/composables/health/useMeals'
-import { useMacroFormatting } from '~/composables/useMacroFormatting'
+import { useMacroFormatting } from '~/composables/health/useMacroFormatting'
 import BaseModal from './BaseModal.vue'
 
 const { formatCalories, formatMacro } = useMacroFormatting()

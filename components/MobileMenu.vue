@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useMobile } from '~/composables/useMobile'
+import { useMobile } from '~/composables/ui/useMobile'
 import { computed } from 'vue'
 
 const { isMobileMenuOpen, activeMenu, closeMobileMenu } = useMobile()

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed, type Ref } from 'vue'
 import Chart from 'chart.js/auto'
-import { useCashFlowChart } from '~/composables/useCashFlowChart'
+import { useCashFlowChart } from '~/composables/finance/useCashFlowChart'
 
 interface CashFlowData {
   months: string[]

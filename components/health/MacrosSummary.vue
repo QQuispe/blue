@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { useHealthData } from '~/composables/useHealthData'
-import { useMacroFormatting } from '~/composables/useMacroFormatting'
+import { useHealthData } from '~/composables/health/useHealthData'
+import { useMacroFormatting } from '~/composables/health/useMacroFormatting'
 import MacroCard from './MacroCard.vue'
 
 const { targetMacros, todaysMacros, remainingMacros, macroProgress } = useHealthData()

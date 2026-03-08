@@ -102,3 +102,18 @@ export async function getAuthUser(event: H3Event): Promise<User | null> {
     return null
   }
 }
+
+/**
+ * Require admin authentication for a route
+ * Returns the user object or throws an error
+ */
+export async function requireAdmin(event: H3Event): Promise<User> {
+  const user = await requireAuth(event)
+  if (!user.is_admin) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: 'Access denied. Admin only.',
+    })
+  }
+  return user
+}

@@ -1,5 +1,5 @@
 import { useHealthDate } from './useHealthDate'
-import { useHealthData } from '~/composables/useHealthData'
+import { useHealthData } from '~/composables/health/useHealthData'
 
 export interface MealFood {
   id?: number

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useHealthData } from '~/composables/useHealthData'
+import { useHealthData } from '~/composables/health/useHealthData'
 
 interface MenuItem {
   name: string

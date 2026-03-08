@@ -1,5 +1,5 @@
 <script setup>
-import { useMobile } from '~/composables/useMobile'
+import { useMobile } from '~/composables/ui/useMobile'
 
 const { isCollapsed } = useSidebar()
 const auth = useAuth()

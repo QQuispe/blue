@@ -1,4 +1,8 @@
-import { budgetCategories, categoryIcons, categoryColors } from '~/composables/useBudgetCategories'
+import {
+  budgetCategories,
+  categoryIcons,
+  categoryColors,
+} from '~/composables/finance/useBudgetCategories'
 
 export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('en-US', {

@@ -180,10 +180,13 @@ export interface HealthPreferences {
   id: number
   user_id: number
   dietary_restrictions: string[]
+  preferred_cuisines: string[]
   allergies: string[]
   liked_foods: string[]
   disliked_foods: string[]
   meal_count: number
+  meal_reminders: boolean
+  workout_reminders: boolean
   equipment: string[]
   workout_style: WorkoutStyle | null
   workout_frequency: number

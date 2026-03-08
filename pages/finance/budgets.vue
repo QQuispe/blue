@@ -2,7 +2,7 @@
 import { ref, computed, watch, type Ref, nextTick } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
 import BaseButton from '~/components/BaseButton.vue'
-import { budgetCategories } from '~/composables/useBudgetCategories'
+import { budgetCategories } from '~/composables/finance/useBudgetCategories'
 import {
   formatCurrency,
   formatDate,
@@ -10,7 +10,7 @@ import {
   getRiskColorClass,
   getCategoryIcon,
 } from '~/utils/formatters'
-import { useBudgetProgress } from '~/composables/useBudgetProgress'
+import { useBudgetProgress } from '~/composables/finance/useBudgetProgress'
 
 interface Budget {
   id: number

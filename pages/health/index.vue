@@ -4,7 +4,7 @@ import PageLayout from '~/components/PageLayout.vue'
 import Card from '~/components/Card.vue'
 import MacroCard from '~/components/health/MacroCard.vue'
 import QuickStats from '~/components/health/QuickStats.vue'
-import { useHealthData } from '~/composables/useHealthData'
+import { useHealthData } from '~/composables/health/useHealthData'
 import { useHealthDate } from '~/composables/health/useHealthDate'
 import { formatDate } from '~/utils/formatters'
 
@@ -286,7 +286,9 @@ onMounted(() => {
               ></div>
             </div>
             <div class="chart-labels">
-              <span v-if="filteredWeightData.length">{{ formatDate(filteredWeightData[filteredWeightData.length - 1]?.date) }}</span>
+              <span v-if="filteredWeightData.length">{{
+                formatDate(filteredWeightData[filteredWeightData.length - 1]?.date)
+              }}</span>
               <span v-if="filteredWeightData.length">{{
                 formatDate(filteredWeightData[0]?.date)
               }}</span>

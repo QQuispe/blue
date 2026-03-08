@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import BaseButton from '~/components/BaseButton.vue'
 import { formatCurrency, getProgressColorClass } from '~/utils/formatters'
 import BudgetProgressBar from '~/components/BudgetProgressBar.vue'
-import { useBudgetProgress } from '~/composables/useBudgetProgress'
+import { useBudgetProgress } from '~/composables/finance/useBudgetProgress'
 
 interface Budget {
   id: number

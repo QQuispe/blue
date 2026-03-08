@@ -1,3 +1,6 @@
+import type { ApiSuccess } from '~/types/api/common'
+import type { HealthProfile, HealthGoal } from '~/types/health'
+
 export interface ProfileData {
   weight: number | null
   height: number | null
@@ -68,37 +71,42 @@ export const useHealthSetup = () => {
       isLoading.value = true
 
       const [profileRes, goalRes, prefsRes] = await Promise.all([
-        $fetch('/api/health/profile', { credentials: 'include' }),
-        $fetch('/api/health/goals', { credentials: 'include' }),
-        $fetch('/api/health/preferences', { credentials: 'include' }),
+        $fetch<ApiSuccess<{ profile: HealthProfile }>>('/api/v1/health/profile', {
+          credentials: 'include',
+        }),
+        $fetch<ApiSuccess<{ goals: HealthGoal[] }>>('/api/v1/health/goals', {
+          credentials: 'include',
+        }),
+        $fetch<ApiSuccess<any>>('/api/v1/health/preferences', { credentials: 'include' }),
       ])
 
-      if (profileRes.profile) {
+      if (profileRes.data.profile) {
         profile.value = {
-          weight: profileRes.profile.weight,
-          height: profileRes.profile.height,
-          age: profileRes.profile.age,
-          gender: profileRes.profile.gender,
-          activityLevel: profileRes.profile.activityLevel || 'moderate',
+          weight: profileRes.data.profile.weight,
+          height: profileRes.data.profile.height,
+          age: profileRes.data.profile.age,
+          gender: profileRes.data.profile.gender,
+          activityLevel: profileRes.data.profile.activity_level || 'moderate',
         }
       }
 
-      const activeGoal = (goalRes as any).activeGoal || (goalRes as any).goal
+      const activeGoal =
+        goalRes.data.goals?.find((g: HealthGoal) => g.is_active) || goalRes.data.goals?.[0]
       if (activeGoal) {
         goal.value = {
-          goalType: activeGoal.goalType,
-          startingWeight: activeGoal.startingWeight,
-          targetWeight: activeGoal.targetWeight,
-          targetDate: activeGoal.targetDate,
-          weeklyRate: activeGoal.weeklyRate,
-          targetCalories: activeGoal.targetCalories,
-          targetProtein: activeGoal.targetProtein,
-          targetCarbs: activeGoal.targetCarbs,
-          targetFat: activeGoal.targetFat,
+          goalType: activeGoal.goal_type,
+          startingWeight: activeGoal.starting_weight,
+          targetWeight: activeGoal.target_weight,
+          targetDate: activeGoal.target_date,
+          weeklyRate: activeGoal.weekly_rate,
+          targetCalories: activeGoal.target_calories,
+          targetProtein: activeGoal.target_protein,
+          targetCarbs: activeGoal.target_carbs,
+          targetFat: activeGoal.target_fat,
         }
       }
 
-      const prefs = (prefsRes as any).preferences || prefsRes
+      const prefs = prefsRes.data?.preferences || prefsRes.data
       if (prefs) {
         preferences.value = {
           mealsPerDay: prefs.mealCount || prefs.mealsPerDay || 3,
@@ -117,7 +125,7 @@ export const useHealthSetup = () => {
 
   const saveProfile = async () => {
     try {
-      await $fetch('/api/health/profile', {
+      await $fetch('/api/v1/health/profile', {
         method: 'PUT',
         credentials: 'include',
         body: profile.value,
@@ -133,11 +141,16 @@ export const useHealthSetup = () => {
 
   const saveGoal = async () => {
     try {
-      const existingGoals = await $fetch('/api/health/goals', { credentials: 'include' })
-      const activeGoal = (existingGoals as any).activeGoal || (existingGoals as any).goal
+      const existingGoals = await $fetch<ApiSuccess<{ goals: HealthGoal[] }>>(
+        '/api/v1/health/goals',
+        { credentials: 'include' }
+      )
+      const activeGoal =
+        existingGoals.data.goals?.find((g: HealthGoal) => g.is_active) ||
+        existingGoals.data.goals?.[0]
 
       if (activeGoal) {
-        await $fetch(`/api/health/goals/${activeGoal.id}`, {
+        await $fetch<ApiSuccess<{ goal: HealthGoal }>>(`/api/v1/health/goals/${activeGoal.id}`, {
           method: 'PUT',
           credentials: 'include',
           body: {
@@ -153,7 +166,7 @@ export const useHealthSetup = () => {
           },
         })
       } else {
-        await $fetch('/api/health/goals', {
+        await $fetch<ApiSuccess<{ goal: HealthGoal }>>('/api/v1/health/goals', {
           method: 'POST',
           credentials: 'include',
           body: {
@@ -181,7 +194,7 @@ export const useHealthSetup = () => {
 
   const savePreferences = async () => {
     try {
-      await $fetch('/api/health/preferences', {
+      await $fetch('/api/v1/health/preferences', {
         method: 'PUT',
         credentials: 'include',
         body: preferences.value,

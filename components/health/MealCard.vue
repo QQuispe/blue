@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useMeals } from '~/composables/health/useMeals'
-import { useMacroFormatting } from '~/composables/useMacroFormatting'
+import { useMacroFormatting } from '~/composables/health/useMacroFormatting'
 
 const { formatCalories, formatMacro } = useMacroFormatting()
 

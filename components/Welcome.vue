@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, type Ref } from 'vue'
-import { useAuth } from '~/composables/useAuth'
+import { useAuth } from '~/composables/auth/useAuth'
 
 interface User {
   id: number

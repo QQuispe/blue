@@ -15,7 +15,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import ProgressBar from '~/components/ProgressBar.vue'
-import { useMacroFormatting } from '~/composables/useMacroFormatting'
+import { useMacroFormatting } from '~/composables/health/useMacroFormatting'
 
 const { formatCalories, formatMacro } = useMacroFormatting()
 

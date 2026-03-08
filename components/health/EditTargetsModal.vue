@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useHealthData } from '~/composables/useHealthData'
+import { useHealthData } from '~/composables/health/useHealthData'
 import BaseModal from './BaseModal.vue'
 
 const {

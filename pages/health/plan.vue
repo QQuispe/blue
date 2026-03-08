@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import PageLayout from '~/components/PageLayout.vue'
 import Card from '~/components/Card.vue'
 import HealthSetupRequired from '~/components/health/HealthSetupRequired.vue'
-import { useHealthData } from '~/composables/useHealthData'
+import { useHealthData } from '~/composables/health/useHealthData'
 
 const { $toast } = useNuxtApp()
 

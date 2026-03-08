@@ -1,3 +1,5 @@
+import { useAuth } from '~/composables/auth/useAuth'
+
 export default defineNuxtPlugin(() => {
   const LAST_ACTIVITY_KEY = 'session-last-activity'
   const TAB_HIDDEN_KEY = 'session-tab-hidden'

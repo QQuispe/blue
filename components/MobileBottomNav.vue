@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useMobile } from '~/composables/useMobile'
+import { useMobile } from '~/composables/ui/useMobile'
 import { useRoute } from 'vue-router'
 
 const { isMobile, openMobileMenu, closeMobileMenu } = useMobile()
@@ -47,7 +47,7 @@ const isActive = (item: (typeof navItems)[0]) => {
   return false
 }
 
-const handleNavClick = (item: typeof navItems[0]) => {
+const handleNavClick = (item: (typeof navItems)[0]) => {
   if (item.path) {
     // Close any open menu first, then navigate
     closeMobileMenu()

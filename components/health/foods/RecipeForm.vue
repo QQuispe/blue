@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import { useFoodSearch } from '~/composables/health/useFoodSearch'
-import { useEventBus, EVENTS } from '~/composables/useEventBus'
-import { useMacroFormatting } from '~/composables/useMacroFormatting'
+import { useEventBus, EVENTS } from '~/composables/ui/useEventBus'
+import { useMacroFormatting } from '~/composables/health/useMacroFormatting'
 import PortionInput from '~/components/PortionInput.vue'
 
 const { formatCalories, formatMacro } = useMacroFormatting()

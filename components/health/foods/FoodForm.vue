@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import { useEventBus, EVENTS } from '~/composables/useEventBus'
+import { useEventBus, EVENTS } from '~/composables/ui/useEventBus'
 
 interface FoodFormData {
   name: string

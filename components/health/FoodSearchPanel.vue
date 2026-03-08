@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useFoodSearch } from '~/composables/health/useFoodSearch'
-import { useAuth } from '~/composables/useAuth'
-import { useMacroFormatting } from '~/composables/useMacroFormatting'
+import { useAuth } from '~/composables/auth/useAuth'
+import { useMacroFormatting } from '~/composables/health/useMacroFormatting'
 import PortionInput from '~/components/PortionInput.vue'
 import DeleteConfirmModal from './DeleteConfirmModal.vue'
 import FoodFormModal from './FoodFormModal.vue'
