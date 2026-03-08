@@ -48,6 +48,10 @@ export default defineNuxtConfig({
     compatibilityDate: '2025-03-01',
     experimental: {
       wasm: true,
+      tasks: true,
+    },
+    scheduledTasks: {
+      '0 3 * * *': ['cleanup:tokens'],
     },
   },
 

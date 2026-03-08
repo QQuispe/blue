@@ -203,3 +203,26 @@ CREATE INDEX IF NOT EXISTS idx_user_bills_user_active_date ON user_bills(user_id
 
 -- For pending transaction filtering (partial index for boolean with low cardinality)
 CREATE INDEX IF NOT EXISTS idx_transactions_pending ON transactions(pending) WHERE pending = true;
+
+-- API Tokens table for bearer token authentication (native mobile apps)
+CREATE TABLE IF NOT EXISTS api_tokens (
+    id                  SERIAL PRIMARY KEY,
+    user_id             INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    token_hash          VARCHAR(64) UNIQUE NOT NULL,
+    refresh_hash        VARCHAR(64) UNIQUE,
+    token_family        UUID NOT NULL,
+    client_id           VARCHAR(50) DEFAULT 'android',
+    name                VARCHAR(100),
+    last_used_at        TIMESTAMP,
+    expires_at          TIMESTAMP NOT NULL,
+    refresh_expires_at  TIMESTAMP,
+    max_expires_at      TIMESTAMP NOT NULL,
+    revoked_at          TIMESTAMP,
+    created_at          TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_api_tokens_token_hash ON api_tokens(token_hash);
+CREATE INDEX IF NOT EXISTS idx_api_tokens_refresh_hash ON api_tokens(refresh_hash);
+CREATE INDEX IF NOT EXISTS idx_api_tokens_user_id ON api_tokens(user_id);
+CREATE INDEX IF NOT EXISTS idx_api_tokens_token_family ON api_tokens(token_family);
+CREATE INDEX IF NOT EXISTS idx_api_tokens_client_id ON api_tokens(client_id);

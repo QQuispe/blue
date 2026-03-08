@@ -1,8 +1,9 @@
 import { H3Event } from 'h3'
-import { createError, getCookie } from 'h3'
+import { createError, getCookie, getRequestHeader } from 'h3'
 import type { User } from '~/types/database'
 import { getUserById } from '~/server/db/queries/users'
 import { verifySignedSession } from '~/server/utils/session'
+import { requireBearerAuth } from '~/server/utils/bearerAuth'
 
 /**
  * Require authentication for a route
@@ -46,6 +47,21 @@ export async function requireAuth(event: H3Event): Promise<User> {
   }
 
   return user
+}
+
+/**
+ * Accepts either cookie session (web app) or Bearer token (native app).
+ * Use this on endpoints that both clients call.
+ * Checks for Authorization header first — falls back to cookie session.
+ */
+export const requireAnyAuth = async (event: H3Event): Promise<User> => {
+  const authHeader = getRequestHeader(event, 'authorization')
+
+  if (authHeader?.startsWith('Bearer ')) {
+    return await requireBearerAuth(event)
+  }
+
+  return await requireAuth(event)
 }
 
 /**

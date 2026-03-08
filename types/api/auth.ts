@@ -43,4 +43,41 @@ export interface SetupResponse extends ApiSuccess<{
 }> {}
 export interface LogoutResponse extends ApiSuccess<{ success: boolean }> {}
 
+// Token issuance
+export interface TokenRequest {
+  username?: string
+  email?: string
+  password: string
+  clientName?: string
+  clientId?: string
+}
+
+export interface TokenResponse extends ApiSuccess<{
+  accessToken: string
+  refreshToken: string
+  expiresAt: string
+  user: AuthUser
+}> {}
+
+// Token refresh
+export interface RefreshRequest {
+  refreshToken: string
+}
+
+export interface RefreshResponse extends ApiSuccess<{
+  accessToken: string
+  refreshToken: string
+  expiresAt: string
+}> {}
+
+// Token revocation (RFC 7009 inspired)
+export interface RevokeRequest {
+  token: string
+  token_type_hint?: 'access_token' | 'refresh_token'
+}
+
+export interface RevokeResponse extends ApiSuccess<{
+  revoked: boolean
+}> {}
+
 export type AuthError = ApiError
