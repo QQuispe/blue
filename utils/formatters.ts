@@ -11,7 +11,9 @@ export const formatCurrency = (amount: number): string => {
 
 export const formatDate = (dateStr: string): string => {
   if (!dateStr) return ''
-  const date = new Date(dateStr + 'T00:00:00')
+  const dateOnly = dateStr.slice(0, 10) // handles both "2026-03-05" and "2026-03-05T00:00:00.000Z"
+  const [y, m, d] = dateOnly.split('-').map(Number)
+  const date = new Date(y, m - 1, d) // local midnight, no UTC shift
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 

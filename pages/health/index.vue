@@ -6,6 +6,7 @@ import MacroCard from '~/components/health/MacroCard.vue'
 import QuickStats from '~/components/health/QuickStats.vue'
 import { useHealthData } from '~/composables/useHealthData'
 import { useHealthDate } from '~/composables/health/useHealthDate'
+import { formatDate } from '~/utils/formatters'
 
 interface DashboardData {
   profile: any
@@ -285,9 +286,9 @@ onMounted(() => {
               ></div>
             </div>
             <div class="chart-labels">
-              <span v-if="filteredWeightData.length">{{ filteredWeightData[0]?.date }}</span>
+              <span v-if="filteredWeightData.length">{{ formatDate(filteredWeightData[filteredWeightData.length - 1]?.date) }}</span>
               <span v-if="filteredWeightData.length">{{
-                filteredWeightData[filteredWeightData.length - 1]?.date
+                formatDate(filteredWeightData[0]?.date)
               }}</span>
             </div>
           </div>
@@ -473,7 +474,7 @@ onMounted(() => {
 }
 
 .chart-point:hover {
-  background: var(--color-accent-hover);
+  background: var(--color-accent-dark);
 }
 
 .chart-labels {

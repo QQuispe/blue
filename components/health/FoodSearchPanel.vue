@@ -3,6 +3,7 @@ import { useRouter } from 'vue-router'
 import { useFoodSearch } from '~/composables/health/useFoodSearch'
 import { useAuth } from '~/composables/useAuth'
 import { useMacroFormatting } from '~/composables/useMacroFormatting'
+import PortionInput from '~/components/PortionInput.vue'
 import DeleteConfirmModal from './DeleteConfirmModal.vue'
 import FoodFormModal from './FoodFormModal.vue'
 import RecipeFormModal from './RecipeFormModal.vue'
@@ -180,11 +181,9 @@ const removeFromSelection = (index: number) => {
 }
 
 const updateServings = (index: number, value: number) => {
-  if (value <= 0) {
-    removeFromSelection(index)
-  } else {
-    selectedFoods.value[index].servings = value
-  }
+  // Allow any value >= 0, default to 1 if blank/0/negative
+  const validValue = value > 0 ? value : 1
+  selectedFoods.value[index].servings = validValue
 }
 
 const emitSelectedFoods = () => {
@@ -359,13 +358,9 @@ defineExpose({
       <div v-for="(food, index) in selectedFoods" :key="index" class="selected-item">
         <span>{{ food.food_name }}</span>
         <div class="portion-controls">
-          <input
-            type="number"
-            :value="food.servings"
-            min="0"
-            step="0.001"
-            class="portion-input"
-            @input="updateServings(index, Number(($event.target as HTMLInputElement).value))"
+          <PortionInput
+            :model-value="food.servings || 1"
+            @update:model-value="val => updateServings(index, val)"
           />
           <span>x</span>
           <span class="calories">
@@ -739,15 +734,16 @@ defineExpose({
   gap: 8px;
 }
 
-.portion-input {
-  width: 60px;
-  padding: 4px 8px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  background: var(--color-bg);
-  color: var(--color-text-primary);
-  text-align: center;
+.portion-controls :deep(.portion-input) {
+  width: 65px;
+  padding: 6px 28px 6px 8px;
   font-size: 0.8125rem;
+  height: 36px;
+}
+
+.portion-controls :deep(.step-btn) {
+  width: 22px;
+  height: 17px;
 }
 
 .calories {

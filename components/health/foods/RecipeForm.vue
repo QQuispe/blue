@@ -3,6 +3,7 @@ import { ref, watch, computed } from 'vue'
 import { useFoodSearch } from '~/composables/health/useFoodSearch'
 import { useEventBus, EVENTS } from '~/composables/useEventBus'
 import { useMacroFormatting } from '~/composables/useMacroFormatting'
+import PortionInput from '~/components/PortionInput.vue'
 
 const { formatCalories, formatMacro } = useMacroFormatting()
 
@@ -302,9 +303,10 @@ watch(
   () => props.recipe,
   newRecipe => {
     if (newRecipe) {
+      // Deep copy to prevent mutations affecting parent
       form.value = {
         name: newRecipe.name || '',
-        ingredients: newRecipe.ingredients || [],
+        ingredients: newRecipe.ingredients?.map((ing: any) => ({ ...ing })) || [],
       }
     } else {
       form.value = { name: '', ingredients: [] }
@@ -391,20 +393,10 @@ watch(
               </div>
               <div class="ingredient-actions">
                 <div class="servings-control">
-                  <input
-                    :value="ing.servings"
-                    type="number"
-                    class="form-input servings-input"
-                    @input="
-                      e =>
-                        updateIngredientServings(
-                          index,
-                          parseFloat((e.target as HTMLInputElement).value) || 1
-                        )
-                    "
-                    @click.stop
+                  <PortionInput
+                    :model-value="ing.servings"
+                    @update:model-value="val => updateIngredientServings(index, val)"
                   />
-                  <span class="servings-suffix">x</span>
                 </div>
                 <button type="button" class="btn-icon" @click.stop="removeIngredient(index)">
                   <Icon name="mdi:close" size="16" />
@@ -728,25 +720,16 @@ watch(
   gap: 4px;
 }
 
-.servings-input {
-  width: 50px;
-  padding: 4px 6px;
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
-  background: var(--color-bg);
-  color: var(--color-text-primary);
+.servings-control :deep(.portion-input) {
+  width: 70px;
+  padding: 4px 28px 4px 8px;
   font-size: 0.8125rem;
-  text-align: center;
+  height: 32px;
 }
 
-.servings-input:focus {
-  outline: none;
-  border-color: var(--color-accent);
-}
-
-.servings-suffix {
-  font-size: 0.8125rem;
-  color: var(--color-text-muted);
+.servings-control :deep(.step-btn) {
+  width: 20px;
+  height: 15px;
 }
 
 .ingredient-edit {
@@ -830,11 +813,6 @@ watch(
   border-radius: 4px;
   font-size: 0.8rem;
   color: var(--color-text-secondary);
-}
-
-.servings-input:focus {
-  outline: none;
-  border-color: var(--color-accent);
 }
 
 .btn-icon {
