@@ -1,4 +1,6 @@
 <script setup>
+import { useMobile } from '~/composables/useMobile'
+
 const { isCollapsed } = useSidebar()
 const auth = useAuth()
 const { initializeTheme } = useTheme()

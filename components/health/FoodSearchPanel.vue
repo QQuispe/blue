@@ -7,6 +7,7 @@ import PortionInput from '~/components/PortionInput.vue'
 import DeleteConfirmModal from './DeleteConfirmModal.vue'
 import FoodFormModal from './FoodFormModal.vue'
 import RecipeFormModal from './RecipeFormModal.vue'
+import BarcodeScannerModal from './BarcodeScannerModal.vue'
 
 const { formatCalories, formatMacro } = useMacroFormatting()
 
@@ -28,6 +29,7 @@ const emit = defineEmits<{
 
 const router = useRouter()
 const { user, isAdmin } = useAuth()
+const { $toast } = useNuxtApp()
 
 const {
   searchQuery,
@@ -52,6 +54,76 @@ const itemToDelete = ref<{ id: number; type: 'food' | 'recipe' } | null>(null)
 const isDeleting = ref(false)
 const showRecipeEditModal = ref(false)
 const recipeToEdit = ref<any>(null)
+
+// Barcode scanner state
+const showBarcodeScanner = ref(false)
+
+// Barcode scanner events
+const handleBarcodeFound = (food: any, servings: number) => {
+  // Add to selected foods with scanned data
+  selectedFoods.value.push({
+    food_name: food.name,
+    food_id: null, // Will be created when saving
+    servings: servings,
+    calories: food.calories,
+    protein: food.protein,
+    carbs: food.carbs,
+    fat: food.fat,
+    type: 'custom',
+    barcode: food.barcode,
+    brand: food.brand,
+    serving_size: food.serving_size,
+    serving_unit: food.serving_unit,
+  })
+
+  // Also save to "My Foods" library
+  saveScannedFoodToLibrary(food)
+
+  showBarcodeScanner.value = false
+  $toast.success(`Added ${food.name}`)
+}
+
+const handleBarcodeNotFound = (barcode: string) => {
+  showBarcodeScanner.value = false
+  // Create a minimal food object with just the barcode
+  itemToEdit.value = {
+    id: null,
+    name: '',
+    brand: '',
+    barcode: barcode,
+    serving_size: 100,
+    serving_unit: 'g',
+    calories: '',
+    protein: '',
+    carbs: '',
+    fat: '',
+    fiber: '',
+  }
+  showEditModal.value = true
+}
+
+const saveScannedFoodToLibrary = async (food: any) => {
+  try {
+    await $fetch('/api/health/foods/custom', {
+      method: 'POST',
+      body: {
+        name: food.name,
+        brand: food.brand,
+        barcode: food.barcode,
+        serving_size: food.serving_size,
+        serving_unit: food.serving_unit,
+        calories: food.calories,
+        protein: food.protein,
+        carbs: food.carbs,
+        fat: food.fat,
+        fiber: food.fiber,
+      },
+    })
+  } catch (err) {
+    // Silent fail - user still has the food in their meal
+    console.error('Failed to save to library:', err)
+  }
+}
 
 // My Foods search
 const myFoodsSearch = ref('')
@@ -303,13 +375,13 @@ defineExpose({
           />
         </div>
         <div class="header-buttons">
-          <button class="btn btn-sm" @click="router.push('/health/foods')">
-            <Icon name="mdi:plus" size="16" />
-            Recipe
+          <button class="btn btn-sm" @click="showBarcodeScanner = true">
+            <Icon name="mdi:barcode-scan" size="16" />
+            Scan
           </button>
           <button class="btn btn-sm" @click="router.push('/health/foods')">
             <Icon name="mdi:plus" size="16" />
-            Food
+            Add
           </button>
         </div>
       </div>
@@ -397,6 +469,14 @@ defineExpose({
       :recipe="recipeToEdit"
       @save="handleRecipeSaved"
       @close="closeRecipeEditModal"
+    />
+
+    <!-- Barcode Scanner Modal -->
+    <BarcodeScannerModal
+      :show="showBarcodeScanner"
+      @found="handleBarcodeFound"
+      @notfound="handleBarcodeNotFound"
+      @close="showBarcodeScanner = false"
     />
   </div>
 </template>

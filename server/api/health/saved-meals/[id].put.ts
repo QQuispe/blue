@@ -13,7 +13,7 @@ async function enrichIngredientsWithLiveData(ingredients: any[]): Promise<any[]>
 
   const foodsToFetchById = ingredients.filter(ing => ing.food_id).map(ing => ing.food_id)
 
-  let foodsMap: Record<number, any> = {}
+  const foodsMap: Record<number, any> = {}
   if (foodsToFetchById.length > 0) {
     const foods = await getFoodsByIds(foodsToFetchById)
     for (const food of foods) {

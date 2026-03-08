@@ -5,6 +5,7 @@ import { useEventBus, EVENTS } from '~/composables/useEventBus'
 interface FoodFormData {
   name: string
   brand: string
+  barcode: string
   serving_size: string | number
   serving_unit: string
   calories: string | number
@@ -36,6 +37,7 @@ const isSaving = ref(false)
 const form = ref<FoodFormData>({
   name: '',
   brand: '',
+  barcode: '',
   serving_size: '',
   serving_unit: 'g',
   calories: '',
@@ -60,6 +62,7 @@ const resetForm = () => {
   form.value = {
     name: '',
     brand: '',
+    barcode: '',
     serving_size: '',
     serving_unit: 'g',
     calories: '',
@@ -77,6 +80,7 @@ watch(
       form.value = {
         name: newFood.name || '',
         brand: newFood.brand || '',
+        barcode: newFood.barcode || '',
         serving_size: newFood.serving_size || '',
         serving_unit: newFood.serving_unit || 'g',
         calories: newFood.calories || '',
@@ -104,6 +108,7 @@ const handleSave = async () => {
     const payload = {
       name: form.value.name,
       brand: form.value.brand || null,
+      barcode: form.value.barcode || null,
       serving_size: form.value.serving_size ? Number(form.value.serving_size) : 100,
       serving_unit: form.value.serving_unit,
       calories: form.value.calories ? Number(form.value.calories) : 0,
@@ -196,6 +201,18 @@ defineExpose({
       <div class="form-group">
         <label>Brand</label>
         <input v-model="form.brand" type="text" placeholder="e.g., Kirkland" class="form-input" />
+      </div>
+
+      <!-- Barcode field - shown only if has value (from scan) -->
+      <div v-if="form.barcode" class="form-group barcode-field">
+        <label>Barcode</label>
+        <input
+          v-model="form.barcode"
+          type="text"
+          class="form-input"
+          readonly
+          title="Barcode from product scan"
+        />
       </div>
 
       <div class="form-row">
@@ -398,6 +415,12 @@ defineExpose({
 
 .btn-primary:hover:not(:disabled) {
   background: var(--color-accent-dark);
+}
+
+.barcode-field input {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {

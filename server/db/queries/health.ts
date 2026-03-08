@@ -383,6 +383,17 @@ export async function getFoodsByIds(foodIds: number[]): Promise<HealthFood[]> {
   return result.rows
 }
 
+export async function getFoodByBarcode(barcode: string): Promise<HealthFood | null> {
+  const result = await pool.query(
+    `SELECT * FROM health_foods 
+     WHERE barcode = $1 
+     AND deleted_at IS NULL 
+     LIMIT 1`,
+    [barcode]
+  )
+  return result.rows[0] || null
+}
+
 export async function createCustomFood(
   userId: number,
   food: Partial<HealthFood>
