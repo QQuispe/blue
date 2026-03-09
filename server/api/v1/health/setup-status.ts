@@ -2,7 +2,7 @@ import { defineEventHandler, getMethod, createError } from 'h3'
 import { withErrorHandling } from '~/server/utils/errorHandler'
 import { apiSuccess } from '~/server/utils/response'
 import { requireAuth } from '~/server/utils/auth'
-import { getHealthProfile } from '~/server/db/queries/health'
+import { getHealthProfile, getActiveHealthGoal } from '~/server/db/queries/health'
 
 export default defineEventHandler(
   withErrorHandling(async event => {
@@ -21,7 +21,7 @@ export default defineEventHandler(
     return apiSuccess({
       isSetup: !!profile,
       hasProfile: !!profile,
-      hasGoals: false, // Would need to check goals table
+      hasGoals: !!(await getActiveHealthGoal(user.id)),
       message: profile ? 'Health module is set up' : 'Health setup required',
     })
   })

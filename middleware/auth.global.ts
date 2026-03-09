@@ -48,17 +48,17 @@ export default defineNuxtRouteMiddleware(async to => {
 
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
-      const response: any = await $fetch('/api/auth/me', {
+      const response: any = await $fetch('/api/v1/auth/me', {
         credentials: 'include',
         ignoreResponseError: true,
       })
 
       // Check for valid response - must have statusCode 200 and user
-      if (response?.statusCode === 200 && response?.user) {
+      if (response?.success && response?.data?.user) {
         // Success - update cache and user
-        cachedUser = response.user
+        cachedUser = response.data.user
         lastVerified = now
-        auth.user.value = response.user
+        auth.user.value = response.data.user
 
         if (attempt > 1) {
           console.log(`[Auth] Session verified after ${attempt} attempts`)
@@ -68,7 +68,7 @@ export default defineNuxtRouteMiddleware(async to => {
 
       // If we get here, response exists but doesn't have valid user
       // This is a legitimate 401 - don't retry
-      if (response?.statusCode === 401 || !response?.user) {
+      if (!response?.success || !response?.data?.user) {
         console.log('[Auth] Not authenticated, redirecting to login')
         cachedUser = null
         lastVerified = 0

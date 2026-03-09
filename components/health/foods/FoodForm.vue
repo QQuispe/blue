@@ -121,14 +121,14 @@ const handleSave = async () => {
     let response
 
     if (isEditing.value && props.food) {
-      response = await fetch(`/api/health/foods/custom/${props.food.id}`, {
+      response = await fetch(`/api/v1/health/foods/custom/${props.food.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(payload),
       })
     } else {
-      response = await fetch('/api/health/foods/custom', {
+      response = await fetch('/api/v1/health/foods/custom', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -144,7 +144,7 @@ const handleSave = async () => {
 
     // Emit event for reactive cache invalidation
     // This triggers updates in all recipes using this food
-    if (savedFood.food) {
+    if (savedFood.data?.food) {
       emitEvent(EVENTS.FOOD_UPDATED, {
         foodId: savedFood.food.id,
         foodName: savedFood.food.name,

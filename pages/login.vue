@@ -17,10 +17,10 @@ const handleLogin = async () => {
 
   try {
     const response = await authLogin(username.value, password.value)
-    if (response.statusCode === 200) {
+    if (response.success) {
       router.push('/')
     } else {
-      error.value = response.message || 'Invalid credentials'
+      error.value = response.error || 'Invalid credentials'
     }
   } catch (err) {
     error.value = 'Unable to connect. Please try again.'

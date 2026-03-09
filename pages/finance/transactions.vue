@@ -46,19 +46,19 @@ const showDetail: Ref<boolean> = ref(false)
 let fetchTimeout: ReturnType<typeof setTimeout> | null = null
 
 const fetchTransactions = async (params: URLSearchParams) => {
-  const response = await fetch(`/api/finance/transactions?${params}`, { credentials: 'include' })
+  const response = await fetch(`/api/v1/finance/transactions?${params}`, { credentials: 'include' })
   if (!response.ok) throw new Error('Failed to fetch transactions')
   const data = await response.json()
-  return data
+  return data.data
 }
 
 const fetchSummary = async (params: URLSearchParams) => {
-  const response = await fetch(`/api/finance/transactions/summary?${params}`, {
+  const response = await fetch(`/api/v1/finance/transactions/summary?${params}`, {
     credentials: 'include',
   })
   if (response.ok) {
     const data = await response.json()
-    return data.totalSpend || 0
+    return data.data?.totalSpend || 0
   }
   return null
 }
@@ -98,7 +98,7 @@ const fetchData = async (showLoading = true) => {
         }
 
         if (showLoading && accounts.value.length === 0) {
-          const filtersRes = await fetch('/api/finance/transactions/filters', {
+          const filtersRes = await fetch('/api/v1/finance/transactions/filters', {
             credentials: 'include',
           })
           if (filtersRes.ok) {

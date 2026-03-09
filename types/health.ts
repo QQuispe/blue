@@ -17,6 +17,7 @@ export interface HealthProfile {
   age: number | null
   gender: Gender | null
   activity_level: ActivityLevel
+  goal_type?: 'lose' | 'maintain' | 'gain' | null
   created_at: Date
   updated_at: Date
 }
@@ -294,28 +295,37 @@ export interface HealthWorkoutSessionInput {
 
 export interface HealthDashboard {
   profile: HealthProfile | null
-  active_goal: HealthGoal | null
-  latest_checkin: HealthCheckin | null
-  today_meals: HealthMeal[]
-  today_macros: {
+  activeGoal: {
+    id: number
+    goalType: string
+    startingWeight: number
+    targetWeight: number
+    targetDate: string
+    weeklyRate: number
+  } | null
+  activeGoalId?: number | null
+  latestCheckin: HealthCheckin | null
+  todayMeals: HealthMeal[]
+  todayMacros: {
     calories: number
     protein: number
     carbs: number
     fat: number
   }
-  target_macros: {
+  targetMacros: {
     calories: number
     protein: number
     carbs: number
     fat: number
   }
-  active_meal_plan: HealthMealPlan | null
-  active_workout_plan: HealthWorkoutPlan | null
-  today_workout: DailyWorkout | null
+  weightCheckins?: any[]
+  activeMealPlan: HealthMealPlan | null
+  activeWorkoutPlan: HealthWorkoutPlan | null
+  todayWorkout: DailyWorkout | null
   progress: {
-    weight_change: number | null
-    weeks_remaining: number | null
-    on_track: boolean | null
+    weightChange: number | null
+    weeksRemaining: number | null
+    onTrack: boolean | null
   }
 }
 

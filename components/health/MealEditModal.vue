@@ -32,7 +32,7 @@ const moveFoodFromEditMeal = async (index: number, newMealType: string, food: an
   if (!props.meal) return
 
   try {
-    const response = await $fetch('/api/health/meals', {
+    const response = await $fetch('/api/v1/health/meals', {
       method: 'POST',
       body: {
         meal_type: newMealType,
@@ -83,7 +83,7 @@ const handleSave = async () => {
       { calories: 0, protein: 0, carbs: 0, fat: 0 }
     )
 
-    const response = await fetch(`/api/health/meals/${props.meal.id}`, {
+    const response = await fetch(`/api/v1/health/meals/${props.meal.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

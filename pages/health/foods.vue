@@ -17,7 +17,7 @@ const { setupStatus, isReady, isRecipesRefreshing, init } = useHealthData()
 
 const needsSetup = computed(() => {
   if (!isReady.value) return false
-  return !setupStatus.value?.isComplete
+  return !setupStatus.value?.isSetup
 })
 
 const { customFoods, savedMeals, isRefreshing, initFoods, deleteCustomFood, deleteSavedMeal } =
@@ -55,7 +55,7 @@ const filteredRecipes = computed(() => {
     const query = searchQuery.value.toLowerCase()
     items = items.filter(r => r.name?.toLowerCase().includes(query))
   }
-  return items.map(r => ({ ...r, type: 'recipe' as const }))
+  return items.map(r => ({ ...r, calories: r.calories ?? r.total_calories ?? 0, protein: r.protein ?? r.total_protein ?? 0, carbs: r.carbs ?? r.total_carbs ?? 0, fat: r.fat ?? r.total_fat ?? 0, type: 'recipe' as const }))
 })
 
 const displayItems = computed(() => {
@@ -192,7 +192,7 @@ const handleDuplicate = async (item: any) => {
         fat: item.fat,
         fiber: item.fiber,
       }
-      const response = await fetch('/api/health/foods/custom', {
+      const response = await fetch('/api/v1/health/foods/custom', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

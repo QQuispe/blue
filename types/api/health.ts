@@ -207,6 +207,27 @@ export interface DashboardData {
   macroProgress: MacroProgress
   recentCheckins: Checkin[]
   recentMeals: Meal[]
+  // Extended fields returned by server
+  activeGoal?: {
+    id: number
+    goalType: string
+    startingWeight: number
+    targetWeight: number
+    targetDate: string
+    weeklyRate: number
+  } | null
+  latestCheckin?: Checkin | null
+  todayMeals?: Meal[]
+  activeMealPlan?: any
+  activeWorkoutPlan?: any
+  todayWorkout?: any
+  progress?: {
+    weightChange: number | null
+    weeksRemaining: number | null
+    onTrack: boolean | null
+  }
+  weightCheckins?: Checkin[]
+  activeGoalId?: number | null
 }
 
 // Barcode

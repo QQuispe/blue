@@ -37,8 +37,8 @@ export async function getSettings(userId: number): Promise<UserSettings> {
     locale: settings.locale,
     timezone: settings.timezone,
     theme: settings.theme,
-    notificationsEnabled: settings.notifications_enabled,
-    budgetAlertsEnabled: settings.budget_alerts_enabled,
+    notificationsEnabled: (settings as any).notifications_enabled,
+    budgetAlertsEnabled: (settings as any).budget_alerts_enabled,
   }
 }
 
@@ -49,9 +49,9 @@ export async function updateSettings(userId: number, data: SettingsUpdate): Prom
   let settings = await getUserSettings(userId)
 
   if (!settings) {
-    settings = await createUserSettings(userId, data)
+    settings = await createUserSettings(userId, data as any)
   } else {
-    settings = await updateUserSettings(userId, data)
+    settings = await updateUserSettings(userId, data as any)
   }
 
   if (!settings) {
@@ -63,7 +63,7 @@ export async function updateSettings(userId: number, data: SettingsUpdate): Prom
     locale: settings.locale,
     timezone: settings.timezone,
     theme: settings.theme,
-    notificationsEnabled: settings.notifications_enabled,
-    budgetAlertsEnabled: settings.budget_alerts_enabled,
+    notificationsEnabled: (settings as any).notifications_enabled,
+    budgetAlertsEnabled: (settings as any).budget_alerts_enabled,
   }
 }

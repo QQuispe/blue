@@ -140,11 +140,38 @@ export async function getDashboardData(userId: number, dateParam?: string): Prom
       target_carbs: activeGoal?.target_carbs || null,
       target_fat: activeGoal?.target_fat || null,
     },
-    todaysMacros,
+    activeGoal: activeGoal
+      ? {
+          id: activeGoal.id,
+          goalType: activeGoal.goal_type,
+          startingWeight: activeGoal.starting_weight,
+          targetWeight: activeGoal.target_weight,
+          targetDate: activeGoal.target_date || '',
+          weeklyRate: activeGoal.weekly_rate,
+        }
+      : null,
+    latestCheckin: recentCheckins[0] || null,
+    todayMeals: recentMeals,
+    todaysMacros: todaysMacros,
     targetMacros,
     remainingMacros,
     macroProgress,
+    activeMealPlan: null,
+    activeWorkoutPlan: null,
+    todayWorkout: null,
+    progress: {
+      weightChange:
+        activeGoal && profile ? Number(profile.weight) - Number(activeGoal.starting_weight) : null,
+      weeksRemaining: null,
+      onTrack: null,
+    },
+    weightCheckins: recentCheckins.map((c: any) => ({
+      id: c.id,
+      date: c.date,
+      weight: Number(c.weight),
+    })) as any[],
     recentCheckins,
     recentMeals,
+    activeGoalId: activeGoal?.id || null,
   }
 }

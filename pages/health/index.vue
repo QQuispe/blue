@@ -51,7 +51,7 @@ const fetchDashboard = async () => {
   try {
     isLoading.value = true
     const localDate = getLocalDateString()
-    const response = await fetch(`/api/health/dashboard?date=${localDate}`, {
+    const response = await fetch(`/api/v1/health/dashboard?date=${localDate}`, {
       credentials: 'include',
     })
 
@@ -59,8 +59,8 @@ const fetchDashboard = async () => {
       throw new Error('Failed to fetch dashboard')
     }
 
-    const data = await response.json()
-    dashboard.value = data.dashboard
+    const responseData = await response.json()
+    dashboard.value = responseData.data
   } catch (err: any) {
     console.error('Dashboard error:', err)
   } finally {
@@ -69,7 +69,7 @@ const fetchDashboard = async () => {
 }
 
 const needsSetup = computed(() => {
-  return !dashboard.value?.profile || !dashboard.value?.activeGoal
+  return !dashboard.value?.profile || !dashboard.value?.profile?.goal_type
 })
 
 const getDayName = () => {

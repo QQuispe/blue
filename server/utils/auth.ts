@@ -1,6 +1,6 @@
 import { H3Event } from 'h3'
 import { createError, getCookie, getRequestHeader } from 'h3'
-import type { User } from '~/types/database'
+import type { User } from '~/types'
 import { getUserById } from '~/server/db/queries/users'
 import { verifySignedSession } from '~/server/utils/session'
 import { requireBearerAuth } from '~/server/utils/bearerAuth'

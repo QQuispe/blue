@@ -50,7 +50,7 @@ const syncLiabilities = async () => {
     isSyncing.value = true
     error.value = null
 
-    const response = await fetch('/api/finance/liabilities/sync', {
+    const response = await fetch('/api/v1/finance/liabilities/sync', {
       credentials: 'include',
     })
 
@@ -59,7 +59,7 @@ const syncLiabilities = async () => {
     }
 
     const data = await response.json()
-    logger.component('BillsCard', 'liabilities_synced', { count: data.count })
+    logger.component('BillsCard', 'liabilities_synced', { count: data.data.count })
 
     // Refresh bills list
     await fetchBills()
@@ -76,7 +76,7 @@ const fetchBills = async () => {
     isLoading.value = true
     error.value = null
 
-    const response = await fetch('/api/finance/bills', {
+    const response = await fetch('/api/v1/finance/bills', {
       credentials: 'include',
     })
 
@@ -85,9 +85,9 @@ const fetchBills = async () => {
     }
 
     const data = await response.json()
-    bills.value = data.bills || []
-    suggestions.value = data.suggestions || []
-    totalDue.value = data.totalDue || 0
+    bills.value = data.data.bills || []
+    suggestions.value = data.data.suggestions || []
+    totalDue.value = data.data.totalDue || 0
 
     logger.component('BillsCard', 'fetch_success', { count: bills.value.length })
   } catch (err) {
@@ -100,7 +100,7 @@ const fetchBills = async () => {
 
 const addBill = async () => {
   try {
-    const response = await fetch('/api/finance/bills', {
+    const response = await fetch('/api/v1/finance/bills', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -124,7 +124,7 @@ const updateBill = async () => {
   if (!editingBill.value) return
 
   try {
-    const response = await fetch(`/api/finance/bills/${editingBill.value.id}`, {
+    const response = await fetch(`/api/v1/finance/bills/${editingBill.value.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -157,7 +157,7 @@ const addSuggestedBill = async (suggestion: SuggestedBill) => {
       nextDue.setDate(nextDue.getDate() + 7)
     }
 
-    const response = await fetch('/api/finance/bills', {
+    const response = await fetch('/api/v1/finance/bills', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -183,7 +183,7 @@ const addSuggestedBill = async (suggestion: SuggestedBill) => {
 
 const ignoreSuggestion = async (suggestionId: number) => {
   try {
-    await fetch(`/api/finance/bills/suggestions/${suggestionId}/ignore`, {
+    await fetch(`/api/v1/finance/bills/suggestions/${suggestionId}/ignore`, {
       method: 'POST',
       credentials: 'include',
     })

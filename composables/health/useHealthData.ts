@@ -43,7 +43,7 @@ export const useHealthData = () => {
         $fetch<ApiSuccess<SetupStatusData>>('/api/v1/health/setup-status', {
           ignoreResponseError: true,
         }),
-        $fetch('/api/user/settings', { ignoreResponseError: true }),
+        $fetch('/api/v1/user/settings', { ignoreResponseError: true }),
       ])
 
       // Handle unauthenticated case - don't mark as initialized so it retries
@@ -68,8 +68,8 @@ export const useHealthData = () => {
         dashboard.value = dashboardRes?.data || null
 
         // Set active goal ID from dashboard
-        if (dashboardRes?.data?.active_goal) {
-          activeGoalId.value = dashboardRes.data.active_goal.id
+        if (dashboardRes?.data?.profile?.goal_type) {
+          activeGoalId.value = dashboardRes.data.activeGoalId || null
         }
       }
 
@@ -87,14 +87,14 @@ export const useHealthData = () => {
 
     try {
       const [recentRes, customRes, savedRes] = await Promise.all([
-        $fetch<{ foods: any[] }>('/api/health/foods/recent', { ignoreResponseError: true }),
-        $fetch<{ foods: any[] }>('/api/health/foods/custom', { ignoreResponseError: true }),
-        $fetch<{ meals: any[] }>('/api/health/saved-meals', { ignoreResponseError: true }),
+        $fetch<{ foods: any[] }>('/api/v1/health/foods/recent', { ignoreResponseError: true }),
+        $fetch<{ foods: any[] }>('/api/v1/health/foods/custom', { ignoreResponseError: true }),
+        $fetch<{ meals: any[] }>('/api/v1/health/saved-meals', { ignoreResponseError: true }),
       ])
 
-      recentFoods.value = (recentRes as any)?.foods || []
-      customFoods.value = (customRes as any)?.foods || []
-      savedMeals.value = (savedRes as any)?.meals || []
+      recentFoods.value = (recentRes as any)?.data?.foods || []
+      customFoods.value = (customRes as any)?.data?.foods || []
+      savedMeals.value = (savedRes as any)?.data?.savedMeals || []
 
       isFoodsInitialized.value = true
     } catch (err) {
@@ -106,7 +106,7 @@ export const useHealthData = () => {
 
   // === Computed Macros (from dashboard) ===
   const targetMacros = computed(() => {
-    const tm = dashboard.value?.target_macros
+    const tm = dashboard.value?.targetMacros
     return tm || { calories: 2000, protein: 120, carbs: 200, fat: 65 }
   })
 
@@ -186,7 +186,7 @@ export const useHealthData = () => {
 
       const data = await response.json()
       if (dashboard.value) {
-        dashboard.value.target_macros = {
+        dashboard.value.targetMacros = {
           calories: data.data?.goal?.target_calories || editTargets.value.calories,
           protein: data.data?.goal?.target_protein || editTargets.value.protein,
           carbs: data.data?.goal?.target_carbs || editTargets.value.carbs,
@@ -228,10 +228,10 @@ export const useHealthData = () => {
         isRecipesRefreshing.value = true
         try {
           // Refetch saved meals to get enriched data with updated food values
-          const savedRes = await $fetch<{ meals: any[] }>('/api/health/saved-meals', {
+          const savedRes = await $fetch<{ meals: any[] }>('/api/v1/health/saved-meals', {
             ignoreResponseError: true,
           })
-          savedMeals.value = (savedRes as any)?.meals || []
+          savedMeals.value = (savedRes as any)?.data?.savedMeals || []
         } catch (err) {
           console.error('[HealthData] Failed to refresh recipes:', err)
         } finally {
@@ -249,10 +249,10 @@ export const useHealthData = () => {
       if (!isRecipesRefreshing.value && isFoodsInitialized.value) {
         isRecipesRefreshing.value = true
         try {
-          const savedRes = await $fetch<{ meals: any[] }>('/api/health/saved-meals', {
+          const savedRes = await $fetch<{ meals: any[] }>('/api/v1/health/saved-meals', {
             ignoreResponseError: true,
           })
-          savedMeals.value = (savedRes as any)?.meals || []
+          savedMeals.value = (savedRes as any)?.data?.savedMeals || []
         } catch (err) {
           console.error('[HealthData] Failed to refresh recipes:', err)
         } finally {
@@ -269,10 +269,10 @@ export const useHealthData = () => {
       if (!isRecipesRefreshing.value && isFoodsInitialized.value) {
         isRecipesRefreshing.value = true
         try {
-          const savedRes = await $fetch<{ meals: any[] }>('/api/health/saved-meals', {
+          const savedRes = await $fetch<{ meals: any[] }>('/api/v1/health/saved-meals', {
             ignoreResponseError: true,
           })
-          savedMeals.value = (savedRes as any)?.meals || []
+          savedMeals.value = (savedRes as any)?.data?.savedMeals || []
         } catch (err) {
           console.error('[HealthData] Failed to refresh recipes:', err)
         } finally {

@@ -74,7 +74,7 @@ export const useHealthMacros = () => {
   const fetchTargetMacros = async () => {
     try {
       isLoadingTargets.value = true
-      const response = await fetch('/api/health/dashboard', {
+      const response = await fetch('/api/v1/health/dashboard', {
         credentials: 'include',
       })
 
@@ -121,7 +121,7 @@ export const useHealthMacros = () => {
 
     try {
       isSavingTargets.value = true
-      const response = await fetch(`/api/health/goals/${activeGoalId.value}`, {
+      const response = await fetch(`/api/v1/health/goals/${activeGoalId.value}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

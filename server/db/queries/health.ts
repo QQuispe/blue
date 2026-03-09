@@ -1,5 +1,5 @@
 import { pool } from '../index.js'
-import type { QueryResult, QueryResultArray } from '~/types/database.js'
+import type { QueryResult, QueryResultArray } from '~/types'
 import type {
   HealthProfile,
   HealthGoal,

@@ -50,7 +50,7 @@ const deleteHealthData = async () => {
 
   try {
     isDeletingHealth.value = true
-    await $fetch('/api/health/delete-all', { method: 'DELETE', credentials: 'include' })
+    await $fetch('/api/v1/health/delete-all', { method: 'DELETE', credentials: 'include' })
     $toast.success('Health data deleted')
     showHealthDeleteModal.value = false
     healthDeleteConfirmation.value = ''
@@ -79,7 +79,7 @@ const fetchAdminStats = async () => {
 
   try {
     isLoadingStats.value = true
-    const response = await fetch('/api/admin/stats', {
+    const response = await fetch('/api/v1/admin/stats', {
       credentials: 'include',
     })
 
@@ -87,7 +87,7 @@ const fetchAdminStats = async () => {
       throw new Error('Failed to fetch admin stats')
     }
 
-    adminStats.value = await response.json()
+    adminStats.value = (await response.json()).data
   } catch (err) {
     // Silently fail - admin stats are not critical
   } finally {
@@ -120,18 +120,18 @@ const timezones = [
 const fetchSettings = async () => {
   try {
     isLoadingSettings.value = true
-    const response = await fetch('/api/user/settings', {
+    const response = await fetch('/api/v1/user/settings', {
       credentials: 'include',
     })
     if (response.ok) {
       const data = await response.json()
       userSettings.value = {
-        currency: data.settings?.currency || 'USD',
-        locale: data.settings?.locale || 'en-US',
-        timezone: data.settings?.timezone || 'America/Los_Angeles',
-        theme: data.settings?.theme || 'light',
-        notificationsEnabled: data.settings?.notificationsEnabled ?? true,
-        budgetAlertsEnabled: data.settings?.budgetAlertsEnabled ?? true,
+        currency: data.data?.settings?.currency || 'USD',
+        locale: data.data?.settings?.locale || 'en-US',
+        timezone: data.data?.settings?.timezone || 'America/Los_Angeles',
+        theme: data.data?.settings?.theme || 'light',
+        notificationsEnabled: data.data?.settings?.notificationsEnabled ?? true,
+        budgetAlertsEnabled: data.data?.settings?.budgetAlertsEnabled ?? true,
       }
     }
   } catch (err) {
@@ -144,7 +144,7 @@ const fetchSettings = async () => {
 const saveSettings = async () => {
   try {
     isSavingSettings.value = true
-    const response = await fetch('/api/user/settings', {
+    const response = await fetch('/api/v1/user/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -177,7 +177,7 @@ const changePassword = async () => {
   try {
     isChangingPassword.value = true
 
-    const response = await fetch('/api/user/change-password', {
+    const response = await fetch('/api/v1/user/change-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -210,7 +210,7 @@ const changeUsername = async () => {
   try {
     isChangingUsername.value = true
 
-    const response = await fetch('/api/user/change-username', {
+    const response = await fetch('/api/v1/user/change-username', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -245,7 +245,7 @@ const deleteAccount = async () => {
   try {
     isDeleting.value = true
 
-    const response = await fetch('/api/user/delete-account', {
+    const response = await fetch('/api/v1/user/delete-account', {
       method: 'DELETE',
       credentials: 'include',
     })

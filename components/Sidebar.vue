@@ -22,7 +22,7 @@ const { isCollapsed, toggle } = useSidebar()
 
 // Use centralized health data
 const { setupStatus } = useHealthData()
-const healthSetupComplete = computed(() => setupStatus.value?.isComplete ?? false)
+const healthSetupComplete = computed(() => setupStatus.value?.isSetup ?? false)
 
 const financeExpanded = ref(false)
 const financeTempExpanded = ref(false)

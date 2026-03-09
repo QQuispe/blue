@@ -1,5 +1,5 @@
 import { getTotalBalanceForUser, getAccountsByUserId } from '~/server/db/queries/accounts.js'
-import type { Account } from '~/types/database.js'
+import type { Account } from '~/types'
 
 export interface BalanceSummary {
   totalCurrent: number

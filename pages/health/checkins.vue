@@ -14,7 +14,7 @@ const { $toast } = useNuxtApp()
 const { setupStatus, isReady, init } = useHealthData()
 const needsSetup = computed(() => {
   if (!isReady.value) return false
-  return !setupStatus.value?.isComplete
+  return !setupStatus.value?.isSetup
 })
 
 // Composables

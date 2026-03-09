@@ -131,7 +131,7 @@ const addAsCustomIngredient = async () => {
       fat: 0,
     }
 
-    const response = await fetch('/api/health/foods/custom', {
+    const response = await fetch('/api/v1/health/foods/custom', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -143,7 +143,7 @@ const addAsCustomIngredient = async () => {
     }
 
     const result = await response.json()
-    const newFood = result.food
+    const newFood = result.data?.food
 
     // Add to recipe
     form.value.ingredients.push({
@@ -237,14 +237,14 @@ const handleSave = async () => {
     let response
 
     if (isEditing.value && props.recipe) {
-      response = await fetch(`/api/health/saved-meals/${props.recipe.id}`, {
+      response = await fetch(`/api/v1/health/saved-meals/${props.recipe.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(payload),
       })
     } else {
-      response = await fetch('/api/health/saved-meals', {
+      response = await fetch('/api/v1/health/saved-meals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

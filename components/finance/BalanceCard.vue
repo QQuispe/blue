@@ -37,22 +37,22 @@ const fetchBalance = async () => {
 
     logger.component('BalanceCard', 'fetch_start', { timestamp: new Date().toISOString() })
 
-    const response = await fetch('/api/finance/balance', {
+    const response = await fetch('/api/v1/finance/balance', {
       credentials: 'include',
     })
 
     const duration = Date.now() - startTime
 
     if (!response.ok) {
-      logger.api('GET', '/api/finance/balance', response.status, duration)
+      logger.api('GET', '/api/v1/finance/balance', response.status, duration)
       throw new Error('Failed to fetch balance')
     }
 
     const data = await response.json()
-    balanceData.value = data.summary
-    accounts.value = data.accounts || []
+    balanceData.value = data.data.summary
+    accounts.value = data.data.accounts || []
 
-    logger.api('GET', '/api/finance/balance', response.status, duration)
+    logger.api('GET', '/api/v1/finance/balance', response.status, duration)
     logger.component('BalanceCard', 'fetch_success', {
       accountsFetched: accounts.value.length,
       balance: balanceData.value?.summary?.totalCurrent,

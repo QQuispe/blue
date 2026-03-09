@@ -90,7 +90,7 @@ export const useFoodSearch = () => {
     try {
       isSearching.value = true
       const response = await fetch(
-        `/api/health/foods/search?q=${encodeURIComponent(searchQuery.value)}`,
+        `/api/v1/health/foods/search?q=${encodeURIComponent(searchQuery.value)}`,
         {
           credentials: 'include',
         }
@@ -119,7 +119,7 @@ export const useFoodSearch = () => {
   // Delete functions - update cached state after deletion
   const deleteCustomFood = async (id: number): Promise<{ success: boolean; error?: any }> => {
     try {
-      await $fetch(`/api/health/foods/custom/${id}`, {
+      await $fetch(`/api/v1/health/foods/custom/${id}`, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -133,7 +133,7 @@ export const useFoodSearch = () => {
 
   const deleteSavedMeal = async (id: number) => {
     try {
-      await $fetch(`/api/health/saved-meals/${id}`, {
+      await $fetch(`/api/v1/health/saved-meals/${id}`, {
         method: 'DELETE',
         credentials: 'include',
       })

@@ -25,8 +25,8 @@ export const useFinanceData = () => {
 
     try {
       const [accountsRes, budgetsRes] = await Promise.all([
-        $fetch('/api/finance/accounts', { ignoreResponseError: true }),
-        $fetch('/api/finance/budgets', { ignoreResponseError: true }),
+        $fetch('/api/v1/finance/accounts', { ignoreResponseError: true }),
+        $fetch('/api/v1/finance/budgets', { ignoreResponseError: true }),
       ])
 
       // Handle unauthenticated case
@@ -105,7 +105,7 @@ export const useFinanceData = () => {
 
   const fetchLiabilities = async () => {
     try {
-      const res = await $fetch('/api/finance/liabilities', { ignoreResponseError: true })
+      const res = await $fetch('/api/v1/finance/liabilities', { ignoreResponseError: true })
       liabilities.value = (res as any)?.liabilities || []
     } catch (err) {
       console.error('[FinanceData] fetchLiabilities failed:', err)

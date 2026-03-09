@@ -28,7 +28,7 @@ const fetchTransactions = async () => {
 
     logger.component('TransactionsCard', 'fetch_start', { timestamp: new Date().toISOString() })
 
-    const response = await fetch('/api/finance/transactions?limit=5', {
+    const response = await fetch('/api/v1/finance/transactions?limit=5', {
       credentials: 'include',
     })
 
@@ -37,7 +37,7 @@ const fetchTransactions = async () => {
     }
 
     const data = await response.json()
-    transactions.value = data.transactions || []
+    transactions.value = data.data.transactions || []
 
     logger.component('TransactionsCard', 'fetch_success', { count: transactions.value.length })
   } catch (err) {

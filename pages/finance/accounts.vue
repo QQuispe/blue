@@ -38,13 +38,13 @@ const router = useRouter()
 // Sync accounts for an item
 const syncAccounts = async itemId => {
   try {
-    const response = await fetch('/api/plaid/accounts', {
+    const response = await fetch('/api/v1/finance/plaid/accounts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ itemId }),
     })
     const data = await response.json()
-    if (data.statusCode === 200) {
+    if (data.success) {
       return true
     } else {
       logger.error('Account sync failed:', data.message)
@@ -59,13 +59,13 @@ const syncAccounts = async itemId => {
 // Sync transactions for an item
 const syncTransactions = async itemId => {
   try {
-    const response = await fetch('/api/plaid/transactions', {
+    const response = await fetch('/api/v1/finance/plaid/transactions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ itemId }),
     })
     const data = await response.json()
-    if (data.statusCode === 200) {
+    if (data.success) {
       // Transaction sync completed successfully
     } else {
       logger.error('Transaction sync failed:', data.message)
@@ -79,14 +79,14 @@ const syncTransactions = async itemId => {
 const initializePlaidLink = async () => {
   isLinkLoading.value = true
   try {
-    const response = await fetch('/api/plaid/tokens', { method: 'POST' })
+    const response = await fetch('/api/v1/finance/plaid/tokens', { method: 'POST' })
     const data = await response.json()
-    linkToken.value = data.link_token
+    linkToken.value = data.data?.link_token
 
     const plaidLink = Plaid.create({
       token: linkToken.value,
       onSuccess: async public_token => {
-        const accessResponse = await fetch('/api/plaid/exchange', {
+        const accessResponse = await fetch('/api/v1/finance/plaid/exchange', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ publicToken: public_token }),
@@ -132,7 +132,7 @@ const fetchData = async () => {
     error.value = null
 
     // Fetch accounts
-    const accountsResponse = await fetch('/api/finance/balance', {
+    const accountsResponse = await fetch('/api/v1/finance/balance', {
       credentials: 'include',
     })
 
@@ -141,16 +141,16 @@ const fetchData = async () => {
     }
 
     const accountsData = await accountsResponse.json()
-    accounts.value = accountsData.accounts || []
+    accounts.value = accountsData.data?.accounts || []
 
     // Fetch items (bank connections) for sync status
-    const itemsResponse = await fetch('/api/finance/items', {
+    const itemsResponse = await fetch('/api/v1/finance/items', {
       credentials: 'include',
     })
 
     if (itemsResponse.ok) {
       const itemsData = await itemsResponse.json()
-      items.value = itemsData.items || []
+      items.value = itemsData.data?.items || []
     }
 
     logger.info('Fetched balance data', { accountCount: accounts.value.length })
@@ -172,7 +172,7 @@ const syncItem = async itemId => {
   try {
     logger.action('manual_sync_item', { itemId })
 
-    const response = await fetch('/api/plaid/transactions', {
+    const response = await fetch('/api/v1/finance/plaid/transactions', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -187,7 +187,7 @@ const syncItem = async itemId => {
 
     logger.success('Item synced successfully', {
       itemId,
-      added: data.stats?.added,
+      added: data.data?.stats?.added,
       modified: data.stats?.modified,
     })
 
@@ -220,7 +220,7 @@ const disconnectItem = async itemId => {
   try {
     logger.action('disconnect_item', { itemId })
 
-    const response = await fetch(`/api/finance/items/${itemId}/disconnect`, {
+    const response = await fetch(`/api/v1/finance/items/${itemId}/disconnect`, {
       method: 'POST',
       credentials: 'include',
     })

@@ -2,13 +2,13 @@ import { getItemsByUserId, getItemById, deleteItem } from '~/server/db/queries/i
 import { getAccountsByUserId } from '~/server/db/queries/accounts.js'
 import { plaidClient } from './plaid.js'
 import { decrypt } from '~/server/utils/crypto.js'
-import type { Item } from '~/types/database.js'
+import type { Item } from '~/types'
 
 export interface SafeItem {
   id: number
   plaid_item_id: string
-  plaid_institution_id?: string
-  institution_name?: string
+  plaid_institution_id?: string | null
+  institution_name?: string | null
   status: string
   error?: any
   created_at: Date
@@ -39,8 +39,8 @@ export async function getItems(userId: number): Promise<ItemsData> {
   const safeItems: SafeItem[] = items.map((item: Item) => ({
     id: item.id,
     plaid_item_id: item.plaid_item_id,
-    plaid_institution_id: item.plaid_institution_id,
-    institution_name: institutionMap[item.id] || item.plaid_institution_id,
+    plaid_institution_id: item.institution_id,
+    institution_name: institutionMap[item.id] || item.institution_id,
     status: item.status,
     error: item.error || null,
     created_at: item.created_at,

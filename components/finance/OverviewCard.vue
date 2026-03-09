@@ -90,7 +90,7 @@ const fetchOverview = async () => {
   error.value = null
 
   try {
-    const response = await fetch('/api/finance/overview', {
+    const response = await fetch('/api/v1/finance/overview', {
       credentials: 'include',
     })
 
@@ -98,7 +98,8 @@ const fetchOverview = async () => {
       throw new Error('Failed to fetch overview data')
     }
 
-    overviewData.value = await response.json()
+    const responseData = await response.json()
+    overviewData.value = responseData.data
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unknown error'
   } finally {

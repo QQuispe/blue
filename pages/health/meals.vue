@@ -29,7 +29,7 @@ const {
 // Derived state from centralized data
 const needsSetup = computed(() => {
   if (!isReady.value) return false // Show loading instead
-  return !setupStatus.value?.isComplete
+  return !setupStatus.value?.isSetup
 })
 const userTimezone = computed(() => userSettings.value?.timezone || 'America/New_York')
 

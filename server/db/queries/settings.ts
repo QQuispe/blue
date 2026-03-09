@@ -1,5 +1,5 @@
 import { pool } from '../index.js'
-import type { UserSettings, QueryResult } from '~/types/database.js'
+import type { UserSettings, QueryResult } from '~/types'
 
 export async function getUserSettings(userId: number): Promise<QueryResult<UserSettings>> {
   const result = await pool.query(`SELECT * FROM user_settings WHERE user_id = $1`, [userId])
@@ -28,8 +28,8 @@ export async function createUserSettings(
       settings.locale || 'en-US',
       settings.timezone || 'America/New_York',
       settings.theme || 'dark',
-      settings.notifications_enabled ?? true,
-      settings.budget_alerts_enabled ?? true,
+      settings.notificationsEnabled ?? true,
+      settings.budgetAlertsEnabled ?? true,
     ]
   )
   return result.rows[0]
@@ -39,8 +39,7 @@ export async function updateUserSettings(
   userId: number,
   settings: Partial<UserSettings>
 ): Promise<QueryResult<UserSettings>> {
-  const { currency, locale, timezone, theme, notifications_enabled, budget_alerts_enabled } =
-    settings
+  const { currency, locale, timezone, theme, notificationsEnabled, budgetAlertsEnabled } = settings
 
   const result = await pool.query(
     `UPDATE user_settings
@@ -53,7 +52,7 @@ export async function updateUserSettings(
          updated_at = CURRENT_TIMESTAMP
      WHERE user_id = $1
      RETURNING *`,
-    [userId, currency, locale, timezone, theme, notifications_enabled, budget_alerts_enabled]
+    [userId, currency, locale, timezone, theme, notificationsEnabled, budgetAlertsEnabled]
   )
   return result.rows[0] || null
 }

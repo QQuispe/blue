@@ -6,7 +6,7 @@ import {
   getFilteredTotalSpend,
 } from '~/server/db/queries/transactions.js'
 import { getAccountsByUserId } from '~/server/db/queries/accounts.js'
-import type { Transaction } from '~/types/database.js'
+import type { Transaction } from '~/types'
 
 export interface TransactionWithCategory extends Transaction {
   categoryPrimary?: string

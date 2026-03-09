@@ -22,7 +22,7 @@ const fetchSpending = async () => {
     isLoading.value = true
     error.value = null
 
-    const response = await fetch('/api/finance/spending-by-category', {
+    const response = await fetch('/api/v1/finance/spending-by-category', {
       credentials: 'include',
     })
 
@@ -31,9 +31,9 @@ const fetchSpending = async () => {
     }
 
     const data = await response.json()
-    categories.value = data.categories
-    totalSpending.value = data.totalSpending
-    period.value = data.period
+    categories.value = data.data.categories
+    totalSpending.value = data.data.totalSpending
+    period.value = data.data.period
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unknown error'
   } finally {

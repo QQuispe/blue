@@ -12,7 +12,7 @@ const fetchBudgets = async () => {
     isLoading.value = true
     error.value = null
 
-    const response = await fetch('/api/finance/budgets', {
+    const response = await fetch('/api/v1/finance/budgets', {
       credentials: 'include',
     })
 
@@ -21,8 +21,8 @@ const fetchBudgets = async () => {
     }
 
     const data = await response.json()
-    budgets.value = data.budgets
-    period.value = data.period
+    budgets.value = data.data.budgets
+    period.value = data.data.period
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unknown error'
   } finally {

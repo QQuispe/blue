@@ -25,7 +25,7 @@ const fetchNetWorth = async () => {
     isLoading.value = true
     error.value = null
 
-    const response = await fetch(`/api/finance/net-worth?timeframe=${selectedTimeframe.value}`, {
+    const response = await fetch(`/api/v1/finance/net-worth?timeframe=${selectedTimeframe.value}`, {
       credentials: 'include',
     })
 
@@ -35,8 +35,8 @@ const fetchNetWorth = async () => {
 
     const data = await response.json()
 
-    currentData.value = data.current
-    historyData.value = data.history || []
+    currentData.value = data.data.current
+    historyData.value = data.data.history || []
   } catch (err) {
     const errorMessage = err instanceof Error ? err.message : 'Unknown error'
     error.value = errorMessage

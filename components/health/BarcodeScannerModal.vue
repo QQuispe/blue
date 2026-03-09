@@ -93,13 +93,13 @@ const lookupBarcode = async (barcode: string) => {
   currentState.value = 'loading'
 
   try {
-    const response = await fetch(`/api/health/barcode/${barcode}`, {
+    const response = await fetch(`/api/v1/health/barcode/${barcode}`, {
       credentials: 'include',
     })
 
     const data = await response.json()
 
-    if (data.statusCode === 200 && data.data) {
+    if (data.success && data.data) {
       scannedFood.value = data.data
       currentState.value = 'result'
     } else if (data.statusCode === 404) {

@@ -17,7 +17,7 @@ export const useHealthDate = () => {
 
   const fetchUserTimezone = async () => {
     try {
-      const res = await fetch('/api/user/settings', { credentials: 'include' })
+      const res = await fetch('/api/v1/user/settings', { credentials: 'include' })
       if (res.ok) {
         const data = await res.json()
         userTimezone.value = data.settings?.timezone || 'America/New_York'

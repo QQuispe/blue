@@ -126,7 +126,7 @@ export const useCheckins = () => {
   const fetchCheckins = async () => {
     try {
       isLoading.value = true
-      const response = await fetch('/api/health/checkins', {
+      const response = await fetch('/api/v1/health/checkins', {
         credentials: 'include',
       })
 
@@ -175,14 +175,14 @@ export const useCheckins = () => {
       let response
 
       if (isEditingCheckin.value && editingCheckinId.value) {
-        response = await fetch(`/api/health/checkins/${editingCheckinId.value}`, {
+        response = await fetch(`/api/v1/health/checkins/${editingCheckinId.value}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify(payload),
         })
       } else {
-        response = await fetch('/api/health/checkins', {
+        response = await fetch('/api/v1/health/checkins', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -210,7 +210,7 @@ export const useCheckins = () => {
     if (!checkinToDelete.value) return
 
     try {
-      await $fetch(`/api/health/checkins/${checkinToDelete.value.id}`, {
+      await $fetch(`/api/v1/health/checkins/${checkinToDelete.value.id}`, {
         method: 'DELETE',
         credentials: 'include',
       })

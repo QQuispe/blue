@@ -23,7 +23,7 @@ const {
   pending,
   error,
   refresh,
-} = useFetch('/api/finance/budgets', {
+} = useFetch('/api/v1/finance/budgets', {
   credentials: 'include',
   immediate: false,
 })

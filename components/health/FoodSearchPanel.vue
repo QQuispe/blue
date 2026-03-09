@@ -104,7 +104,7 @@ const handleBarcodeNotFound = (barcode: string) => {
 
 const saveScannedFoodToLibrary = async (food: any) => {
   try {
-    await $fetch('/api/health/foods/custom', {
+    await $fetch('/api/v1/health/foods/custom', {
       method: 'POST',
       body: {
         name: food.name,

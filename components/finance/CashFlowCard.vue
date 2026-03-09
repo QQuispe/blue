@@ -26,7 +26,7 @@ const fetchData = async () => {
     isLoading.value = true
     error.value = null
 
-    const response = await fetch('/api/finance/cash-flow', {
+    const response = await fetch('/api/v1/finance/cash-flow', {
       credentials: 'include',
     })
 
@@ -34,7 +34,7 @@ const fetchData = async () => {
       throw new Error('Failed to fetch cash flow data')
     }
 
-    data.value = await response.json()
+    data.value = (await response.json()).data
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unknown error'
   } finally {

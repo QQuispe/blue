@@ -11,7 +11,7 @@ const { $toast } = useNuxtApp()
 const { setupStatus, isReady, init } = useHealthData()
 const needsSetup = computed(() => {
   if (!isReady.value) return false
-  return !setupStatus.value?.isComplete
+  return !setupStatus.value?.isSetup
 })
 
 interface MealPlan {
@@ -58,8 +58,8 @@ const fetchPlans = async () => {
     isLoading.value = true
 
     const [mealRes, workoutRes] = await Promise.all([
-      fetch('/api/health/meal-plans', { credentials: 'include' }),
-      fetch('/api/health/workout-plans', { credentials: 'include' }),
+      fetch('/api/v1/health/meal-plans', { credentials: 'include' }),
+      fetch('/api/v1/health/workout-plans', { credentials: 'include' }),
     ])
 
     const mealData = await mealRes.json()
@@ -78,7 +78,7 @@ const generateMealPlan = async () => {
   try {
     isGenerating.value = true
 
-    const response = await fetch('/api/health/meal-plans/generate', {
+    const response = await fetch('/api/v1/health/meal-plans/generate', {
       method: 'POST',
       credentials: 'include',
     })
@@ -102,7 +102,7 @@ const generateWorkoutPlan = async () => {
   try {
     isGenerating.value = true
 
-    const response = await fetch('/api/health/workout-plans/generate', {
+    const response = await fetch('/api/v1/health/workout-plans/generate', {
       method: 'POST',
       credentials: 'include',
     })

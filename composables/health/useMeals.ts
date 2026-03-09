@@ -70,7 +70,7 @@ export const useMeals = () => {
   const fetchMeals = async () => {
     try {
       isLoading.value = true
-      const response = await fetch(`/api/health/meals?date=${selectedDate.value}`, {
+      const response = await fetch(`/api/v1/health/meals?date=${selectedDate.value}`, {
         credentials: 'include',
       })
 
@@ -117,7 +117,7 @@ export const useMeals = () => {
 
       if (existingMeal?.id) {
         // Update existing meal
-        const response = await fetch(`/api/health/meals/${existingMeal.id}`, {
+        const response = await fetch(`/api/v1/health/meals/${existingMeal.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -139,7 +139,7 @@ export const useMeals = () => {
         $toast?.success('Meal updated!')
       } else {
         // Create new meal
-        const response = await fetch('/api/health/meals', {
+        const response = await fetch('/api/v1/health/meals', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -177,7 +177,7 @@ export const useMeals = () => {
     }
   ) => {
     try {
-      const response = await fetch(`/api/health/meals/${id}`, {
+      const response = await fetch(`/api/v1/health/meals/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -199,7 +199,7 @@ export const useMeals = () => {
 
   const deleteMeal = async (meal: Meal) => {
     try {
-      await $fetch(`/api/health/meals/${meal.id}`, {
+      await $fetch(`/api/v1/health/meals/${meal.id}`, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -214,7 +214,7 @@ export const useMeals = () => {
     if (!food.id) return
 
     try {
-      await $fetch(`/api/health/meal-foods/${food.id}`, {
+      await $fetch(`/api/v1/health/meal-foods/${food.id}`, {
         method: 'DELETE',
         credentials: 'include',
       })
@@ -234,7 +234,7 @@ export const useMeals = () => {
       )
 
       if (targetMeal) {
-        await $fetch(`/api/health/meals/${targetMeal.id}`, {
+        await $fetch(`/api/v1/health/meals/${targetMeal.id}`, {
           method: 'PUT',
           credentials: 'include',
           body: {
@@ -259,7 +259,7 @@ export const useMeals = () => {
           },
         })
       } else {
-        await $fetch('/api/health/meals', {
+        await $fetch('/api/v1/health/meals', {
           method: 'POST',
           credentials: 'include',
           body: {
@@ -281,7 +281,7 @@ export const useMeals = () => {
       }
 
       if (food.id) {
-        await $fetch(`/api/health/meal-foods/${food.id}`, {
+        await $fetch(`/api/v1/health/meal-foods/${food.id}`, {
           method: 'DELETE',
           credentials: 'include',
         })
