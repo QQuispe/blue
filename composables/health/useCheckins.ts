@@ -135,9 +135,9 @@ export const useCheckins = () => {
       }
 
       const data = await response.json()
-      checkins.value = (data.checkins || []).map((c: any) => ({
+      checkins.value = (data.data?.checkins || []).map((c: any) => ({
         ...c,
-        checkin_date: c.checkinDate,
+        checkin_date: c.checkin_date || c.checkinDate || c.date,
         weight: c.weight ? Number(c.weight) : null,
         chest: c.chest ? Number(c.chest) : null,
         waist: c.waist ? Number(c.waist) : null,

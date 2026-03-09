@@ -79,7 +79,7 @@ export const useMeals = () => {
       }
 
       const data = await response.json()
-      meals.value = data.meals || []
+      meals.value = (data.data?.meals || []).map((m: any) => ({ ...m, mealType: m.mealType || m.meal_type, mealDate: m.mealDate || m.meal_date, totalCalories: m.totalCalories ?? m.total_calories ?? 0, totalProtein: m.totalProtein ?? m.total_protein ?? 0, totalCarbs: m.totalCarbs ?? m.total_carbs ?? 0, totalFat: m.totalFat ?? m.total_fat ?? 0 }))
       setTodaysMacros(meals.value)
     } catch (err) {
       console.error('Error:', err)

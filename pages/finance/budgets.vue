@@ -78,7 +78,7 @@ const {
   query: computed(() => ({ month: selectedMonth.value })),
 })
 
-const budgets = computed(() => response.value?.budgets || [])
+const budgets = computed(() => response.value?.data?.budgets || [])
 const isLoading = computed(() => pending.value)
 const fetchError = computed(() => error.value)
 
@@ -320,7 +320,7 @@ const viewBudgetTransactions = async (budget: Budget) => {
       }
     )
 
-    selectedBudgetTransactions.value = response.transactions || []
+    selectedBudgetTransactions.value = response.data?.transactions || []
   } catch (err) {
     $toast.error('Failed to load transactions')
   } finally {

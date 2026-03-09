@@ -41,8 +41,8 @@ export const useFinanceData = () => {
         return
       }
 
-      accounts.value = (accountsRes as any)?.accounts || []
-      budgets.value = (budgetsRes as any)?.budgets || []
+      accounts.value = (accountsRes as any)?.data?.accounts || []
+      budgets.value = (budgetsRes as any)?.data?.budgets || []
 
       isInitialized.value = true
     } catch (err) {

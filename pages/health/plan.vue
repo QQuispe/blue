@@ -65,8 +65,8 @@ const fetchPlans = async () => {
     const mealData = await mealRes.json()
     const workoutData = await workoutRes.json()
 
-    activeMealPlan.value = mealData.activePlan
-    activeWorkoutPlan.value = workoutData.activePlan
+    activeMealPlan.value = mealData.data?.activePlan
+    activeWorkoutPlan.value = workoutData.data?.activePlan
   } catch (err: any) {
     console.error('Error:', err)
   } finally {
